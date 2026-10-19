@@ -1876,7 +1876,15 @@ function syncText() {
 }
 const isEmptyState = s => !(s?.hcps?.length || s?.events?.length || s?.engs?.length);
 const sameTime = (a, b) => !!a && !!b && Date.parse(a) === Date.parse(b);
-function cloudData() { const {ownerId, syncedAt, pending, ...rest} = state; return rest; }
+function cloudData() { const {ownerId, syncedAt, pending, ...rest} = state; return {...rest, tplAt:template?.uploadedAt || null}; }
+// Tiết kiệm băng thông (gói Free 5 GB/tháng): chỉ hỏi updated_at trước, tải cả bản dữ liệu khi thật sự có thay đổi; phôi chỉ tải khi đổi phôi
+async function fetchRow(uid, withTemplate) {
+  const {data, error} = await sync.client.from('app_state').select('data, updated_at').eq('user_id', uid).maybeSingle();
+  if (error) throw error; if (!data) return null;
+  const need = withTemplate || !template || (data.data?.tplAt && data.data.tplAt !== template?.uploadedAt);
+  if (need) { const t = await sync.client.from('app_state').select('template').eq('user_id', uid).maybeSingle(); if (t.error) throw t.error; data.template = t.data?.template || null; }
+  return data;
+}
 function setSync(st, err = '') { sync.status = st; sync.err = err; renderRail(); const box = document.getElementById('acct-box'); if (box) box.innerHTML = acctHtml(); }
 function schedulePush(ms = 1200) { if (!sync.user) return; clearTimeout(sync.timer); sync.timer = setTimeout(() => push(), ms); }
 async function syncInit() {
@@ -1897,8 +1905,15 @@ async function doPull() {
   if (!sync.user) return;
   const uid = sync.user.id; sync.lastPull = Date.now();
   setSync('loading');
-  const {data:row, error} = await sync.client.from('app_state').select('data, template, updated_at').eq('user_id', uid).maybeSingle();
-  if (error) { setSync(navigator.onLine ? 'error' : 'offline', error.message); return; }
+  let meta, row;
+  try {
+    const r = await sync.client.from('app_state').select('updated_at').eq('user_id', uid).maybeSingle(); if (r.error) throw r.error; meta = r.data;
+    if (meta && state.ownerId === uid && sameTime(meta.updated_at, state.syncedAt)) {
+      if (state.pending) { await push(true); return; }
+      sync.at = Date.now(); setSync('synced'); return;
+    }
+    row = meta ? await fetchRow(uid) : null;
+  } catch (error) { setSync(navigator.onLine ? 'error' : 'offline', error.message || String(error)); return; }
   if (!row) {
     if (isEmptyState(state) || state.ownerId === uid) { state.ownerId = uid; state.syncedAt = null; sync.tplDirty = !!template; await push(true); return; }
     return askMigrate();
@@ -1914,7 +1929,7 @@ function adopt(row) {
   const f = fresh(); const d = row.data || {};
   state = {...f, ...d, settings:{...f.settings, ...(d.settings || {})}, ownerId:sync.user.id, syncedAt:row.updated_at, pending:false};
   if (ensurePresets(state)) { state.pending = true; schedulePush(); }
-  if (row.template) { template = row.template; persistTemplate(); } else if (template) { sync.tplDirty = true; schedulePush(); }
+  if (row.template) { template = row.template; persistTemplate(); } else if (template && !d.tplAt) { sync.tplDirty = true; schedulePush(); }
   persistLocal(); sync.at = Date.now(); setSync('synced'); render();
 }
 async function push(force) {
@@ -1924,9 +1939,9 @@ async function push(force) {
   const uid = sync.user.id;
   try {
     if (!force) {
-      const {data:row, error} = await sync.client.from('app_state').select('data, template, updated_at').eq('user_id', uid).maybeSingle();
+      const {data:meta, error} = await sync.client.from('app_state').select('updated_at').eq('user_id', uid).maybeSingle();
       if (error) throw error;
-      if (row && !sameTime(row.updated_at, state.syncedAt)) { sync.again = false; askConflict(row); return; }
+      if (meta && !sameTime(meta.updated_at, state.syncedAt)) { sync.again = false; askConflict(await fetchRow(uid)); return; }
     }
     const payload = {user_id:uid, data:cloudData(), updated_at:new Date().toISOString()};
     if (sync.tplDirty) payload.template = template;
