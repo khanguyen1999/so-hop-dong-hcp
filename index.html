@@ -308,7 +308,6 @@ const STORE_KEY = 'hcp-desk:v1', TPL_KEY = 'hcp-desk:template:v1';
 const DOTS = '……………';
 const SIX_CITIES = ['Hồ Chí Minh','Hà Nội','Đà Nẵng','Hải Phòng','Cần Thơ','Huế'];
 const ROLES = ['Báo cáo viên','Chủ tọa','Điều phối viên'];
-const BANKS = ['Vietcombank','VietinBank','BIDV','Agribank','MB','Techcombank','ACB','Sacombank','VPBank','TPBank','HDBank','VIB','SHB','OCB','Eximbank','SeABank','MSB','Nam A Bank','LPBank','Bac A Bank','SCB','PVcomBank','Kienlongbank','ABBANK','VietABank'];
 const CONTRACT_REQ = [['name','Họ tên'],['street','Địa chỉ'],['city','Thành phố'],['cccd','CCCD/MST'],['bankAccount','Số TK'],['bankName','Ngân hàng'],['bankCode','Mã NH'],['hospital','Bệnh viện'],['specialty','Chuyên môn']];
 const PAY_REQ = [['tier','Tier'],['email','Email'],['phone','SĐT'],['cccd','CCCD/MST'],['street','Địa chỉ']];
 const STAGE = {
@@ -433,6 +432,63 @@ let undoSnap = null;
 const checkpoint = () => { undoSnap = JSON.stringify(state); };
 function undo() { if (!undoSnap) return; const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...JSON.parse(undoSnap), ...keep}; undoSnap = null; save(); render(); toast('Đã hoàn tác'); }
 
+/* ================= bank codes (bảng mã Citi "Bankcode guideline" 31/03/2025) ================= */
+// [mã 8 số, tên ngắn, 1 = nằm trong danh sách mã trực tiếp Citi khuyến nghị (dùng được cho mọi chi nhánh)]
+const BANK_CODES = [["01101014","NHNN SO GIAO DICH",0],["01101100","NHNN KHU VUC 1",0],["01201001","VIETINBANK VN",1],["01201003","VIETINBANK CN DONG DA",0],["01201004","VIETINBANK CN BA DINH",0],["01201011","VIETINBANK CN HOAN KIEM",0],["01202001","BIDV VN",1],["01202002","BIDV CN SGD 1",0],["01202021","BIDV CN HOAN KIEM",0],["01203001","VIETCOMBANK VN",1],["01203002","VIETCOMBANK VN SGD",0],["01203003","VIETCOMBANK VN CN HA NOI",0],["01203004","VIETCOMBANK VN CN THANG LONG",0],["01203005","VIETCOMBANK VN CN BA DINH",0],["01203006","VIETCOMBANK VN CN THANH CONG",0],["01203007","VIETCOMBANK VN CN CHUONG DUONG",0],["01203008","VIETCOMBANK CN HOAN KIEM",0],["01203009","VIETCOMBANK CN HA TAY",0],["01203010","VIETCOMBANK CN THANH XUAN",0],["01204001","AGRIBANK VN HSC",1],["01204009","AGRIBANK CN TT Thanh Toan",0],["01207001","NH CSXH SGD",0],["01208001","NHPT VN HSC",0],["01302001","NHTMCP HANG HAI TRU SO CHINH",1],["01305001","NH EXIMBANK HA NOI",0],["01305002","NH EXIMBANK CN BA DINH",0],["01305003","NH EXIMBANK LONG BIEN",0],["01306001","NHTMCP NAM A HA NOI",0],["01307001","ACB CN HA NOI",1],["01309001","VPBANK HSC",0],["01310001","TECHCOMBANK VN HSC",1],["01310005","TECHCOMBANK CN HOAN KIEM",0],["01310012","TECHCOMBANK CN HA THANH",0],["01311001","NHTMCP QUAN DOI HA NOI",1],["01311002","NHTMCP QUAN DOI DIEN BIEN PHU",0],["01311003","NHTMCP QUAN DOI CN SGD 1",1],["01311013","NHTMCP QUAN DOI CN HOAN KIEM",0],["01314007","VIB BANK SGD",1],["01317001","SEABANK HSC - HA NOI",0],["01319001","NH TNHH MTV VN HIEN DAI CN HN",0],["01320001","GP BANK HSC",1],["01321001","HD BANK CN HA NOI",1],["01321003","HD BANK CN BA DINH",0],["01323001","ABBANK CN HA NOI",1],["01323002","ABBANK HOI SO CHINH",1],["01334003","SCB CN THANG LONG",0],["01339001","NHTM TNHH MTV XAY DUNG VN CN HA NOI",0],["01341001","PG BANK CN HA NOI",0],["01348002","SHB HSC",0],["01352002","NH TMCP QUOC DAN HSC",0],["01355001","NH TMCP VIET A CN HA NOI",0],["01355002","NH TMCP VIET A HSC",0],["01357001","NH LOC PHAT VN CN HANOI",0],["01357002","NH LOC PHAT VN CN DONG DO",0],["01357003","NH LOC PHAT VN CN THANG LONG",0],["01358001","TP BANK HSC",1],["01359001","NH TMCP BAO VIET HSC",0],["01360002","PVCOM BANK VN HSC",0],["01401001","NAPAS HA NOI",0],["01501001","NH TNHH MTV PUBLIC VN HSC",1],["01502001","INDOVINA BANK CN HA NOI",1],["01602002","NH TNHH MTV ANZ VN HOI SO",0],["01603001","NH HONG LEONG VN CN HA NOI",0],["01604001","NH STANDARD CHARTERED VN SGD HA NOI",0],["01604002","NH TNHH STANDARD CHARTERED VN HSC",1],["01604003","STANDARD CHARTERED CN LE DAI HANH",0],["01605001","CITI BANK HA NOI",0],["01608001","FIRST COMMERCIAL BANK CN HA NOI",0],["01609001","MAY BANK HA NOI",0],["01613001","MIZUHO BANK HA NOI",0],["01616002","NH TNHH MTV SHINHAN VN CN HA NOI",0],["01617001","NHTNHH MTV HSBC VN CN HA NOI",0],["01626001","KOREA EXCHANGE BANK HA NOI",0],["01636001","SMB CORPORATION HA NOI",0],["01638001","NH DT&PT CAMPUCHIA CN HA NOI",0],["01642001","NH TAIPEI FUBON CN HA NOI",0],["01649001","ICB OF CHINA CN HA NOI",0],["01652001","IBK CN HA NOI",0],["01653001","MUFG BANK, LTD CN HA NOI",0],["01657001","NH BNP PARIBAS CN HA NOI",0],["01661001","NH TNHH MTV CIMB VN",0],["01662001","NH NONG HYUP CN HN",0],["01663001","WOORI BANK VN",0],["01664001","AGRICULTURAL BANK OF CHINA CN HANOI",0],["01666001","NH KOOKMIN CN TP HN",0],["01667001","BANGKOK BANK CN HA NOI",0],["01701001","KHO BAC NHA NUOC .",0],["01701035","BQL HE THONG THANH TOAN KBNN",0],["01901001","NH HOP TAC XA VN HSC",0],["14101001","NHNN KHU VUC 3",0],["19101005","NHNN KHU VUC 5",0],["25101001","NHNN KHU VUC 4",0],["31101001","NHNN KHU VUC 6",0],["38101001","NHNN KHU VUC 7",0],["40313001","NH BAC A HOI SO CHINH",0],["42101001","NHNN KHU VUC 8",0],["48101001","NHNN KHU VUC 9",0],["48204018","AGRIBANK VPDD KV Mien Trung",0],["48304001","NH VIKKI CN DA NANG",0],["56101001","NHNN KHU VUC 10",0],["66101001","NHNN KHU VUC 11",0],["74655001","NH TAIPEI FUBON CN BINH DUONG",0],["75101001","NHNN KHU VUC 12",0],["75606001","SCSB CHI NHANH DONG NAI",0],["75658001","NH TNHH E.SUN CN DONG NAI",0],["79101100","NHNN KHU VUC 2",0],["79201001","VIETINBANK CN TP HCM",1],["79202002","BIDV CN TP HCM",1],["79204017","AGRIBANK VPDD KV Mien Nam",0],["79302001","NHTMCP HANG HAI HCMC",1],["79303001","SACOMBANK HSC",1],["79303003","SACOMBANK CN CHO LON",0],["79303008","SACOMBANK CN TAN BINH",0],["79304001","NH VIKKI HOI SO CHINH",1],["79305001","NH EXIMBANK HOI SO",1],["79306001","NHTMCP NAM A HCM",0],["79307001","ACB HCM",1],["79307005","ACB CN CHO LON",0],["79307006","ACB CN SAI GON",0],["79308001","SAIGONBANK HCM",0],["79309001","VPBANK CN HCM",0],["79310001","TECHCOMBANK HCM",1],["79314013","VIB BANK HSC",1],["79317002","SEABANK CN HCM",0],["79320001","GP BANK CN TP HCM",1],["79321001","HD BANK HSC",1],["79327001","NHTMCP BAN VIET HSC",0],["79333001","OCB HCM",0],["79334001","SCB TP HCM",1],["79339002","NH XAY DUNG VN CN LAM GIANG",0],["79341001","PG BANK CN SAI GON",0],["79352001","NH TMCP QUOC DAN CN SAI GON",0],["79353001","NH TMCP KIEN LONG CN SAI GON",0],["79356001","VIETBANK CN TP HCM",1],["79357001","NH LOC PHAT VN CN TP HCM",0],["79358001","TP BANK CN TP HCM",1],["79359001","NH TMCP BAO VIET CN TP HCM",0],["79360001","PVCOM BANK VN CN TP HCM",0],["79502001","INDOVINA BANK HCM",1],["79600001","SIAM COMMERCIAL BANK PUBLIC CN HCM",0],["79601001","NH BPCEIOM CN TP HCM",0],["79602001","NH TNHH ANZ VN CN TP HCM",0],["79602002","NH ANZ VN TT NGHIEP VU",0],["79603001","NH HONG LEONG VN HSC",0],["79604001","STANDARD CHARTERED VN CN TP HCM",1],["79604002","STANDARD CHARTERED CN QUAN 7",0],["79611001","CHINA CONSTRUCTION BANK CORP CN HCM",0],["79612001","BANGKOK BANK TP HCM",0],["79614001","BNP-PARIBAS TP HCM",0],["79615001","BANK OF COMMUNICATIONS CN TP HCM",0],["79616001","NH TNHH SHINHAN VN HSC",0],["79617001","NH TNHH MTV HSBC VN",0],["79617002","NH HSBC VN CN LE DAI HANH",0],["79619001","DEUTSCHE BANK TP HCM",0],["79620001","BANK OF CHINA TP HCM",0],["79622001","MUFG BANK,LTD CN TP HCM",0],["79623001","MEGA ICBC TP HCM",0],["79625001","OVERSEA - CHINESE BANKING TP HCM",0],["79627001","JPMORGAN CHASE N.A TP HCM",0],["79629001","NH TNHH CTBC CN TP HCM",0],["79630001","FIRST COMMERCIAL BANK CN TP HCM",0],["79631001","NH KOOKMIN CN TP HCM",0],["79632001","NH SINOPAC CN TP HCM",0],["79634001","NH CATHAY CN TPHCM",0],["79635001","MALAYAN BANKING BERHAD TP HCM",0],["79636001","SUMITOMO MITSUI BANKING CORP TP HCM",0],["79639001","MIZUHO BANK TP HCM",0],["79640001","HUA NAN COMMERCIAL BANK TP HCM",0],["79641001","IBK TP HCM",0],["79648001","NH DT VA PT CAMPUCHIA CN TP HCM",0],["79650001","NH DBS BANK LTD CN TP HCM",0],["79651001","NH TM TAIPEI FUBON CN TP HCM",0],["79654001","NH CITIBANK CN TP HCM",0],["79656001","HANA BANK CN TP HCM",0],["79659001","BANK OF INDIA CN TP HCM",0],["79660001","BUSAN BANK CN HCM",0],["79665001","UOB VIETNAM",0],["79668001","NGAN HANG IM CN TPHCM",0],["79669001","KASIKORNBANK CN TPHCM",0],["80339001","NHTM TNHH MTV XAY DUNG VN HSC",0],["82101001","NHNN KHU VUC 13",0],["91101001","NHNN KHU VUC 15",0],["91353001","NH TMCP KIEN LONG HOI SO",0],["92101001","NHNN KHU VUC 14",0],["92204012","AGRIBANK VPDD KV Tay Nam Bo",0]];
+const BANK_SOURCE = 'Bảng mã Citi 31/03/2025';
+// [tên hiển thị, mã ngân hàng 3 số trong mã CITAD, các tên gọi khác (đã bỏ dấu, viết liền)]
+const BANK_DIR = [
+  ['VietinBank',['201'],'vietinbank vietin ctg congthuong icb'], ['BIDV',['202'],'bidv dautuvaphattrien dautuphattrien dtpt'],
+  ['Vietcombank',['203'],'vietcombank vcb ngoaithuong'], ['Agribank',['204'],'agribank agri nongnghiep nongnghiepvaphattriennongthon nopptnt'],
+  ['MSB',['302'],'msb maritimebank maritime hanghai tnex'], ['Sacombank',['303'],'sacombank stb saigonthuongtin'],
+  ['Vikki Bank (DongA)',['304'],'vikki vikkibank donga dongabank dab'], ['Eximbank',['305'],'eximbank eib xuatnhapkhau'],
+  ['Nam A Bank',['306'],'namabank nama'], ['ACB',['307'],'acb achau'], ['Saigonbank',['308'],'saigonbank sgb saigoncongthuong'],
+  ['VPBank',['309'],'vpbank vp thinhvuong vietnamthinhvuong cake cakebybvpbank ubank'], ['Techcombank',['310'],'techcombank tcb techcom kythuong'],
+  ['MB',['311'],'mb mbbank quandoi militarybank'], ['Bac A Bank',['313'],'bacabank baca'], ['VIB',['314'],'vib quocte'],
+  ['SeABank',['317'],'seabank dongnama'], ['MBV (OceanBank)',['319'],'mbv oceanbank daiduong hiendai'], ['GPBank',['320'],'gpbank gp daukhitoancau'],
+  ['HDBank',['321'],'hdbank hd phattrientphcm phattrienthanhphohochiminh'], ['ABBANK',['323'],'abbank ab anbinh'],
+  ['BVBank (Bản Việt)',['327'],'bvbank banviet vietcapitalbank vietcapital vccb timo'], ['OCB',['333'],'ocb phuongdong liobank'], ['SCB',['334'],'scb saigon'],
+  ['VCBNeo (CBBank)',['339'],'vcbneo cbbank xaydung ngoaithuongcongngheso'], ['PGBank',['341'],'pgbank pg thinhvuongvaphattrien xangdaupetrolimex'],
+  ['SHB',['348'],'shb saigonhanoi'], ['NCB',['352'],'ncb quocdan'], ['Kienlongbank',['353'],'kienlongbank kienlong klb'],
+  ['VietABank',['355'],'vietabank vieta vab'], ['Vietbank',['356'],'vietbank thuongtin vietnamthuongtin'],
+  ['LPBank',['357'],'lpbank lpb locphat lienvietpostbank lienviet lienvietpost'], ['TPBank',['358'],'tpbank tp tienphong'],
+  ['BaoVietBank',['359'],'baovietbank baoviet bvb'], ['PVcomBank',['360'],'pvcombank pvcom daichung'],
+  ['Public Bank',['501'],'publicbank public pbvn'], ['Indovina Bank',['502'],'indovina indovinabank ivb'], ['ANZ',['602'],'anz'],
+  ['Hong Leong',['603'],'hongleong hongleongbank'], ['Standard Chartered',['604'],'standardchartered scvn'], ['Citibank',['605','654'],'citibank citi'],
+  ['Shinhan Bank',['616'],'shinhan shinhanbank'], ['HSBC',['617'],'hsbc'], ['Woori Bank',['663'],'woori wooribank'], ['UOB',['665'],'uob unitedoverseasbank'],
+  ['CIMB',['661'],'cimb'], ['DBS',['650'],'dbs'], ['KEB Hana',['626','656'],'hana kebhana hanabank'], ['MUFG',['622','653'],'mufg'],
+  ['Mizuho',['613','639'],'mizuho'], ['Maybank',['609','635'],'maybank malayanbanking'], ['Bangkok Bank',['612','667'],'bangkokbank'],
+  ['Co-opBank',['901'],'coopbank hoptacxa'],
+];
+const BANK_ALIAS = (() => { const m = new Map(); for (const [name, ids, al] of BANK_DIR) for (const a of [...al.split(' '), name.toLowerCase().replace(/[^a-z0-9]/g, '')]) if (a && !m.has(a)) m.set(a, {name, ids}); return m; })();
+const BANK_ALIAS_LONG = [...BANK_ALIAS.keys()].filter(a => a.length >= 4).sort((a, b) => b.length - a.length);
+function bankKey(s) {
+  return norm(s).replace(/\b(ngan hang|nh|nhtm|nhtmcp|tmcp|thuong mai co phan|tnhh|mtv|mot thanh vien|viet nam|vietnam|vn|chi nhanh|cn|phong giao dich|pgd|hoi so|so giao dich)\b/g, ' ').replace(/[^a-z0-9]/g, '');
+}
+function bankInfo(name) {
+  const k = bankKey(name); if (!k) return null;
+  const exact = BANK_ALIAS.get(k) || BANK_ALIAS.get(k.replace(/bank$/, ''));
+  if (exact) return exact;
+  let best = null, at = Infinity;
+  for (const a of BANK_ALIAS_LONG) { const i = k.indexOf(a); if (i >= 0 && (i < at || (i === at && a.length > best.length))) { best = a; at = i; } }
+  return best ? BANK_ALIAS.get(best) : null;
+}
+// Ưu tiên: mã trực tiếp Citi khuyến nghị → chi nhánh TP.HCM (mã bắt đầu 79) → mã chung (VN / hội sở) → sở giao dịch → chi nhánh khác
+function bankRank([code, name, intro]) {
+  const n = String(name).toUpperCase();
+  const office = /VPDD|TT THANH TOAN|TT NGHIEP VU|NAPAS/.test(n) ? 1 : 0;
+  const general = /(HSC|HOI SO|TRU SO| VN$| VN | VN-|VIET NAM$|^[A-Z0-9 &.-]*HCM$|HCMC$|CN TP HCM$|TP HCM$|TP HO CHI MINH$)/.test(n) ? 0 : /SGD|SO GIAO DICH/.test(n) ? 1 : 2;
+  return [office, intro ? 0 : 1, code.startsWith('79') ? 0 : 1, general];
+}
+function bankLookup(name) {
+  const info = bankInfo(name); if (!info) return null;
+  const all = BANK_CODES.filter(([c]) => info.ids.includes(c.slice(2, 5)));
+  if (!all.length) return {bank:info.name, code:'', branch:'', all};
+  const best = [...all].sort((a, b) => { const x = bankRank(a), y = bankRank(b); for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; })[0];
+  return {bank:info.name, code:best[0], branch:best[1], all};
+}
+const bankCodeName = code => BANK_CODES.find(([c]) => c === clean(code))?.[1] || '';
+
 /* ================= lookups & domain ================= */
 const hcpById = id => state.hcps.find(h => h.id === id);
 const evById = id => state.events.find(e => e.id === id);
@@ -479,6 +535,7 @@ function findHcp(rec) {
   const n = norm(rec.name); return n ? state.hcps.find(x => norm(x.name) === n) : null;
 }
 function upsertHcp(rec) {
+  if (rec.bankName && !clean(rec.bankCode)) { const b = bankLookup(rec.bankName); if (b?.code) rec.bankCode = b.code; }
   const h = findHcp(rec);
   if (!h) { const n = {...emptyHcp(), ...Object.fromEntries(Object.entries(rec).filter(([, v]) => v !== undefined && v !== null && v !== ''))}; state.hcps.push(n); return {hcp:n, created:true}; }
   let changed = false;
@@ -1252,15 +1309,13 @@ function readForm(root) {
 }
 
 /* --- HCP modal --- */
-function knownBankCodes() { const m = {}; state.hcps.forEach(h => { if (h.bankName && h.bankCode) m[norm(h.bankName)] = h.bankCode; }); return m; }
 function openHcpModal(id, {prefill = {}, onSaved} = {}) {
   const h = id ? {...hcpById(id)} : {...emptyHcp(), ...prefill};
   const isNew = !id;
   const fl = (k, label, attrs = '', cls = '') => `<label class="field ${cls}"><span>${label}</span><input class="input" name="${k}" value="${esc(k === 'defaultFee' ? (h[k] ? fmtVND(h[k]) : '') : h[k])}" ${attrs}></label>`;
   const hist = id ? state.engs.filter(e => e.hcpId === id).map(e => ({e, ev:evById(e.eventId)})).filter(x => x.ev).sort((a, b) => (b.ev.date || '').localeCompare(a.ev.date || '')) : [];
   const miss = id ? hcpMissing(hcpById(id)).concat(hcpMissing(hcpById(id), 'pay')) : [];
-  const banks = [...new Set([...BANKS, ...state.hcps.map(x => x.bankName).filter(Boolean)])];
-  const codes = [...new Set(state.hcps.map(x => x.bankCode).filter(Boolean))];
+  const banks = [...new Set([...BANK_DIR.map(b => b[0]), ...state.hcps.map(x => x.bankName).filter(Boolean)])];
   const w = openModal(`
     <div class="modal-h"><div><h2>${isNew ? 'Thêm bác sĩ' : esc(h.name)}</h2><p>${isNew ? 'Trường có dấu * cần cho hợp đồng.' : esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · '))}</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
     <form class="modal-b" id="hcp-form" autocomplete="off">
@@ -1292,14 +1347,31 @@ function openHcpModal(id, {prefill = {}, onSaved} = {}) {
       <datalist id="dl-hosp">${[...new Set(state.hcps.map(x => x.hospital).filter(Boolean))].map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
       <datalist id="dl-spec">${[...new Set(['Tim Mạch','Nội thận','Nội tiết','Nội tổng quát','Thần kinh', ...state.hcps.map(x => x.specialty).filter(Boolean)])].map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
       <datalist id="dl-bank">${banks.map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
-      <datalist id="dl-code">${codes.map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
+      <datalist id="dl-code"></datalist>
     </form>
     <div class="modal-f">${!isNew ? `<button class="btn danger sm left" data-act="del-hcp" data-id="${id}" data-confirm="Bấm lần nữa để xoá BS">Xoá</button>` : ''}<button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="save-hcp">Lưu</button></div>`);
   w._hcp = {id, onSaved};
   const form = $('#hcp-form', w);
   form.addEventListener('submit', e => { e.preventDefault(); ACT['save-hcp'](); });
   const bn = form.elements.bankName, bc = form.elements.bankCode;
-  bn.addEventListener('change', () => { const c = knownBankCodes()[norm(bn.value)]; if (c && !bc.value) { bc.value = c; $('#bank-hint', w).textContent = `Đã điền mã ${c} theo BS khác cùng ngân hàng ${bn.value}. Kiểm tra lại chi nhánh.`; } });
+  const hint = $('#bank-hint', w); let autoCode = '';
+  const bankUpdate = (fromName) => {
+    const b = clean(bn.value) ? bankLookup(bn.value) : null;
+    $('#dl-code', w).innerHTML = (b?.all || []).map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join('');
+    if (fromName && b?.code && (!clean(bc.value) || bc.value === autoCode)) { bc.value = b.code; autoCode = b.code; }
+    if (!fromName && fromName !== false && !clean(bc.value) && b?.code) { bc.value = b.code; autoCode = b.code; }
+    const cur = clean(bc.value), curName = bankCodeName(cur);
+    if (!clean(bn.value)) { hint.innerHTML = ''; return; }
+    if (!b) { hint.innerHTML = `Không tìm thấy “${esc(bn.value)}” trong ${BANK_SOURCE}. Nhập mã thủ công${cur && curName ? ` · ${esc(cur)} = ${esc(curName)}` : ''}.`; return; }
+    if (!b.code) { hint.innerHTML = `${esc(b.bank)} chưa có trong ${BANK_SOURCE}. Nhập mã thủ công.`; return; }
+    if (cur === b.code) hint.innerHTML = `Mã <b class="mono">${esc(b.code)}</b> · ${esc(b.branch)} (${BANK_SOURCE}). Cần chi nhánh khác: bấm vào ô Mã ngân hàng để chọn.`;
+    else hint.innerHTML = `${cur ? `Đang dùng <b class="mono">${esc(cur)}</b>${curName ? ' · ' + esc(curName) : ''}. ` : ''}Bảng mã gợi ý <b class="mono">${esc(b.code)}</b> · ${esc(b.branch)}. <button type="button" class="btn sm" id="bank-use">Dùng mã này</button>`;
+    const use = $('#bank-use', w); if (use) use.onclick = () => { bc.value = b.code; autoCode = b.code; bankUpdate(false); };
+  };
+  bn.addEventListener('input', () => bankUpdate(true));
+  bn.addEventListener('change', () => bankUpdate(true));
+  bc.addEventListener('input', () => bankUpdate(false));
+  bankUpdate();
 }
 function saveHcpFromModal() {
   const w = topModal(); if (!w?._hcp) return;
@@ -1307,7 +1379,8 @@ function saveHcpFromModal() {
   if (!clean(f.name)) { toast('Cần nhập họ tên.', {kind:'err'}); $('#hcp-form', w).elements.name.focus(); return; }
   const rec = {};
   for (const [k, v] of Object.entries(f)) rec[k] = k === 'defaultFee' ? money(v) : (k === 'note' ? v.trim() : clean(v));
-  rec.cccd = rec.cccd.replace(/\s/g, ''); rec.bankAccount = rec.bankAccount.replace(/\s/g, '');
+  rec.cccd = rec.cccd.replace(/\s/g, ''); rec.bankAccount = rec.bankAccount.replace(/\s/g, ''); rec.bankCode = rec.bankCode.replace(/\s/g, '');
+  if (rec.bankName && !rec.bankCode) { const b = bankLookup(rec.bankName); if (b?.code) rec.bankCode = b.code; }
   const dup = findHcp(rec); const {id, onSaved} = w._hcp;
   if (dup && dup.id !== id) { toast(`Trùng với hồ sơ “${dup.name}” (cùng ${digits(dup.cccd) === digits(rec.cccd) && digits(rec.cccd) ? 'CCCD' : 'họ tên'}).`, {kind:'err'}); return; }
   let h;
