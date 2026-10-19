@@ -34,8 +34,31 @@ create policy "doc cua minh" on public.app_state for select to authenticated usi
 create policy "them cua minh" on public.app_state for insert to authenticated with check (auth.uid() = user_id);
 create policy "sua cua minh" on public.app_state for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
-3. Authentication → URL Configuration → Site URL = link GitHub Pages của app.
-4. Điền `SUPABASE_URL` và `SUPABASE_KEY` trong `index.html`.
+3. Cấu hình chung (admin quản lý phôi hợp đồng và bảng sản phẩm cho mọi tài khoản) — chạy thêm:
+```sql
+create table public.app_admins (email text primary key);
+insert into public.app_admins (email) values ('nguyenthanhkha1999@gmail.com');
+alter table public.app_admins enable row level security;
+create policy "doc danh sach admin" on public.app_admins for select to authenticated using (true);
+
+create table public.shared_config (
+  id text primary key,
+  products jsonb,
+  template jsonb,
+  updated_at timestamptz not null default now(),
+  updated_by text
+);
+alter table public.shared_config enable row level security;
+create policy "ai dang nhap cung doc" on public.shared_config for select to authenticated using (true);
+create policy "chi admin them" on public.shared_config for insert to authenticated
+  with check (exists (select 1 from public.app_admins a where a.email = lower(auth.jwt() ->> 'email')));
+create policy "chi admin sua" on public.shared_config for update to authenticated
+  using (exists (select 1 from public.app_admins a where a.email = lower(auth.jwt() ->> 'email')))
+  with check (exists (select 1 from public.app_admins a where a.email = lower(auth.jwt() ->> 'email')));
+```
+   Thêm admin: `insert into public.app_admins (email) values ('email@...');` và thêm email đó vào `ADMIN_EMAILS` trong `index.html`.
+4. Authentication → URL Configuration → Site URL = link GitHub Pages của app.
+5. Điền `SUPABASE_URL` và `SUPABASE_KEY` trong `index.html`.
 - `.gitignore` chặn mọi file .docx/.xlsx/.json để không lỡ đẩy dữ liệu lên GitHub.
 
 ## Chạy

@@ -138,7 +138,8 @@ textarea.input{resize:vertical;min-height:62px;line-height:1.45}
 .panel-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
 .panel-h h2{margin:0;font-size:15px;font-weight:600}
 .panel-b{padding:16px 18px}
-.stack{display:grid;gap:18px}
+.stack{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+.stack>*{min-width:0}
 .tbl-wrap{overflow-x:auto}
 table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -319,6 +320,9 @@ const LIBS = {
 /* Đồng bộ tài khoản (Supabase). Để trống = chỉ lưu trên máy. Chỉ điền Project URL + publishable/anon key, KHÔNG điền secret key. */
 const SUPABASE_URL = 'https://kbxnrkxfmobwisbzkehl.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_XKsxbKUrbku72rlmG08-dA_5mf311dF';
+/* Admin: phôi hợp đồng và bảng sản phẩm của admin được áp dụng cho mọi tài khoản. Quyền ghi thật sự do bảng app_admins + RLS trên Supabase quyết định. */
+const ADMIN_EMAILS = ['nguyenthanhkha1999@gmail.com'];
+const SHARED_KEY = 'hcp-desk:shared:v1';
 const STORE_KEY = 'hcp-desk:v1', TPL_KEY = 'hcp-desk:template:v1';
 const DOTS = '……………';
 const SIX_CITIES = ['Hồ Chí Minh','Hà Nội','Đà Nẵng','Hải Phòng','Cần Thơ','Huế'];
@@ -1143,7 +1147,7 @@ async function onTemplateFile(file) {
     }
     const known = new Set(TAGS.map(t => t[0]));
     const unknown = tags.filter(t => !known.has(t));
-    saveTemplate({name:file.name, b64:b64FromBuf(buf), uploadedAt:Date.now(), tags});
+    saveTemplate({name:file.name, b64:b64FromBuf(buf), uploadedAt:Date.now(), tags}); sharedPushSoon();
     render();
     toast(unknown.length ? `Đã nạp phôi. Trường không nhận ra sẽ để trống: ${unknown.join(', ')}` : `Đã nạp phôi (${tags.length} trường).`);
   } catch (err) { toast(err.message, {kind:'err'}); }
@@ -1455,10 +1459,11 @@ function viewSettings() {
   return pageHead('Cài đặt', 'Thông tin cố định dùng cho hợp đồng và file thanh toán. Tự lưu khi bạn sửa.') + `
   <div class="stack">
   ${SYNC_ON ? `<section class="panel"><div class="panel-h"><h2>Tài khoản & đồng bộ</h2></div><div class="panel-b" id="acct-box">${acctHtml()}</div></section>` : ''}
+  ${sharedHtml()}
   <section class="panel"><div class="panel-h"><h2>Phôi hợp đồng</h2>${template ? '<span class="tag ok">Đã nạp</span>' : '<span class="tag crit">Chưa có phôi</span>'}</div>
     <div class="panel-b stack">
       <div class="actions">${template ? `<span><b>${esc(template.name)}</b> <span class="muted small">· nạp ${new Date(template.uploadedAt).toLocaleDateString('vi-VN')} · ${template.tags?.length || '?'} trường</span></span>` : '<span class="muted">Tải lên file phôi .docx có các trường dạng {{ho_ten}}.</span>'}</div>
-      <div class="actions"><button class="btn ${template ? '' : 'primary'}" data-act="pick" data-f="f-template">${I.up} ${template ? 'Thay phôi' : 'Tải phôi lên'}</button>${template ? `<button class="btn" data-act="dl-template">${I.down} Tải phôi đang dùng</button><button class="btn danger" data-act="del-template" data-confirm="Bấm lần nữa để gỡ phôi">Gỡ phôi</button>` : ''}</div>
+      <div class="actions">${sharedActive() && template ? '' : `<button class="btn ${template ? '' : 'primary'}" data-act="pick" data-f="f-template">${I.up} ${template ? 'Thay phôi' : 'Tải phôi lên'}</button>`}${template ? `<button class="btn" data-act="dl-template">${I.down} Tải phôi đang dùng</button>${sharedActive() ? '' : `<button class="btn danger" data-act="del-template" data-confirm="Bấm lần nữa để gỡ phôi">Gỡ phôi</button>`}` : ''}</div>
       <details><summary class="small" style="cursor:pointer">Danh sách trường dùng được trong phôi (khi Legal đổi mẫu, mở phôi bằng Word và giữ nguyên các trường này)</summary>
         <div class="tbl-wrap" style="margin-top:10px"><table class="tbl"><tbody>${TAGS.map(([k, d]) => `<tr><td class="mono">{{${k}}}</td><td>${esc(d)}</td></tr>`).join('')}</tbody></table></div></details>
     </div></section>
@@ -1467,7 +1472,7 @@ function viewSettings() {
     <div class="fgrid">${f('staffName', 'Họ tên Staff (cột E)')}${f('manager', 'Người quản lý RFFM/RKAM (cột Q)')}${f('contractForm', 'Hình thức HĐ gốc (cột R)')}</div>
     <div><div class="field"><span>Sản phẩm / hoạt động: BU, UDA, SIO (cột B, C, D) và người ký Marketing trên hợp đồng. Mỗi sự kiện chọn một dòng.</span></div>
       <div class="tbl-wrap"><table class="tbl tbl-prod"><thead><tr><th>Sản phẩm</th><th>Hoạt động</th><th>BU</th><th>UDA / Cost center</th><th>SIO</th><th>Marketing ký</th><th>Chức vụ</th><th></th></tr></thead><tbody>
-      ${state.products.map(p => `<tr>${['brand','activity','bu','costCenter','sio','signer2Name','signer2Title'].map(k => `<td><input class="input" data-prod="${p.id}" data-k="${k}" value="${esc(k === 'brand' && !p.brand ? (p.name || '') : p[k])}"></td>`).join('')}<td><button class="btn sm ghost danger" data-act="del-prod" data-id="${p.id}" data-confirm="Xoá?">${I.x}</button></td></tr>`).join('')}
+      ${state.products.map(p => { const lock = sharedActive() && p.shared; return `<tr>${['brand','activity','bu','costCenter','sio','signer2Name','signer2Title'].map(k => `<td><input class="input" data-prod="${p.id}" data-k="${k}" value="${esc(k === 'brand' && !p.brand ? (p.name || '') : p[k])}" ${lock ? 'disabled title="Do admin quản lý"' : ''}></td>`).join('')}<td>${lock ? '' : `<button class="btn sm ghost danger" data-act="del-prod" data-id="${p.id}" data-confirm="Xoá?">${I.x}</button>`}</td></tr>`; }).join('')}
       </tbody></table></div>
       <div class="actions" style="margin-top:8px"><button class="btn sm" data-act="add-prod">${I.plus} Thêm dòng</button><button class="btn sm ghost" data-act="reset-prod">Bổ sung bộ mặc định CVRM</button></div></div>
   </div></section>
@@ -1900,7 +1905,7 @@ async function syncInit() {
   });
 }
 let pulling = null;
-function pull() { return pulling ||= doPull().finally(() => { pulling = null; }); }
+function pull() { return pulling ||= doPull().then(() => sharedPull()).finally(() => { pulling = null; }); }
 async function doPull() {
   if (!sync.user) return;
   const uid = sync.user.id; sync.lastPull = Date.now();
@@ -2033,7 +2038,7 @@ async function authSubmit() {
 async function signOut() {
   if (state.pending) { await push(); if (state.pending) { toast('Còn thay đổi chưa lưu lên tài khoản. Kiểm tra mạng rồi thử lại.', {kind:'err'}); return; } }
   try { await sync.client.auth.signOut(); } catch (e) {}
-  sync.user = null; state = fresh(); template = null; persistLocal(); persistTemplate(); undoSnap = null;
+  sync.user = null; state = fresh(); template = null; persistLocal(); persistTemplate(); undoSnap = null; shared = {at:null, by:'', has:false, err:''}; persistShared();
   while (modals.length) closeModal(); setSync('signedout'); go('home'); toast('Đã đăng xuất và xoá dữ liệu khỏi máy này.');
 }
 function syncRefresh() {
@@ -2043,6 +2048,64 @@ function syncRefresh() {
 document.addEventListener('visibilitychange', syncRefresh);
 window.addEventListener('online', syncRefresh);
 window.addEventListener('focus', syncRefresh);
+
+/* ================= cấu hình chung (admin → mọi tài khoản) ================= */
+let shared = {at:null, by:'', has:false, err:''};
+try { const sv = JSON.parse(localStorage.getItem(SHARED_KEY) || 'null'); if (sv) shared = {...shared, ...sv}; } catch (e) {}
+const isAdmin = () => !!sync.user && ADMIN_EMAILS.includes(String(sync.user.email || '').toLowerCase());
+const sharedActive = () => !!sync.user && shared.has && !isAdmin();
+const persistShared = () => { try { localStorage.setItem(SHARED_KEY, JSON.stringify({at:shared.at, by:shared.by, has:shared.has})); } catch (e) {} };
+const prodKey = p => p.presetId || p.id;
+const PROD_FIELDS = ['brand','activity','name','bu','costCenter','sio','signer2Name','signer2Title'];
+function mergeSharedProducts(st, list) {
+  let changed = false;
+  for (const sp of list || []) {
+    const key = sp.key || prodKey(sp);
+    let lp = st.products.find(p => prodKey(p) === key || p.id === key);
+    if (!lp) { lp = {id:key, presetId:key}; st.products.push(lp); changed = true; }
+    for (const f of PROD_FIELDS) if ((sp[f] ?? '') !== (lp[f] ?? '')) { lp[f] = sp[f] ?? ''; changed = true; }
+    if (!lp.shared) { lp.shared = true; changed = true; }
+  }
+  return changed;
+}
+async function sharedPull() {
+  if (!sync.user || !sync.client) return;
+  try {
+    const r = await sync.client.from('shared_config').select('updated_at').eq('id', 'main').maybeSingle();
+    if (r.error) throw r.error;
+    shared.err = '';
+    if (!r.data) { shared.has = false; persistShared(); if (isAdmin()) sharedPushSoon(200); return; }
+    if (sameTime(r.data.updated_at, shared.at) && (isAdmin() || template)) { shared.has = true; return; }
+    const full = await sync.client.from('shared_config').select('products, template, updated_at, updated_by').eq('id', 'main').single();
+    if (full.error) throw full.error;
+    applyShared(full.data);
+  } catch (err) { shared.err = err?.message || String(err); if (document.getElementById('shared-box')) render(); }
+}
+function applyShared(cfg) {
+  shared = {at:cfg.updated_at, by:cfg.updated_by || '', has:true, err:''}; persistShared();
+  if (!isAdmin()) {
+    let ch = mergeSharedProducts(state, cfg.products);
+    if (cfg.template && cfg.template.uploadedAt !== template?.uploadedAt) { template = cfg.template; persistTemplate(); ch = true; }
+    if (ch) { save(true); render(); toast('Đã cập nhật phôi và bảng sản phẩm theo admin.'); return; }
+  }
+  if (document.getElementById('shared-box')) render();
+}
+let sharedTimer = null;
+function sharedPushSoon(ms = 1500) { if (!isAdmin()) return; clearTimeout(sharedTimer); sharedTimer = setTimeout(sharedPush, ms); }
+async function sharedPush() {
+  if (!isAdmin()) return;
+  const payload = {id:'main', products:state.products.map(p => ({...Object.fromEntries(PROD_FIELDS.map(f => [f, p[f] ?? ''])), key:prodKey(p)})), template:template || null, updated_at:new Date().toISOString(), updated_by:sync.user.email};
+  const {data, error} = await sync.client.from('shared_config').upsert(payload).select('updated_at').single();
+  if (error) { shared.err = error.message; toast('Chưa áp dụng được cho các tài khoản khác: ' + error.message, {kind:'err'}); if (document.getElementById('shared-box')) render(); return; }
+  shared = {at:data.updated_at, by:sync.user.email, has:true, err:''}; persistShared();
+  if (document.getElementById('shared-box')) render();
+}
+function sharedHtml() {
+  if (!SYNC_ON || !sync.user) return '';
+  if (isAdmin()) return `<div class="callout" id="shared-box"><b>Bạn là admin.</b> Phôi hợp đồng và bảng sản phẩm ở trang này được áp dụng cho mọi tài khoản${shared.at ? ` · cập nhật lần cuối ${esc(new Date(shared.at).toLocaleString('vi-VN'))}` : ''}.${shared.err ? `<div style="margin-top:6px;color:var(--crit)">Chưa đồng bộ được cấu hình chung: ${esc(shared.err)}. Kiểm tra đã chạy đoạn SQL tạo bảng shared_config chưa.</div>` : ''}</div>`;
+  if (shared.has) return `<div class="callout" id="shared-box">Phôi hợp đồng và bảng sản phẩm do admin (${esc(shared.by || ADMIN_EMAILS[0])}) quản lý, tự cập nhật cho tài khoản của bạn.</div>`;
+  return '';
+}
 
 /* ================= toast & busy ================= */
 function toast(msg, {kind, action, onAction} = {}) {
@@ -2131,10 +2194,10 @@ const ACT = {
   'apply-contracts': () => { const p = pendingPlan; const opts = {events:!!$('#opt-ev', topModal())?.checked}; closeModal(); applyContracts(p, opts); },
   'do-restore': () => { checkpoint(); const o = pendingRestore; const f = fresh(); const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...f, ...o.state, settings:{...f.settings, ...(o.state.settings || {})}, lastBackupAt:Date.parse(o.exportedAt) || Date.now(), changes:0, ...keep}; ensurePresets(state); if (o.template) saveTemplate(o.template); save(); closeModal(); render(); toast('Đã khôi phục.', {action:'Hoàn tác', onAction:undo}); },
   'dl-template': () => saveFile(template.name || 'Phoi_Speaker_Agreement.docx', new Blob([bufFromB64(template.b64)])),
-  'del-template': () => { saveTemplate(null); render(); toast('Đã gỡ phôi.'); },
-  'add-prod': () => { state.products.push({id:uid(), brand:'', activity:'', bu:'CVRM', costCenter:'', sio:'', signer2Name:'', signer2Title:''}); save(); render(); },
-  'reset-prod': () => { const ch = ensurePresets(state); if (ch) { save(); render(); } toast(ch ? 'Đã bổ sung các dòng mặc định còn thiếu.' : 'Đã có đủ bộ mặc định.'); },
-  'del-prod': t => { const n = state.events.filter(e => e.productId === t.dataset.id).length; if (n) { toast(`Có ${n} sự kiện đang dùng dòng này, không xoá được.`, {kind:'err'}); return; } state.products = state.products.filter(p => p.id !== t.dataset.id); save(); render(); },
+  'del-template': () => { saveTemplate(null); sharedPushSoon(); render(); toast('Đã gỡ phôi.'); },
+  'add-prod': () => { state.products.push({id:uid(), brand:'', activity:'', bu:'CVRM', costCenter:'', sio:'', signer2Name:'', signer2Title:''}); save(); sharedPushSoon(); render(); },
+  'reset-prod': () => { const ch = ensurePresets(state); if (ch) { save(); sharedPushSoon(); render(); } toast(ch ? 'Đã bổ sung các dòng mặc định còn thiếu.' : 'Đã có đủ bộ mặc định.'); },
+  'del-prod': t => { const n = state.events.filter(e => e.productId === t.dataset.id).length; if (n) { toast(`Có ${n} sự kiện đang dùng dòng này, không xoá được.`, {kind:'err'}); return; } state.products = state.products.filter(p => p.id !== t.dataset.id); save(); sharedPushSoon(); render(); },
   account: t => openAccount(t.dataset.m || 'login'),
   'auth-mode': t => { const w = topModal(); const em = w?.querySelector('[name=email]')?.value || ''; openAccount(t.dataset.m, em); },
   'auth-submit': () => authSubmit(),
@@ -2195,7 +2258,7 @@ document.addEventListener('change', e => {
     const k = t.dataset.set; const numeric = ['fee','duration','chairDuration','prep','annualCap'].includes(k);
     state.settings[k] = numeric ? money(t.value) : clean(t.value); save(); renderRail(); toast('Đã lưu cài đặt.'); return;
   }
-  if (t.dataset.prod) { const p = state.products.find(x => x.id === t.dataset.prod); if (p) { p[t.dataset.k] = clean(t.value); if (t.dataset.k === 'brand') p.name = clean(t.value); save(); toast('Đã lưu.'); } return; }
+  if (t.dataset.prod) { const p = state.products.find(x => x.id === t.dataset.prod); if (p) { p[t.dataset.k] = clean(t.value); if (t.dataset.k === 'brand') p.name = clean(t.value); save(); sharedPushSoon(); toast(isAdmin() ? 'Đã lưu, áp dụng cho mọi tài khoản.' : 'Đã lưu.'); } return; }
   if (t.closest('#eng-rows') && t.name?.endsWith('.role')) {
     syncRows(); const rid = t.name.split('.')[1]; const r = edit.rows.find(x => x.rid === rid);
     if (r && norm(r.role) === norm('Chủ tọa') && Number(r.duration) === Number(state.settings.duration)) { r.duration = state.settings.chairDuration; renderRows(); }
