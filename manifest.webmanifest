@@ -1,0 +1,16 @@
+{
+  "name": "Sổ hợp đồng HCP",
+  "short_name": "Sổ HĐ HCP",
+  "description": "Hợp đồng Speaker Agreement và file Yêu cầu thanh toán HCP",
+  "lang": "vi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F1F4F3",
+  "theme_color": "#0B6B6B",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
