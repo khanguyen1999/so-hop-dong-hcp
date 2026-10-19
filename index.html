@@ -325,6 +325,8 @@ const SIX_CITIES = ['Hồ Chí Minh','Hà Nội','Đà Nẵng','Hải Phòng','C
 const ROLES = ['Báo cáo viên','Chủ tọa','Điều phối viên'];
 const CONTRACT_REQ = [['name','Họ tên'],['street','Địa chỉ'],['city','Thành phố'],['cccd','CCCD/MST'],['bankAccount','Số TK'],['bankName','Ngân hàng'],['bankCode','Mã NH'],['hospital','Bệnh viện'],['specialty','Chuyên môn']];
 const PAY_REQ = [['tier','Tier'],['email','Email'],['phone','SĐT'],['cccd','CCCD/MST'],['street','Địa chỉ']];
+// Bắt buộc khi lưu hồ sơ BS. Các trường hợp đồng/thanh toán chỉ nhắc khi BS được đưa vào hợp đồng hoặc file YCTT.
+const ESSENTIAL_REQ = [['name','Họ tên'],['khoa','Khoa'],['hospital','Bệnh viện'],['street','Địa chỉ BV']];
 const STAGE = {
   prep:  {label:'Chuẩn bị', cls:'s-prep'},
   ready: {label:'Chờ diễn ra', cls:'s-ready'},
@@ -719,8 +721,8 @@ function stageLabel(e) {
 const chip = (st, label) => `<span class="chip ${STAGE[st].cls}"><i></i>${esc(label || STAGE[st].label)}</span>`;
 function hcpMissing(h, kind = 'contract') {
   if (!h) return ['Chưa chọn BS'];
-  const req = kind === 'contract' ? CONTRACT_REQ : PAY_REQ;
-  const out = req.filter(([k]) => !clean(h[k])).map(([, l]) => l);
+  const req = kind === 'contract' ? CONTRACT_REQ : kind === 'essential' ? ESSENTIAL_REQ : PAY_REQ;
+  const out = req.filter(([k]) => !clean(h[k]) && !(k === 'khoa' && clean(h.position))).map(([, l]) => l);
   if (kind === 'contract' && !clean(h.position) && !clean(h.khoa)) out.push('Chức vụ/Khoa');
   return out;
 }
@@ -1308,7 +1310,7 @@ function hcpTable() {
     .sort((a, b) => sortName(a.name, b.name));
   if (!list.length) return `<div class="empty"><b>Không tìm thấy</b>Thử từ khoá khác.</div>`;
   return `<div class="tbl-wrap"><table class="tbl tbl-hcp"><thead><tr><th>Bác sĩ</th><th>Khoa · Bệnh viện</th><th>CCCD/MST</th><th>Ngân hàng</th><th>Liên hệ</th><th class="num">Năm ${year}</th><th>Hồ sơ</th></tr></thead><tbody>
-  ${list.map(h => { const miss = hcpMissing(h); const mp = hcpMissing(h, 'pay').filter(x => !miss.includes(x)); const t = tot.get(h.id);
+  ${list.map(h => { const ess = hcpMissing(h, 'essential'); const forHd = [...new Set([...hcpMissing(h), ...hcpMissing(h, 'pay')])].filter(x => !ess.includes(x) && x !== 'Địa chỉ'); const t = tot.get(h.id);
     return `<tr class="clickable" data-act="edit-hcp" data-id="${h.id}">
       <td><div class="t-main">${esc(h.title ? h.title + ' ' : '')}${esc(h.name)}</div><div class="t-sub">${[h.tier, h.specialty].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</div></td>
       <td><div>${esc(h.position || h.khoa) || '<span class="muted">—</span>'}</div><div class="t-sub">${esc(h.hospital)}</div></td>
@@ -1316,7 +1318,7 @@ function hcpTable() {
       <td>${h.bankAccount ? `<div class="mono">${esc(h.bankAccount)}</div><div class="t-sub">${esc(h.bankName)}${h.bankCode ? ' · ' + esc(h.bankCode) : ''}</div>` : '<span class="muted">—</span>'}</td>
       <td><div class="mono">${esc(h.phone)}</div><div class="t-sub">${esc(h.email)}</div></td>
       <td class="num">${t ? `<div class="mono">${fmtVND(t.sum)}</div><div class="t-sub">${t.n} lượt</div>` : '<span class="muted">—</span>'}</td>
-      <td>${miss.length || mp.length ? `<div class="miss">${miss.map(m => `<span class="tag crit">${m}</span>`).join('')}${mp.map(m => `<span class="tag warn">${m}</span>`).join('')}</div>` : '<span class="tag ok">Đủ</span>'}</td></tr>`; }).join('')}
+      <td>${ess.length ? `<div class="miss">${ess.map(m => `<span class="tag crit">${m}</span>`).join('')}</div>` : forHd.length ? `<span class="tag" title="Khi làm hợp đồng / thanh toán cần thêm: ${esc(forHd.join(', '))}">Chưa đủ cho HĐ · ${forHd.length}</span>` : '<span class="tag ok">Đủ</span>'}</td></tr>`; }).join('')}
   </tbody></table></div>`;
 }
 
@@ -1525,7 +1527,7 @@ function openHcpModal(id, {prefill = {}, onSaved, quick} = {}) {
   const miss = id ? hcpMissing(hcpById(id)).concat(hcpMissing(hcpById(id), 'pay')) : [];
   const banks = [...new Set([...BANK_DIR.map(b => b[0]), ...state.hcps.map(x => x.bankName).filter(Boolean)])];
   const w = openModal(`
-    <div class="modal-h"><div><h2>${isNew ? 'Thêm bác sĩ' : esc(h.name)}</h2><p>${isNew ? 'Trường có dấu * cần cho hợp đồng.' : esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · '))}</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
+    <div class="modal-h"><div><h2>${isNew ? 'Thêm bác sĩ' : esc(h.name)}</h2><p>${isNew ? 'Bắt buộc: Họ tên, Khoa, Bệnh viện, Địa chỉ BV. CCCD, ngân hàng… điền khi cần làm hợp đồng.' : esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · '))}</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
     <form class="modal-b" id="hcp-form" autocomplete="off">
       <details class="fsec qf" ${isNew || quick ? 'open' : ''}><summary class="qf-sum">${isNew ? 'Thêm nhanh: dán tin nhắn hoặc ảnh' : 'Cập nhật nhanh từ tin nhắn / ảnh'}</summary>
         <div class="qf-box" id="qf-box">
@@ -1535,21 +1537,21 @@ function openHcpModal(id, {prefill = {}, onSaved, quick} = {}) {
         </div></details>
       <div class="fsec"><h3>Cá nhân</h3><div class="fgrid">
         ${fl('name', 'Họ tên <em>*</em>', 'required', 'span2')}${fl('title', 'Danh xưng', 'placeholder="ThS.BS., TS.BS.…"')}${fl('tier', 'Tier', 'list="dl-tier"')}
-        ${fl('cccd', 'CCCD / MST <em>*</em>', 'inputmode="numeric"')}${fl('dob', 'Ngày sinh', 'type="date"')}${fl('birthplace', 'Nơi sinh')}
+        ${fl('cccd', 'CCCD / MST', 'inputmode="numeric"')}${fl('dob', 'Ngày sinh', 'type="date"')}${fl('birthplace', 'Nơi sinh')}
       </div></div>
       <div class="fsec"><h3>Công tác</h3><div class="fgrid">
-        ${fl('khoa', 'Khoa', '', 'span2')}${fl('hospital', 'Bệnh viện <em>*</em>', 'list="dl-hosp"', 'span2')}
-        ${fl('position', 'Chức vụ ghi trên HĐ', 'placeholder="Bỏ trống = dùng Khoa"', 'span2')}${fl('specialty', 'Lĩnh vực chuyên môn <em>*</em>', 'list="dl-spec" placeholder="Tim Mạch, Nội thận…"')}
+        ${fl('khoa', 'Khoa <em>*</em>', '', 'span2')}${fl('hospital', 'Bệnh viện <em>*</em>', 'list="dl-hosp"', 'span2')}
+        ${fl('position', 'Chức vụ ghi trên HĐ', 'placeholder="Bỏ trống = dùng Khoa"', 'span2')}${fl('specialty', 'Lĩnh vực chuyên môn', 'list="dl-spec" placeholder="Tim Mạch, Nội thận…"')}
         ${fl('defaultRole', 'Vai trò thường', 'list="dl-role"')}${fl('defaultFee', 'Phí thường engage (VND)', 'inputmode="numeric" data-money')}
       </div></div>
-      <div class="fsec"><h3>Liên hệ & địa chỉ trên HĐ</h3><div class="fgrid">
+      <div class="fsec"><h3>Liên hệ & địa chỉ bệnh viện</h3><div class="fgrid">
         ${fl('phone', 'Số điện thoại', 'inputmode="tel"')}${fl('email', 'Email', 'type="email"', 'span2')}
-        ${fl('street', 'Địa chỉ (số nhà, đường, phường) <em>*</em>', '', 'span2')}${fl('city', 'Thành phố <em>*</em>')}${fl('country', 'Quốc gia')}
+        ${fl('street', 'Địa chỉ bệnh viện trên HĐ (số nhà, đường, phường) <em>*</em>', '', 'span2')}${fl('city', 'Thành phố')}${fl('country', 'Quốc gia')}
         ${fl('homeAddress', 'Địa chỉ nhà (nếu có)', '', 'spanall')}
       </div></div>
-      <div class="fsec"><h3>Ngân hàng</h3><div class="fgrid">
-        ${fl('bankHolder', 'Chủ tài khoản', 'placeholder="Bỏ trống = Họ tên"', 'span2')}${fl('bankAccount', 'Số tài khoản <em>*</em>', 'inputmode="numeric"')}
-        ${fl('bankName', 'Ngân hàng <em>*</em>', 'list="dl-bank"')}${fl('bankCode', 'Mã ngân hàng <em>*</em>', 'list="dl-code" inputmode="numeric"')}
+      <div class="fsec"><h3>Ngân hàng <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:500">· cần khi làm hợp đồng</span></h3><div class="fgrid">
+        ${fl('bankHolder', 'Chủ tài khoản', 'placeholder="Bỏ trống = Họ tên"', 'span2')}${fl('bankAccount', 'Số tài khoản', 'inputmode="numeric"')}
+        ${fl('bankName', 'Ngân hàng', 'list="dl-bank"')}${fl('bankCode', 'Mã ngân hàng', 'list="dl-code" inputmode="numeric"')}
       </div><div class="hint" id="bank-hint"></div></div>
       <div class="fsec"><h3>Ghi chú</h3><textarea class="input" name="note" rows="2">${esc(h.note)}</textarea></div>
       ${!isNew ? `<div class="fsec"><h3>Tiện ích</h3>
@@ -1613,6 +1615,12 @@ function openHcpModal(id, {prefill = {}, onSaved, quick} = {}) {
     else hint.innerHTML = `${cur ? `Đang dùng <b class="mono">${esc(cur)}</b>${curName ? ' · ' + esc(curName) : ''}. ` : ''}Bảng mã gợi ý <b class="mono">${esc(b.code)}</b> · ${esc(b.branch)}. <button type="button" class="btn sm" id="bank-use">Dùng mã này</button>`;
     const use = $('#bank-use', w); if (use) use.onclick = () => { bc.value = b.code; autoCode = b.code; bankUpdate(false); };
   };
+  const hospEl = form.elements.hospital, streetEl = form.elements.street;
+  hospEl.addEventListener('change', () => {
+    if (clean(streetEl.value)) return;
+    const same = state.hcps.find(x => x.id !== id && norm(x.hospital) === norm(hospEl.value) && clean(x.street));
+    if (same) { streetEl.value = same.street; form.elements.city.value = same.city || form.elements.city.value; streetEl.classList.add('qf-filled'); toast(`Đã điền địa chỉ theo ${same.hospital}.`); }
+  });
   bn.addEventListener('input', () => bankUpdate(true));
   bn.addEventListener('change', () => bankUpdate(true));
   bc.addEventListener('input', () => bankUpdate(false));
@@ -1621,7 +1629,8 @@ function openHcpModal(id, {prefill = {}, onSaved, quick} = {}) {
 function saveHcpFromModal() {
   const w = topModal(); if (!w?._hcp) return;
   const f = readForm($('#hcp-form', w));
-  if (!clean(f.name)) { toast('Cần nhập họ tên.', {kind:'err'}); $('#hcp-form', w).elements.name.focus(); return; }
+  const need = hcpMissing({name:f.name, khoa:f.khoa, position:f.position, hospital:f.hospital, street:f.street}, 'essential');
+  if (need.length) { toast(`Cần nhập: ${need.join(', ')}.`, {kind:'err'}); const first = {'Họ tên':'name','Khoa':'khoa','Bệnh viện':'hospital','Địa chỉ BV':'street'}[need[0]]; $('#hcp-form', w).elements[first]?.focus(); return; }
   const rec = {};
   for (const [k, v] of Object.entries(f)) rec[k] = k === 'defaultFee' ? money(v) : (k === 'note' ? v.trim() : clean(v));
   rec.cccd = rec.cccd.replace(/\s/g, ''); rec.bankAccount = rec.bankAccount.replace(/\s/g, ''); rec.bankCode = rec.bankCode.replace(/\s/g, '');
