@@ -67,6 +67,14 @@ a{color:var(--accent)}
 .store{margin-top:auto;border-top:1px solid var(--line);padding:14px 6px 0;display:grid;gap:8px;font-size:12.5px;color:var(--muted)}
 .store .row{display:flex;gap:8px;align-items:center}
 .store .due{color:var(--warn);font-weight:600}
+.store.with-acct{margin-top:0}
+.acct{margin-top:auto;display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 10px;cursor:pointer;min-width:0}
+.acct:hover{background:var(--surface-2)}
+.acct-t{display:grid;min-width:0}
+.acct-t b{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-t small{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd{flex:none;width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.sd-synced{background:var(--ok)} .sd-saving,.sd-loading{background:var(--accent)} .sd-offline,.sd-conflict{background:var(--warn)} .sd-error{background:var(--crit)}
 main{min-width:0;padding-block:8px 120px}
 .page-h{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
 .page-h h1{font-family:var(--f-display);font-weight:700;font-size:30px;letter-spacing:-.02em;line-height:1.1;margin:0;text-wrap:balance}
@@ -80,6 +88,9 @@ main{min-width:0;padding-block:8px 120px}
   .nav a{white-space:nowrap;padding:8px 10px}
   .nav a .lbl-long{display:none}
   .store{display:none}
+  .acct{margin-top:0;padding:7px 9px;flex:none;order:1}
+  .acct-t{display:none}
+  .nav{order:2}
   .page-h h1{font-size:24px}
 }
 
@@ -288,7 +299,11 @@ const LIBS = {
   zip: 'https://cdn.jsdelivr.net/npm/pizzip@3.2.0/dist/pizzip.min.js',
   docx: 'https://cdn.jsdelivr.net/npm/docxtemplater@3.67.0/build/docxtemplater.min.js',
   xlsx: 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
+  supa: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js',
 };
+/* Đồng bộ tài khoản (Supabase). Để trống = chỉ lưu trên máy. Chỉ điền Project URL + publishable/anon key, KHÔNG điền secret key. */
+const SUPABASE_URL = '';
+const SUPABASE_KEY = '';
 const STORE_KEY = 'hcp-desk:v1', TPL_KEY = 'hcp-desk:template:v1';
 const DOTS = '……………';
 const SIX_CITIES = ['Hồ Chí Minh','Hà Nội','Đà Nẵng','Hải Phòng','Cần Thơ','Huế'];
@@ -400,20 +415,23 @@ let state = load();
 let template = null;
 try { const t = localStorage.getItem(TPL_KEY); if (t) template = JSON.parse(t); } catch (e) { storageOK = false; }
 let persistAsked = false;
+function persistLocal() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); storageOK = true; return true; } catch (e) { storageOK = false; return false; } }
+function persistTemplate() { try { if (template) localStorage.setItem(TPL_KEY, JSON.stringify(template)); else localStorage.removeItem(TPL_KEY); return true; } catch (e) { return false; } }
 function save(silent) {
   state.changes = (state.changes || 0) + 1;
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); storageOK = true; }
-  catch (e) { storageOK = false; if (!silent) toast('Trình duyệt không cho lưu dữ liệu. Hãy Sao lưu ra file để không mất thông tin.', {kind:'err'}); }
+  if (sync.user) state.pending = true;
+  if (!persistLocal() && !silent && !sync.user) toast('Trình duyệt không cho lưu dữ liệu. Hãy Sao lưu ra file để không mất thông tin.', {kind:'err'});
   if (!persistAsked && navigator.storage?.persist) { persistAsked = true; navigator.storage.persist().catch(() => {}); }
+  if (sync.user) schedulePush();
 }
 function saveTemplate(t) {
   template = t;
-  try { if (t) localStorage.setItem(TPL_KEY, JSON.stringify(t)); else localStorage.removeItem(TPL_KEY); }
-  catch (e) { toast('Không lưu được phôi vào trình duyệt. Phôi chỉ dùng được trong phiên này.', {kind:'err'}); }
+  if (!persistTemplate() && !sync.user) toast('Không lưu được phôi vào trình duyệt. Phôi chỉ dùng được trong phiên này.', {kind:'err'});
+  if (sync.user) { sync.tplDirty = true; state.pending = true; persistLocal(); schedulePush(); }
 }
 let undoSnap = null;
 const checkpoint = () => { undoSnap = JSON.stringify(state); };
-function undo() { if (!undoSnap) return; state = JSON.parse(undoSnap); undoSnap = null; save(); render(); toast('Đã hoàn tác'); }
+function undo() { if (!undoSnap) return; const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...JSON.parse(undoSnap), ...keep}; undoSnap = null; save(); render(); toast('Đã hoàn tác'); }
 
 /* ================= lookups & domain ================= */
 const hcpById = id => state.hcps.find(h => h.id === id);
@@ -924,16 +942,17 @@ function renderRail() {
   const nav = [['home','Tổng quan',''], ['events','Sự kiện & HĐ', upcoming ? `<span class="cnt">${upcoming}</span>` : ''], ['pay','Thanh toán', held ? `<span class="cnt hot">${held}</span>` : ''],
     ['hcps','Bác sĩ', state.hcps.length ? `<span class="cnt">${state.hcps.length}</span>` : ''], ['settings','Cài đặt','']];
   const days = state.lastBackupAt ? Math.floor((Date.now() - state.lastBackupAt) / 86400000) : null;
-  const due = state.changes > 0 && (days === null || days >= 7) && state.hcps.length > 0;
+  const due = !sync.user && state.changes > 0 && (days === null || days >= 7) && state.hcps.length > 0;
   $('#rail').innerHTML = `
     <div class="brand">
       <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="var(--accent)"/><path d="M5 18h6l2.5-6 4 12 3-9 1.5 3H29" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div><b>Sổ hợp đồng HCP</b><span>Speaker Agreement · YCTT</span></div>
     </div>
     <nav class="nav">${nav.map(([v, l, c]) => `<a href="#${ROUTE_OF[v]}" data-act="nav" data-v="${v}" ${ui.view === v ? 'aria-current="page"' : ''}>${I[v]}<span>${l}</span>${c}</a>`).join('')}</nav>
-    <div class="store">
-      <div class="row">${storageOK ? 'Dữ liệu lưu trong trình duyệt này' : '<span class="due">Trình duyệt chặn lưu dữ liệu</span>'}</div>
-      <div class="row ${due ? 'due' : ''}">${state.lastBackupAt ? `Sao lưu ${days === 0 ? 'hôm nay' : days + ' ngày trước'}` : 'Chưa sao lưu lần nào'}${state.changes ? ` · ${state.changes} thay đổi` : ''}</div>
+    ${SYNC_ON ? `<button class="acct" data-act="account" title="${esc(syncText())}"><i class="sd sd-${sync.status}"></i><span class="acct-t"><b>${sync.user ? esc(sync.user.email) : 'Đăng nhập'}</b><small>${esc(syncText())}</small></span></button>` : ''}
+    <div class="store ${SYNC_ON ? 'with-acct' : ''}">
+      ${sync.user ? '' : `<div class="row">${storageOK ? 'Dữ liệu lưu trong trình duyệt này' : '<span class="due">Trình duyệt chặn lưu dữ liệu</span>'}</div>`}
+      <div class="row ${due ? 'due' : ''}">${state.lastBackupAt ? `Sao lưu ${days === 0 ? 'hôm nay' : days + ' ngày trước'}` : 'Chưa sao lưu lần nào'}${state.changes && !sync.user ? ` · ${state.changes} thay đổi` : ''}</div>
       <button class="btn sm" data-act="backup">${I.down} Sao lưu ra file</button>
     </div>`;
 }
@@ -957,6 +976,7 @@ function viewHome() {
   const maxV = Math.max(cap, ...totals.map(x => x.sum), 1);
   return pageHead('Tổng quan', `Hôm nay ${weekday(t)}, ${fmtDate(t)}.`, `<button class="btn" data-act="new-hcp">${I.plus} Bác sĩ</button><button class="btn primary" data-act="new-event">${I.plus} Sự kiện mới</button>`) + `
   <div class="stack">
+    ${SYNC_ON && !sync.user && sync.status !== 'loading' ? `<div class="callout" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><span><b>Đăng nhập để dùng chung dữ liệu</b> trên laptop, iPad và điện thoại.</span><button class="btn primary sm" data-act="account">Đăng nhập</button></div>` : ''}
     ${onboard ? onboardHtml() : ''}
     <div class="kpis">${k.map(([st, l, list, v]) => `<button class="kpi ${STAGE[st].cls}" data-act="nav" data-v="${v}"><span class="k-l"><i></i>${l}</span><span class="k-n">${list.length}</span><span class="k-a mono">${fmtVND(sum(list))} VND</span></button>`).join('')}</div>
     <div class="grid-2">
@@ -979,7 +999,7 @@ function onboardHtml() {
   return `<section class="panel"><div class="panel-h"><h2>Bắt đầu trong 3 bước</h2>
     <div class="flow">${['prep','ready','held','sent','paid'].map((s, i) => (i ? '→ ' : '') + chip(s, ['Tạo HĐ','Raise Veeva','Event','Gửi admin','Đã chi'][i])).join(' ')}</div></div>
     <div class="panel-b"><div class="onboard">
-      <div class="ob ${s1 ? 'done' : ''}"><span class="ob-n">${s1 ? 'XONG' : 'BƯỚC 1'}</span><b>Nạp phôi hợp đồng</b><p>Tải file “Phoi_Speaker_Agreement.docx” lên. Phôi chỉ lưu trong trình duyệt này.</p><div><button class="btn sm ${s1 ? '' : 'primary'}" data-act="pick" data-f="f-template">${I.up} Chọn file phôi</button></div></div>
+      <div class="ob ${s1 ? 'done' : ''}"><span class="ob-n">${s1 ? 'XONG' : 'BƯỚC 1'}</span><b>Nạp phôi hợp đồng</b><p>Tải file “Phoi_Speaker_Agreement.docx” lên. ${sync.user ? 'Phôi lưu cùng tài khoản, máy khác không cần tải lại.' : 'Phôi chỉ lưu trong trình duyệt này.'}</p><div><button class="btn sm ${s1 ? '' : 'primary'}" data-act="pick" data-f="f-template">${I.up} Chọn file phôi</button></div></div>
       <div class="ob ${s2 ? 'done' : ''}"><span class="ob-n">${s2 ? 'XONG' : 'BƯỚC 2'}</span><b>Nhập danh sách bác sĩ</b><p>Từ file Excel YCTT cũ (sheet Data HCPs và các sheet YCTT), và từ hợp đồng cũ để lấy số tài khoản.</p><div class="actions"><button class="btn sm ${s2 ? '' : 'primary'}" data-act="pick" data-f="f-excel">Từ Excel</button><button class="btn sm" data-act="pick" data-f="f-contracts">Từ hợp đồng .docx</button></div></div>
       <div class="ob ${s3 ? 'done' : ''}"><span class="ob-n">${s3 ? 'XONG' : 'BƯỚC 3'}</span><b>Tạo sự kiện đầu tiên</b><p>Chọn BS, nhập chủ đề và phí, bấm xuất: mỗi BS ra một file hợp đồng đúng phôi.</p><div><button class="btn sm" data-act="new-event">${I.plus} Sự kiện mới</button></div></div>
     </div></div></section>`;
@@ -1006,7 +1026,7 @@ function buildTodos() {
   const stale = state.engs.filter(e => stageOf(e) === 'sent' && e.sentAt && daysFrom(e.sentAt, t) > 30 && !state.batches.find(b => b.id === e.batchId)?.imported);
   if (stale.length) out.push({sev:'warn', sevL:'Nhắc', title:`${stale.length} BS đã gửi admin hơn 30 ngày, chưa ghi nhận đã chi`, sub:'Hỏi lại admin, hoặc đánh dấu đã thanh toán.', btn:`<button class="btn sm" data-act="nav" data-v="pay">Xem</button>`, o:4});
   const days = state.lastBackupAt ? Math.floor((Date.now() - state.lastBackupAt) / 86400000) : null;
-  if (state.hcps.length && state.changes > 0 && (days === null || days >= 7))
+  if (!sync.user && state.hcps.length && state.changes > 0 && (days === null || days >= 7))
     out.push({sev:'info', sevL:'Sao lưu', title:days === null ? 'Chưa có bản sao lưu nào' : `Lần sao lưu gần nhất ${days} ngày trước`, sub:'Dữ liệu chỉ nằm trong trình duyệt này. Lưu một file .json để phòng khi trình duyệt bị xoá dữ liệu.', btn:`<button class="btn sm" data-act="backup">Sao lưu</button>`, o:5});
   return out;
 }
@@ -1170,6 +1190,7 @@ function viewSettings() {
   const f = (k, label, attrs = '') => `<label class="field"><span>${label}</span><input class="input" data-set="${k}" value="${esc(attrs.includes('data-money') ? (s[k] ? fmtVND(s[k]) : '0') : s[k])}" ${attrs}></label>`;
   return pageHead('Cài đặt', 'Thông tin cố định dùng cho hợp đồng và file thanh toán. Tự lưu khi bạn sửa.') + `
   <div class="stack">
+  ${SYNC_ON ? `<section class="panel"><div class="panel-h"><h2>Tài khoản & đồng bộ</h2></div><div class="panel-b" id="acct-box">${acctHtml()}</div></section>` : ''}
   <section class="panel"><div class="panel-h"><h2>Phôi hợp đồng</h2>${template ? '<span class="tag ok">Đã nạp</span>' : '<span class="tag crit">Chưa có phôi</span>'}</div>
     <div class="panel-b stack">
       <div class="actions">${template ? `<span><b>${esc(template.name)}</b> <span class="muted small">· nạp ${new Date(template.uploadedAt).toLocaleDateString('vi-VN')} · ${template.tags?.length || '?'} trường</span></span>` : '<span class="muted">Tải lên file phôi .docx có các trường dạng {{ho_ten}}.</span>'}</div>
@@ -1199,10 +1220,10 @@ function viewSettings() {
   </div></section>
 
   <section class="panel"><div class="panel-h"><h2>Dữ liệu</h2></div><div class="panel-b stack">
-    <p class="muted" style="margin:0">Mọi thông tin (kể cả CCCD, số tài khoản) chỉ lưu trong trình duyệt trên máy này, không gửi lên máy chủ. Mở app ở trình duyệt hay máy khác sẽ không thấy dữ liệu: dùng Sao lưu rồi Khôi phục để chuyển. Xoá dữ liệu duyệt web cũng xoá luôn dữ liệu app.</p>
+    <p class="muted" style="margin:0">${sync.user ? 'Dữ liệu lưu trên tài khoản của bạn (chỉ tài khoản này đọc được), kèm một bản trên máy này để dùng khi mất mạng. Sao lưu .json vẫn nên làm định kỳ.' : 'Mọi thông tin (kể cả CCCD, số tài khoản) chỉ lưu trong trình duyệt trên máy này, không gửi lên máy chủ. Mở app ở trình duyệt hay máy khác sẽ không thấy dữ liệu: ' + (SYNC_ON ? 'đăng nhập để đồng bộ, hoặc ' : '') + 'dùng Sao lưu rồi Khôi phục để chuyển.'}</p>
     <div class="actions"><button class="btn primary" data-act="backup">${I.down} Sao lưu (.json)</button><button class="btn" data-act="pick" data-f="f-restore">${I.up} Khôi phục từ file</button>
       <button class="btn" data-act="pick" data-f="f-excel">${I.up} Nhập Excel</button><button class="btn" data-act="pick" data-f="f-contracts">${I.up} Nhập từ HĐ cũ</button><button class="btn" data-act="export-hcps">${I.down} Xuất danh sách BS</button></div>
-    <div><button class="btn danger sm" data-act="wipe" data-confirm="Bấm lần nữa: xoá TOÀN BỘ dữ liệu">Xoá toàn bộ dữ liệu</button></div>
+    <div><button class="btn danger sm" data-act="wipe" data-confirm="Bấm lần nữa: xoá TOÀN BỘ dữ liệu${sync.user ? ' (cả trên tài khoản)' : ''}">Xoá toàn bộ dữ liệu</button></div>
   </div></section>
   </div>`;
 }
@@ -1494,6 +1515,168 @@ function showContractPlan(plan) {
 }
 let pendingPlan = null;
 
+/* ================= cloud sync (Supabase) ================= */
+const SYNC_ON = !!(SUPABASE_URL && SUPABASE_KEY) && !(window.claude && typeof window.claude.use === 'function');
+const sync = {client:null, user:null, status:SYNC_ON ? 'loading' : 'off', at:null, timer:null, pushing:false, again:false, tplDirty:false, err:'', lastPull:0};
+const SYNC_LABEL = {loading:'Đang kết nối…', signedout:'Chưa đăng nhập, dữ liệu chỉ ở máy này', synced:'Đã đồng bộ', saving:'Đang lưu lên tài khoản…', offline:'Mất mạng, sẽ đồng bộ lại', conflict:'Cần chọn bản dữ liệu', error:'Lỗi đồng bộ', off:''};
+function syncText() {
+  if (sync.status === 'synced' && sync.at) { const d = new Date(sync.at); return `Đã đồng bộ ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  return SYNC_LABEL[sync.status] || '';
+}
+const isEmptyState = s => !(s?.hcps?.length || s?.events?.length || s?.engs?.length);
+const sameTime = (a, b) => !!a && !!b && Date.parse(a) === Date.parse(b);
+function cloudData() { const {ownerId, syncedAt, pending, ...rest} = state; return rest; }
+function setSync(st, err = '') { sync.status = st; sync.err = err; renderRail(); const box = document.getElementById('acct-box'); if (box) box.innerHTML = acctHtml(); }
+function schedulePush(ms = 1200) { if (!sync.user) return; clearTimeout(sync.timer); sync.timer = setTimeout(() => push(), ms); }
+async function syncInit() {
+  if (!SYNC_ON) return;
+  renderRail();
+  try { await loadScript(LIBS.supa); sync.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true, autoRefreshToken:true, detectSessionInUrl:true}}); }
+  catch (e) { setSync('error', 'Không tải được thư viện đăng nhập.'); return; }
+  sync.client.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') { setTimeout(() => openAccount('newpass'), 0); }
+    const u = session?.user || null;
+    if (u) { if (u.id !== sync.user?.id) { sync.user = u; setTimeout(() => pull(), 0); } }
+    else { sync.user = null; setSync('signedout'); if (event === 'INITIAL_SESSION' && isEmptyState(state) && !modals.length) setTimeout(() => openAccount(), 0); }
+  });
+}
+let pulling = null;
+function pull() { return pulling ||= doPull().finally(() => { pulling = null; }); }
+async function doPull() {
+  if (!sync.user) return;
+  const uid = sync.user.id; sync.lastPull = Date.now();
+  setSync('loading');
+  const {data:row, error} = await sync.client.from('app_state').select('data, template, updated_at').eq('user_id', uid).maybeSingle();
+  if (error) { setSync(navigator.onLine ? 'error' : 'offline', error.message); return; }
+  if (!row) {
+    if (isEmptyState(state) || state.ownerId === uid) { state.ownerId = uid; state.syncedAt = null; sync.tplDirty = !!template; await push(true); return; }
+    return askMigrate();
+  }
+  if (isEmptyState(state) || (state.ownerId && state.ownerId !== uid)) return adopt(row);
+  if (state.ownerId === uid) {
+    if (!state.pending) { if (!sameTime(row.updated_at, state.syncedAt)) adopt(row); else { sync.at = Date.now(); setSync('synced'); } return; }
+    if (sameTime(row.updated_at, state.syncedAt)) { await push(true); return; }
+  }
+  askConflict(row);
+}
+function adopt(row) {
+  const f = fresh(); const d = row.data || {};
+  state = {...f, ...d, settings:{...f.settings, ...(d.settings || {})}, ownerId:sync.user.id, syncedAt:row.updated_at, pending:false};
+  if (row.template) { template = row.template; persistTemplate(); } else if (template) { sync.tplDirty = true; schedulePush(); }
+  persistLocal(); sync.at = Date.now(); setSync('synced'); render();
+}
+async function push(force) {
+  if (!sync.user) return;
+  if (sync.pushing) { sync.again = true; return; }
+  sync.pushing = true; clearTimeout(sync.timer); setSync('saving');
+  const uid = sync.user.id;
+  try {
+    if (!force) {
+      const {data:row, error} = await sync.client.from('app_state').select('data, template, updated_at').eq('user_id', uid).maybeSingle();
+      if (error) throw error;
+      if (row && !sameTime(row.updated_at, state.syncedAt)) { sync.again = false; askConflict(row); return; }
+    }
+    const payload = {user_id:uid, data:cloudData(), updated_at:new Date().toISOString()};
+    if (sync.tplDirty) payload.template = template;
+    const {data:res, error} = await sync.client.from('app_state').upsert(payload).select('updated_at').single();
+    if (error) throw error;
+    state.ownerId = uid; state.syncedAt = res.updated_at; state.pending = false; sync.tplDirty = false; sync.at = Date.now();
+    persistLocal(); setSync('synced');
+  } catch (err) { setSync(navigator.onLine === false ? 'offline' : 'error', err?.message || String(err)); }
+  finally { sync.pushing = false; if (sync.again) { sync.again = false; schedulePush(300); } }
+}
+const countsOf = s => `${s?.hcps?.length || 0} BS, ${s?.events?.length || 0} sự kiện, ${s?.engs?.length || 0} hợp đồng`;
+function askMigrate() {
+  setSync('conflict');
+  openModal(`<div class="modal-h"><div><h2>Đưa dữ liệu lên tài khoản?</h2><p>${esc(sync.user.email)}</p></div></div>
+    <div class="modal-b"><p style="margin:0">Máy này đang có <b>${countsOf(state)}</b> chưa gắn với tài khoản nào. Tài khoản của bạn hiện còn trống.</p></div>
+    <div class="modal-f"><button class="btn left" data-act="sync-fresh" data-confirm="Bấm lần nữa: bỏ dữ liệu trên máy này">Bắt đầu trống</button><button class="btn primary" data-act="sync-upload">Đưa lên tài khoản</button></div>`, {size:'narrow'});
+}
+let conflictRow = null;
+function askConflict(row) {
+  conflictRow = row; setSync('conflict');
+  if (topModal()?.dataset.conflict) return;
+  const w = openModal(`<div class="modal-h"><div><h2>Hai bản dữ liệu khác nhau</h2><p>Tài khoản ${esc(sync.user.email)} vừa được sửa ở thiết bị khác.</p></div></div>
+    <div class="modal-b stack"><dl class="kv"><dt>Trên tài khoản</dt><dd>${countsOf(row.data)} · sửa lúc ${esc(new Date(row.updated_at).toLocaleString('vi-VN'))}</dd><dd></dd>
+      <dt>Trên máy này</dt><dd>${countsOf(state)}${state.pending ? ' · có thay đổi chưa đồng bộ' : ''}</dd><dd></dd></dl>
+      <p class="hint" style="margin:0">Thường nên chọn bản trên tài khoản. Nếu cần giữ thay đổi ở máy này, Sao lưu ra file trước rồi mới chọn.</p></div>
+    <div class="modal-f"><button class="btn left" data-act="backup">${I.down} Sao lưu máy này</button><button class="btn" data-act="sync-keep-local" data-confirm="Bấm lần nữa: ghi đè tài khoản">Giữ bản máy này</button><button class="btn primary" data-act="sync-use-cloud">Dùng bản trên tài khoản</button></div>`, {size:'narrow'});
+  w.dataset.conflict = '1';
+}
+function acctHtml() {
+  if (!SYNC_ON) return '';
+  if (!sync.user) return `<div class="actions"><span class="muted">${esc(syncText())}</span><button class="btn primary" data-act="account">Đăng nhập / Tạo tài khoản</button></div>`;
+  return `<div class="stack"><div class="actions"><i class="sd sd-${sync.status}"></i><b>${esc(sync.user.email)}</b><span class="muted">${esc(syncText())}</span></div>
+    ${sync.err && ['error','offline'].includes(sync.status) ? `<div class="callout warn">${esc(sync.err)}</div>` : ''}
+    <div class="actions"><button class="btn" data-act="sync-now">Đồng bộ ngay</button><button class="btn" data-act="account" data-m="newpass">Đổi mật khẩu</button><button class="btn danger" data-act="sign-out" data-confirm="Bấm lần nữa: đăng xuất và xoá dữ liệu trên máy này">Đăng xuất</button></div>
+    <p class="hint" style="margin:0">Đăng xuất sẽ xoá bản lưu trên máy này (dữ liệu vẫn còn trên tài khoản). Nên đăng xuất khi dùng máy không phải của mình.</p></div>`;
+}
+function openAccount(mode = 'login', email = '') {
+  if (!SYNC_ON) return;
+  if (!sync.client) { toast('Chưa kết nối được máy chủ đăng nhập. Kiểm tra mạng rồi tải lại trang.', {kind:'err'}); return; }
+  if (sync.user && mode === 'login') { go('settings'); return; }
+  const T = {login:['Đăng nhập','Dùng cùng một tài khoản trên laptop, iPad, điện thoại để thấy cùng dữ liệu.','Đăng nhập'],
+    signup:['Tạo tài khoản','Mật khẩu tối thiểu 6 ký tự. Supabase sẽ gửi email xác nhận.','Tạo tài khoản'],
+    reset:['Quên mật khẩu','Nhập email, bạn sẽ nhận link đặt lại mật khẩu.','Gửi link'],
+    newpass:['Đặt mật khẩu mới','Nhập mật khẩu mới cho tài khoản.','Lưu mật khẩu']}[mode];
+  while (modals.length) closeModal();
+  const w = openModal(`<div class="modal-h"><div><h2>${T[0]}</h2><p>${T[1]}</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
+    <form class="modal-b stack" id="auth-form">
+      ${mode !== 'newpass' ? `<label class="field"><span>Email</span><input class="input" name="email" type="email" autocomplete="email" value="${esc(email)}" autofocus></label>` : ''}
+      ${mode !== 'reset' ? `<label class="field"><span>${mode === 'newpass' ? 'Mật khẩu mới' : 'Mật khẩu'}</span><input class="input" name="password" type="password" autocomplete="${mode === 'login' ? 'current-password' : 'new-password'}" ${mode === 'newpass' ? 'autofocus' : ''}></label>` : ''}
+      <p class="hint" id="auth-msg" style="margin:0" aria-live="polite"></p>
+      <button type="submit" hidden></button>
+    </form>
+    <div class="modal-f">${mode === 'login' ? `<button class="btn ghost left" data-act="auth-mode" data-m="reset">Quên mật khẩu</button><button class="btn" data-act="auth-mode" data-m="signup">Tạo tài khoản</button>` : mode !== 'newpass' ? `<button class="btn ghost left" data-act="auth-mode" data-m="login">Đã có tài khoản</button>` : ''}<button class="btn primary" data-act="auth-submit">${T[2]}</button></div>`, {size:'narrow'});
+  w._mode = mode;
+  $('#auth-form', w).addEventListener('submit', e => { e.preventDefault(); authSubmit(); });
+}
+const authErr = e => {
+  const m = String(e?.message || e);
+  if (/invalid login/i.test(m)) return 'Sai email hoặc mật khẩu.';
+  if (/not confirmed/i.test(m)) return 'Email chưa xác nhận. Mở email từ Supabase và bấm link xác nhận.';
+  if (/already (been )?registered/i.test(m)) return 'Email này đã có tài khoản. Chọn “Đã có tài khoản” để đăng nhập.';
+  if (/at least 6|password should/i.test(m)) return 'Mật khẩu tối thiểu 6 ký tự.';
+  if (/rate limit|too many|security purposes/i.test(m)) return 'Gửi email quá nhiều lần. Thử lại sau ít phút.';
+  if (/signups? (not allowed|is disabled)/i.test(m)) return 'Đăng ký tài khoản mới đang bị tắt.';
+  if (/fetch|network/i.test(m)) return 'Không kết nối được máy chủ. Kiểm tra mạng.';
+  return m;
+};
+let authBusy = false;
+async function authSubmit() {
+  const w = topModal(); if (!w || authBusy) return;
+  const f = readForm($('#auth-form', w)); const mode = w._mode; const msg = $('#auth-msg', w);
+  const say = (t, bad) => { msg.textContent = t; msg.style.color = bad ? 'var(--crit)' : 'var(--ink)'; };
+  const email = clean(f.email).toLowerCase(), pw = f.password || '';
+  const redirect = location.origin + location.pathname;
+  if (mode !== 'newpass' && !/^\S+@\S+\.\S+$/.test(email)) return say('Nhập email hợp lệ.', true);
+  if (mode !== 'reset' && pw.length < 6) return say('Mật khẩu tối thiểu 6 ký tự.', true);
+  authBusy = true; say('Đang xử lý…');
+  try {
+    if (mode === 'login') { const {error} = await sync.client.auth.signInWithPassword({email, password:pw}); if (error) throw error; closeModal(); toast('Đã đăng nhập.'); }
+    if (mode === 'signup') {
+      const {data, error} = await sync.client.auth.signUp({email, password:pw, options:{emailRedirectTo:redirect}}); if (error) throw error;
+      if (data.session) { closeModal(); toast('Đã tạo tài khoản.'); } else say(`Đã gửi email xác nhận tới ${email}. Mở email, bấm link xác nhận, app sẽ tự đăng nhập.`);
+    }
+    if (mode === 'reset') { const {error} = await sync.client.auth.resetPasswordForEmail(email, {redirectTo:redirect}); if (error) throw error; say('Đã gửi email. Mở link trong email để đặt mật khẩu mới.'); }
+    if (mode === 'newpass') { const {error} = await sync.client.auth.updateUser({password:pw}); if (error) throw error; closeModal(); toast('Đã đổi mật khẩu.'); }
+  } catch (err) { say(authErr(err), true); }
+  finally { authBusy = false; }
+}
+async function signOut() {
+  if (state.pending) { await push(); if (state.pending) { toast('Còn thay đổi chưa lưu lên tài khoản. Kiểm tra mạng rồi thử lại.', {kind:'err'}); return; } }
+  try { await sync.client.auth.signOut(); } catch (e) {}
+  sync.user = null; state = fresh(); template = null; persistLocal(); persistTemplate(); undoSnap = null;
+  while (modals.length) closeModal(); setSync('signedout'); go('home'); toast('Đã đăng xuất và xoá dữ liệu khỏi máy này.');
+}
+function syncRefresh() {
+  if (!sync.user || document.visibilityState !== 'visible' || modals.length || sync.status === 'conflict') return;
+  if (state.pending) push(); else if (Date.now() - sync.lastPull > 10000) pull();
+}
+document.addEventListener('visibilitychange', syncRefresh);
+window.addEventListener('online', syncRefresh);
+window.addEventListener('focus', syncRefresh);
+
 /* ================= toast & busy ================= */
 function toast(msg, {kind, action, onAction} = {}) {
   const el = document.createElement('div'); el.className = 'toast' + (kind === 'err' ? ' err' : '');
@@ -1579,12 +1762,21 @@ const ACT = {
   'batch-undo': t => { checkpoint(); const b = state.batches.find(x => x.id === t.dataset.id); b.engIds.map(engById).filter(Boolean).forEach(e => { e.sentAt = null; e.batchId = null; }); state.batches = state.batches.filter(x => x !== b); ui.openBatch = null; save(); render(); toast('Đã huỷ đợt, các BS về “chờ gửi”.', {action:'Hoàn tác', onAction:undo}); },
   'apply-excel': () => { const p = pendingPlan; const w = topModal(); const opts = {history:!!$('#opt-hist', w)?.checked, settings:!!$('#opt-set', w)?.checked}; closeModal(); applyExcel(p, opts); },
   'apply-contracts': () => { const p = pendingPlan; const opts = {events:!!$('#opt-ev', topModal())?.checked}; closeModal(); applyContracts(p, opts); },
-  'do-restore': () => { checkpoint(); const o = pendingRestore; const f = fresh(); state = {...f, ...o.state, settings:{...f.settings, ...(o.state.settings || {})}, lastBackupAt:Date.parse(o.exportedAt) || Date.now(), changes:0}; if (o.template) saveTemplate(o.template); save(); closeModal(); render(); toast('Đã khôi phục.', {action:'Hoàn tác', onAction:undo}); },
+  'do-restore': () => { checkpoint(); const o = pendingRestore; const f = fresh(); const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...f, ...o.state, settings:{...f.settings, ...(o.state.settings || {})}, lastBackupAt:Date.parse(o.exportedAt) || Date.now(), changes:0, ...keep}; if (o.template) saveTemplate(o.template); save(); closeModal(); render(); toast('Đã khôi phục.', {action:'Hoàn tác', onAction:undo}); },
   'dl-template': () => saveFile(template.name || 'Phoi_Speaker_Agreement.docx', new Blob([bufFromB64(template.b64)])),
   'del-template': () => { saveTemplate(null); render(); toast('Đã gỡ phôi.'); },
   'add-prod': () => { state.products.push({id:uid(), name:state.products.length ? '' : 'Mặc định', bu:'', costCenter:'', sio:''}); save(); render(); },
   'del-prod': t => { state.products = state.products.filter(p => p.id !== t.dataset.id); save(); render(); },
-  wipe: () => { checkpoint(); state = fresh(); save(); render(); toast('Đã xoá toàn bộ dữ liệu (phôi vẫn giữ).', {action:'Hoàn tác', onAction:undo}); },
+  account: t => openAccount(t.dataset.m || 'login'),
+  'auth-mode': t => { const w = topModal(); const em = w?.querySelector('[name=email]')?.value || ''; openAccount(t.dataset.m, em); },
+  'auth-submit': () => authSubmit(),
+  'sign-out': () => signOut(),
+  'sync-now': () => { if (state.pending) push(); else pull(); },
+  'sync-upload': () => { closeModal(); state.ownerId = sync.user.id; state.syncedAt = null; sync.tplDirty = !!template; push(true).then(() => toast('Đã đưa dữ liệu lên tài khoản.')); },
+  'sync-fresh': () => { closeModal(); state = fresh(); state.ownerId = sync.user.id; persistLocal(); sync.tplDirty = !!template; push(true).then(() => render()); },
+  'sync-use-cloud': () => { closeModal(); if (conflictRow) adopt(conflictRow); conflictRow = null; toast('Đã dùng bản trên tài khoản.'); },
+  'sync-keep-local': () => { closeModal(); state.ownerId = sync.user.id; state.syncedAt = conflictRow?.updated_at || null; sync.tplDirty = !!template; conflictRow = null; push(true).then(() => toast('Đã ghi bản máy này lên tài khoản.')); },
+  wipe: () => { checkpoint(); const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...fresh(), ...keep}; save(); render(); toast('Đã xoá toàn bộ dữ liệu (phôi vẫn giữ).', {action:'Hoàn tác', onAction:undo}); },
 };
 
 document.addEventListener('click', e => {
@@ -1657,6 +1849,7 @@ $('#f-restore').addEventListener('change', e => { const f = e.target.files[0]; i
 window.addEventListener('storage', e => { if (e.key === STORE_KEY && e.newValue) { try { state = {...fresh(), ...JSON.parse(e.newValue)}; render(); } catch (_) {} } });
 
 render();
+syncInit();
 </script>
 
 </body>
