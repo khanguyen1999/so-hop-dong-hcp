@@ -1,0 +1,1663 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Sổ hợp đồng HCP</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: floating left rail (nav + storage status) beside a ledger-style work surface; pipeline stage = colored dot + label everywhere */
+:root{
+  --bg:#F1F4F3; --surface:#FFFFFF; --surface-2:#E8EEEC; --ink:#14202A; --muted:#58676F; --line:#D4DDDA; --line-strong:#B6C3BF;
+  --accent:#0B6B6B; --accent-hover:#085858; --accent-ink:#FFFFFF; --accent-soft:#DAEDEB;
+  --warn:#965800; --warn-soft:#FBEFD8; --crit:#B3261E; --crit-soft:#FBE3E0; --ok:#2F7D32; --ok-soft:#E2F1E2;
+  --s-prep:#6B7780; --s-ready:#6A4BC4; --s-held:#B26B00; --s-sent:#1E63B8; --s-paid:#2F7D32; --s-cancel:#9AA4A9; --on-crit:#FFFFFF;
+  --scrim:rgba(14,22,26,.42); --shadow:0 1px 2px rgba(20,32,42,.06),0 10px 30px rgba(20,32,42,.10);
+  --f-display:'Bricolage Grotesque','Be Vietnam Pro',system-ui,sans-serif;
+  --f-body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1315; --surface:#141D20; --surface-2:#1A262A; --ink:#E2EAE8; --muted:#92A3A8; --line:#25353A; --line-strong:#384C52;
+  --accent:#3CB3AA; --accent-hover:#5AC7BE; --accent-ink:#04201E; --accent-soft:#113838;
+  --warn:#E0A54A; --warn-soft:#33260F; --crit:#F0857B; --crit-soft:#3A1B19; --ok:#6CC070; --ok-soft:#173020;
+  --s-prep:#7F8C93; --s-ready:#8F78E6; --s-held:#BF8630; --s-sent:#4F8FDD; --s-paid:#4FA855; --s-cancel:#5D6A6F; --on-crit:#2A0D0B;
+  --scrim:rgba(0,0,0,.6); --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0D1315; --surface:#141D20; --surface-2:#1A262A; --ink:#E2EAE8; --muted:#92A3A8; --line:#25353A; --line-strong:#384C52;
+  --accent:#3CB3AA; --accent-hover:#5AC7BE; --accent-ink:#04201E; --accent-soft:#113838;
+  --warn:#E0A54A; --warn-soft:#33260F; --crit:#F0857B; --crit-soft:#3A1B19; --ok:#6CC070; --ok-soft:#173020;
+  --s-prep:#7F8C93; --s-ready:#8F78E6; --s-held:#BF8630; --s-sent:#4F8FDD; --s-paid:#4FA855; --s-cancel:#5D6A6F; --on-crit:#2A0D0B;
+  --scrim:rgba(0,0,0,.6); --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.92em;letter-spacing:-.01em}
+.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.nowrap{white-space:nowrap}
+
+/* shell */
+.shell{display:grid;grid-template-columns:236px minmax(0,1fr);gap:20px;min-height:100vh;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.rail{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));align-self:start;height:calc(100vh - 32px - env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 14px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px}
+.brand svg{flex:none}
+.brand b{font-family:var(--f-display);font-size:18px;line-height:1.1;letter-spacing:-.01em;display:block}
+.brand span{font-size:11.5px;color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--surface-2)}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+.nav a .cnt{margin-left:auto;font-size:11.5px;font-weight:600;background:var(--surface-2);color:var(--muted);border-radius:99px;padding:0 7px;line-height:20px}
+.nav a[aria-current="page"] .cnt{background:var(--surface);color:var(--accent)}
+.nav a .cnt.hot{background:var(--warn-soft);color:var(--warn)}
+.nav svg{width:18px;height:18px;flex:none}
+.store{margin-top:auto;border-top:1px solid var(--line);padding:14px 6px 0;display:grid;gap:8px;font-size:12.5px;color:var(--muted)}
+.store .row{display:flex;gap:8px;align-items:center}
+.store .due{color:var(--warn);font-weight:600}
+main{min-width:0;padding-block:8px 120px}
+.page-h{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.page-h h1{font-family:var(--f-display);font-weight:700;font-size:30px;letter-spacing:-.02em;line-height:1.1;margin:0;text-wrap:balance}
+.page-h p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:14px}
+  .rail{position:sticky;top:env(safe-area-inset-top,0px);height:auto;flex-direction:row;align-items:center;gap:10px;padding:8px;border-radius:12px;z-index:30;overflow-x:auto;box-shadow:var(--shadow)}
+  .brand span,.brand b{display:none}
+  .nav{flex-direction:row;gap:2px}
+  .nav a{white-space:nowrap;padding:8px 10px}
+  .nav a .lbl-long{display:none}
+  .store{display:none}
+  .page-h h1{font-size:24px}
+}
+
+/* buttons & inputs */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 13px;font-weight:500;cursor:pointer;line-height:1.2;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.sm{padding:5px 9px;font-size:13px;border-radius:7px}
+.btn.danger{color:var(--crit)}
+.btn[data-armed]{background:var(--crit);border-color:var(--crit);color:var(--on-crit)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn svg{width:16px;height:16px;flex:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+.field>span em{font-style:normal;color:var(--crit)}
+.input,select.input,textarea.input{width:100%;border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:38px}
+textarea.input{resize:vertical;min-height:62px;line-height:1.45}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.input.search{padding-left:34px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237d8a90' stroke-width='2'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E") no-repeat 11px 50%}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px}
+.fgrid .span2{grid-column:span 2}
+.fgrid .spanall{grid-column:1/-1}
+@media (max-width:520px){.fgrid .span2{grid-column:1/-1}}
+.fsec{display:grid;gap:12px;padding:16px 0;border-top:1px solid var(--line)}
+.fsec:first-child{border-top:0;padding-top:0}
+.fsec h3{margin:0;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hint{font-size:12px;color:var(--muted)}
+.check{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.check input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px}
+
+/* panels, tables */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.panel-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
+.panel-h h2{margin:0;font-size:15px;font-weight:600}
+.panel-b{padding:16px 18px}
+.stack{display:grid;gap:18px}
+.tbl-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr.clickable{cursor:pointer}
+.tbl tbody tr.clickable:hover td{background:var(--surface-2)}
+.tbl td.c-check,.tbl th.c-check{width:36px;padding-right:0}
+.tbl .t-main{font-weight:600}
+.tbl .t-sub{font-size:12.5px;color:var(--muted)}
+.empty{padding:36px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:2px 9px 2px 7px;border-radius:99px;background:var(--surface-2);color:var(--ink);white-space:nowrap;line-height:20px}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--muted));flex:none}
+.s-prep{--c:var(--s-prep)} .s-ready{--c:var(--s-ready)} .s-held{--c:var(--s-held)} .s-sent{--c:var(--s-sent)} .s-paid{--c:var(--s-paid)} .s-cancel{--c:var(--s-cancel)}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:5px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.crit{background:var(--crit-soft);color:var(--crit)}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.acc{background:var(--accent-soft);color:var(--accent)}
+.miss{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+
+/* stepper */
+.steps{display:flex;align-items:center;gap:0}
+.step{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:2px 0;cursor:pointer;min-width:58px}
+.step:disabled{cursor:default}
+.step .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line-strong);background:var(--surface);z-index:1}
+.step[data-on] .dot{background:var(--c);border-color:var(--c)}
+.step[data-late] .dot{border-color:var(--crit);border-style:dashed}
+.step .lbl{font-size:10.5px;color:var(--muted);white-space:nowrap}
+.step[data-on] .lbl{color:var(--ink)}
+.step::before{content:"";position:absolute;top:8px;left:-50%;width:100%;height:2px;background:var(--line)}
+.step:first-child::before{display:none}
+.step[data-on]::before{background:var(--c)}
+.step:not(:disabled):hover .dot{box-shadow:0 0 0 4px var(--accent-soft)}
+
+/* home */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-align:left;cursor:pointer;display:grid;gap:4px}
+.kpi:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.kpi .k-l{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted);font-weight:500}
+.kpi .k-l i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.kpi .k-n{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1.05;letter-spacing:-.02em}
+.kpi .k-a{font-size:12.5px;color:var(--muted)}
+.grid-2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:1100px){.grid-2{grid-template-columns:minmax(0,1fr)}}
+.todo{display:grid}
+.todo-i{display:flex;gap:12px;align-items:flex-start;padding:12px 18px;border-top:1px solid var(--line)}
+.todo-i:first-child{border-top:0}
+.todo-i .t-body{flex:1;min-width:0}
+.todo-i .t-title{font-weight:600}
+.todo-i .t-sub{font-size:12.5px;color:var(--muted)}
+.sev{flex:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:5px;margin-top:2px}
+.sev.crit{background:var(--crit-soft);color:var(--crit)}
+.sev.warn{background:var(--warn-soft);color:var(--warn)}
+.sev.info{background:var(--accent-soft);color:var(--accent)}
+.bars{display:grid;gap:10px}
+.bar-r{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px}
+.bar-r .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-t{position:relative;height:10px;background:var(--surface-2);border-radius:99px}
+.bar-f{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:99px}
+.bar-f.over{background:var(--warn)}
+.bar-cap{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--crit)}
+.onboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.ob{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:8px;align-content:start;background:var(--surface)}
+.ob .ob-n{font-family:var(--f-display);font-weight:700;font-size:13px;color:var(--accent)}
+.ob.done{background:var(--surface-2)}
+.ob.done .ob-n{color:var(--ok)}
+.ob b{font-size:14.5px}
+.ob p{margin:0;font-size:12.5px;color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.flow .chip{background:var(--surface)}
+
+/* events */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.toolbar .input.search{max-width:320px}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer;font-size:13px;font-weight:500;border-left:1px solid var(--line)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.mini{display:flex;height:6px;border-radius:99px;overflow:hidden;gap:2px;min-width:90px;background:var(--surface-2)}
+.mini span{background:var(--c)}
+.ev-date{font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1;letter-spacing:-.01em}
+.ev-date small{display:block;font-family:var(--f-body);font-weight:500;font-size:11.5px;color:var(--muted);margin-top:3px;letter-spacing:0}
+.group-h{padding:10px 18px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--line)}
+.ev-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:start}
+.ev-head .big-date{border:1px solid var(--line);border-radius:12px;padding:10px 14px;text-align:center;background:var(--surface)}
+.ev-head .big-date b{display:block;font-family:var(--f-display);font-size:30px;line-height:1}
+.ev-head .big-date span{font-size:12px;color:var(--muted)}
+.ev-meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:13px;margin-top:8px}
+.back{display:inline-flex;gap:6px;align-items:center;color:var(--muted);text-decoration:none;font-weight:500;margin-bottom:10px;cursor:pointer;background:none;border:0;padding:0}
+.back:hover{color:var(--ink)}
+.eng-rows{display:grid;gap:12px}
+.eng-row{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px;background:var(--surface)}
+.eng-row .er-h{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.eng-row .er-n{font-family:var(--f-display);font-weight:700;color:var(--muted);font-size:13px}
+.eng-grid{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,.7fr) minmax(0,.7fr);gap:10px 12px}
+.eng-grid .full{grid-column:1/-1}
+.eng-grid .er-status{grid-column:2/-1;justify-content:flex-end}
+@media (max-width:760px){.eng-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.eng-grid .hcp-col,.eng-grid .er-status{grid-column:1/-1}}
+
+/* combobox */
+.combo{position:relative}
+.combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow);z-index:60;max-height:300px;overflow:auto;padding:4px}
+.combo-opt{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:7px;cursor:pointer}
+.combo-opt[aria-selected="true"],.combo-opt:hover{background:var(--surface-2)}
+.combo-opt small{display:block;color:var(--muted);font-size:12px}
+.combo-opt.new{color:var(--accent);font-weight:600}
+
+/* pay */
+.paybar{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;padding:12px 16px;box-shadow:var(--shadow);margin-top:14px;z-index:20}
+.paybar .sum b{font-family:var(--f-display);font-size:20px}
+.paybar .field{flex-direction:row;align-items:center;gap:8px}
+.inline-note{width:100%;min-width:140px;border:1px solid transparent;background:transparent;border-radius:6px;padding:4px 6px}
+.inline-note:hover{border-color:var(--line)}
+.inline-note:focus{border-color:var(--accent);outline:none;background:var(--surface)}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+.modal{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);width:100%;max-width:760px;display:flex;flex-direction:column;max-height:calc(100vh - 48px);border:1px solid var(--line)}
+.modal.wide{max-width:1040px}
+.modal.narrow{max-width:520px}
+.modal-h{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--line)}
+.modal-h h2{margin:0;font-family:var(--f-display);font-size:21px;letter-spacing:-.01em;line-height:1.2}
+.modal-h p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.modal-b{padding:18px 22px;overflow:auto;display:grid;gap:4px}
+.modal-f{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center;padding:14px 22px;border-top:1px solid var(--line)}
+.modal-f .left{margin-right:auto}
+@media (max-width:640px){.overlay{padding:0}.modal,.modal.wide{max-width:none;max-height:none;min-height:100%;border-radius:0;border:0}.modal-h{padding-top:max(18px,env(safe-area-inset-top,0px))}.modal-f{padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}}
+.kv{display:grid;grid-template-columns:minmax(110px,auto) minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.callout{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:12px 14px;font-size:13px}
+.callout.warn{background:var(--warn-soft);border-color:transparent;color:var(--ink)}
+.callout.warn b{color:var(--warn)}
+pre.msg{white-space:pre-wrap;font-family:var(--f-body);font-size:13px;background:var(--surface-2);border-radius:10px;padding:12px 14px;margin:0}
+
+/* toast */
+.toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;z-index:200;width:min(560px,calc(100vw - 32px))}
+.toast{display:flex;gap:12px;align-items:center;background:var(--ink);color:var(--bg);border-radius:10px;padding:11px 14px;box-shadow:var(--shadow);font-size:13.5px;animation:tin .18s ease-out}
+.toast.err{background:var(--crit);color:var(--on-crit)}
+.toast button{margin-left:auto;background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+@keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+.busy{position:fixed;inset:0;z-index:250;display:grid;place-items:center;background:var(--scrim)}
+.busy div{background:var(--surface);border-radius:12px;padding:16px 20px;box-shadow:var(--shadow);font-weight:500}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail" id="rail"></aside>
+  <main id="main"></main>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<input type="file" id="f-excel" accept=".xlsx,.xlsm" hidden>
+<input type="file" id="f-contracts" accept=".docx" multiple hidden>
+<input type="file" id="f-template" accept=".docx" hidden>
+<input type="file" id="f-restore" accept=".json,application/json" hidden>
+
+<script>
+'use strict';
+/* ================= constants ================= */
+const LIBS = {
+  zip: 'https://cdn.jsdelivr.net/npm/pizzip@3.2.0/dist/pizzip.min.js',
+  docx: 'https://cdn.jsdelivr.net/npm/docxtemplater@3.67.0/build/docxtemplater.min.js',
+  xlsx: 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
+};
+const STORE_KEY = 'hcp-desk:v1', TPL_KEY = 'hcp-desk:template:v1';
+const DOTS = '……………';
+const SIX_CITIES = ['Hồ Chí Minh','Hà Nội','Đà Nẵng','Hải Phòng','Cần Thơ','Huế'];
+const ROLES = ['Báo cáo viên','Chủ tọa','Điều phối viên'];
+const BANKS = ['Vietcombank','VietinBank','BIDV','Agribank','MB','Techcombank','ACB','Sacombank','VPBank','TPBank','HDBank','VIB','SHB','OCB','Eximbank','SeABank','MSB','Nam A Bank','LPBank','Bac A Bank','SCB','PVcomBank','Kienlongbank','ABBANK','VietABank'];
+const CONTRACT_REQ = [['name','Họ tên'],['street','Địa chỉ'],['city','Thành phố'],['cccd','CCCD/MST'],['bankAccount','Số TK'],['bankName','Ngân hàng'],['bankCode','Mã NH'],['hospital','Bệnh viện'],['specialty','Chuyên môn']];
+const PAY_REQ = [['tier','Tier'],['email','Email'],['phone','SĐT'],['cccd','CCCD/MST'],['street','Địa chỉ']];
+const STAGE = {
+  prep:  {label:'Chuẩn bị', cls:'s-prep'},
+  ready: {label:'Chờ diễn ra', cls:'s-ready'},
+  held:  {label:'Chờ gửi thanh toán', cls:'s-held'},
+  sent:  {label:'Đã gửi admin', cls:'s-sent'},
+  paid:  {label:'Đã thanh toán', cls:'s-paid'},
+  cancel:{label:'Đã huỷ', cls:'s-cancel'},
+};
+const TAGS = [
+  ['ho_ten','Họ tên BS'],['dia_chi','Địa chỉ (số nhà, đường, phường)'],['thanh_pho','Thành phố trên địa chỉ'],['quoc_gia','Quốc gia'],['cccd','CCCD / MST'],
+  ['vai_tro','Vai trò (Báo cáo viên, Chủ tọa…)'],['ten_su_kien','Tên sự kiện'],['dia_diem','Địa điểm tổ chức'],['thanh_pho_su_kien','Thành phố tổ chức'],['quoc_gia_su_kien','Quốc gia tổ chức'],
+  ['ngay_su_kien','“ngày 24 tháng 08 năm 2026”'],['ngay_su_kien_so','24/08/2026'],['chu_de','Chủ đề bài nói'],['chuyen_mon','Lĩnh vực chuyên môn'],['thoi_luong','Thời lượng (phút)'],['thoi_gian_chuan_bi','Thời gian chuẩn bị (phút)'],
+  ['phi','Phí, dạng 5,000,000'],['chu_tai_khoan','Chủ tài khoản'],['so_tai_khoan','Số tài khoản'],['ngan_hang','Ngân hàng'],['ma_ngan_hang','Mã ngân hàng'],['ngay_hieu_luc','Ngày hiệu lực (mặc định = ngày sự kiện)'],
+  ['chuc_vu','Chức vụ BS (dòng 1 ô ký)'],['benh_vien','Bệnh viện (dòng 2 ô ký)'],['bayer_ky_1_ten','Người ký Bayer 1'],['bayer_ky_1_chuc_vu','Chức vụ người ký 1'],['bayer_ky_2_ten','Người ký Bayer 2'],['bayer_ky_2_chuc_vu','Chức vụ người ký 2'],
+  ['danh_xung','Danh xưng (ThS.BS…)'],['tier','Tier'],['khoa','Khoa'],['email','Email'],['sdt','Số điện thoại'],['dia_chi_day_du','Địa chỉ đầy đủ'],
+];
+
+/* ================= utils ================= */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, '0');
+const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase().replace(/\s+/g, ' ').trim();
+const digits = s => String(s ?? '').replace(/\D/g, '');
+const clean = s => String(s ?? '').replace(/\s+/g, ' ').trim();
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const isoParts = iso => { const [y, m, d] = String(iso).split('-').map(Number); return {y, m, d}; };
+const fmtDate = iso => { if (!iso) return ''; const {y, m, d} = isoParts(iso); return `${pad(d)}/${pad(m)}/${y}`; };
+const dmyDot = iso => fmtDate(iso).replace(/\//g, '.');
+const viLong = iso => { if (!iso) return ''; const {y, m, d} = isoParts(iso); return `ngày ${pad(d)} tháng ${pad(m)} năm ${y}`; };
+const yymmdd = iso => iso ? iso.slice(2,4) + iso.slice(5,7) + iso.slice(8,10) : '';
+const dayNum = iso => { const {y, m, d} = isoParts(iso); return Date.UTC(y, m-1, d) / 86400000; };
+const daysFrom = (a, b) => dayNum(b) - dayNum(a);
+const addDays = (iso, n) => { const t = new Date((dayNum(iso) + n) * 86400000); return `${t.getUTCFullYear()}-${pad(t.getUTCMonth()+1)}-${pad(t.getUTCDate())}`; };
+const WEEKDAY = ['CN','T2','T3','T4','T5','T6','T7'];
+const weekday = iso => WEEKDAY[new Date(dayNum(iso) * 86400000).getUTCDay()];
+const fmtVND = n => (Math.round(Number(n) || 0)).toLocaleString('en-US');
+const money = s => { const d = digits(s); return d ? Number(d) : 0; };
+function parseMoney(s) {
+  s = String(s ?? '').trim();
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.'); else s = s.replace(/,/g, '');
+  const n = parseFloat(s); return isFinite(n) ? Math.round(n) : 0;
+}
+const cityLabel = (city, prefix) => { const c = clean(city); if (!c) return ''; return SIX_CITIES.some(x => norm(x) === norm(c)) ? prefix + c : c; };
+const lastWord = s => clean(s).split(' ').pop() || '';
+const titleCase = s => clean(s).toLowerCase().split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(' ');
+const sortName = (a, b) => (norm(lastWord(a)) + ' ' + norm(a)).localeCompare(norm(lastWord(b)) + ' ' + norm(b));
+const initials = s => { const p = clean(s).split(' '); return ((p.length > 1 ? p[p.length-2][0] : '') + (p[p.length-1]?.[0] || '')).toUpperCase(); };
+function relDays(iso) {
+  const n = daysFrom(today(), iso);
+  if (n === 0) return 'hôm nay'; if (n === 1) return 'ngày mai'; if (n === -1) return 'hôm qua';
+  return n > 0 ? `còn ${n} ngày` : `${-n} ngày trước`;
+}
+function splitAddress(full) {
+  let s = clean(full); let country = 'Việt Nam';
+  const m = s.match(/,\s*(Việt Nam|Viet Nam|VN)\s*\.?$/i); if (m) s = s.slice(0, m.index).trim();
+  const parts = s.split(',').map(x => x.trim()).filter(Boolean);
+  let city = '';
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    if (/^(tp\.?|thành phố|tỉnh)/i.test(last) || SIX_CITIES.some(c => norm(last).includes(norm(c))) || /^(tp\s*)?hcm$/i.test(norm(last).replace(/\./g,''))) {
+      city = last.replace(/^(tp\.?\s*|thành phố\s+|tỉnh\s+)/i, '').trim(); parts.pop();
+    }
+  }
+  if (/^(tp\s*)?hcm$|^tphcm$/.test(norm(city).replace(/\./g, ''))) city = 'Hồ Chí Minh';
+  return {street: parts.join(', '), city, country};
+}
+function b64FromBuf(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function bufFromB64(b64) { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+const safeFile = s => clean(String(s).replace(/[\\/:*?"<>|]+/g, ' '));
+
+/* ================= lazy libs ================= */
+const loading = {};
+function loadScript(src) {
+  return loading[src] ||= new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res;
+    s.onerror = () => { delete loading[src]; rej(new Error('Không tải được thư viện. Kiểm tra kết nối mạng rồi thử lại.')); };
+    document.head.appendChild(s);
+  });
+}
+async function needZip() { await loadScript(LIBS.zip); return window.PizZip; }
+async function needDocx() { await needZip(); await loadScript(LIBS.docx); return window.docxtemplater; }
+async function needXlsx() { await loadScript(LIBS.xlsx); return window.ExcelJS; }
+
+/* ================= storage ================= */
+function defaultSettings() {
+  return { staffName:'', manager:'', contractForm:'Bản chữ ký sống', signer1Name:'', signer1Title:'', signer2Name:'', signer2Title:'',
+    venue:'Trực tiếp qua phần mềm Zoom', city:'Hồ Chí Minh', country:'Việt Nam', prep:120, duration:15, chairDuration:60, fee:5000000,
+    filePattern:'{yymmdd} - Draft Speaker Agreement - Dr. {ho_ten}', annualCap:0 };
+}
+function fresh() { return { v:1, hcps:[], events:[], engs:[], batches:[], products:[], settings:defaultSettings(), lastBackupAt:null, changes:0 }; }
+let storageOK = true;
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) { const s = JSON.parse(raw); const f = fresh(); return {...f, ...s, settings:{...f.settings, ...(s.settings || {})}}; }
+  } catch (e) { storageOK = false; }
+  return fresh();
+}
+let state = load();
+let template = null;
+try { const t = localStorage.getItem(TPL_KEY); if (t) template = JSON.parse(t); } catch (e) { storageOK = false; }
+let persistAsked = false;
+function save(silent) {
+  state.changes = (state.changes || 0) + 1;
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); storageOK = true; }
+  catch (e) { storageOK = false; if (!silent) toast('Trình duyệt không cho lưu dữ liệu. Hãy Sao lưu ra file để không mất thông tin.', {kind:'err'}); }
+  if (!persistAsked && navigator.storage?.persist) { persistAsked = true; navigator.storage.persist().catch(() => {}); }
+}
+function saveTemplate(t) {
+  template = t;
+  try { if (t) localStorage.setItem(TPL_KEY, JSON.stringify(t)); else localStorage.removeItem(TPL_KEY); }
+  catch (e) { toast('Không lưu được phôi vào trình duyệt. Phôi chỉ dùng được trong phiên này.', {kind:'err'}); }
+}
+let undoSnap = null;
+const checkpoint = () => { undoSnap = JSON.stringify(state); };
+function undo() { if (!undoSnap) return; state = JSON.parse(undoSnap); undoSnap = null; save(); render(); toast('Đã hoàn tác'); }
+
+/* ================= lookups & domain ================= */
+const hcpById = id => state.hcps.find(h => h.id === id);
+const evById = id => state.events.find(e => e.id === id);
+const engById = id => state.engs.find(e => e.id === id);
+const engsOf = evId => state.engs.filter(e => e.eventId === evId);
+const productFor = ev => state.products.find(p => p.id === ev?.productId) || state.products[0] || {bu:'', costCenter:'', sio:''};
+function emptyHcp() {
+  return { id:uid(), name:'', title:'', tier:'', khoa:'', position:'', hospital:'', specialty:'', defaultRole:'', defaultFee:0,
+    cccd:'', dob:'', birthplace:'', phone:'', email:'', street:'', city:'Hồ Chí Minh', country:'Việt Nam', homeAddress:'',
+    bankHolder:'', bankAccount:'', bankName:'', bankCode:'', note:'', createdAt:Date.now(), updatedAt:Date.now() };
+}
+function newEvent(o = {}) {
+  const s = state.settings;
+  return { id:uid(), name:'', date:'', venue:s.venue, city:s.city, country:s.country, online:true, productId:state.products[0]?.id || '',
+    signer1Name:s.signer1Name, signer1Title:s.signer1Title, signer2Name:s.signer2Name, signer2Title:s.signer2Title, note:'', createdAt:Date.now(), ...o };
+}
+function newEng(o = {}) {
+  return { id:uid(), eventId:'', hcpId:'', role:'Báo cáo viên', topic:'', duration:state.settings.duration, prep:state.settings.prep, fee:state.settings.fee,
+    specialty:'', gmLocation:'', contractAt:null, veevaAt:null, sentAt:null, batchId:null, paidAt:null, cancelled:false, payNote:'', createdAt:Date.now(), ...o };
+}
+function stageOf(e) {
+  if (e.cancelled) return 'cancel'; if (e.paidAt) return 'paid'; if (e.sentAt) return 'sent';
+  const ev = evById(e.eventId); if (ev?.date && ev.date <= today()) return 'held';
+  if (e.contractAt && e.veevaAt) return 'ready'; return 'prep';
+}
+function stageLabel(e) {
+  const st = stageOf(e);
+  if (st === 'prep') return !e.contractAt ? 'Chưa xuất HĐ' : 'Chờ raise Veeva';
+  return STAGE[st].label;
+}
+const chip = (st, label) => `<span class="chip ${STAGE[st].cls}"><i></i>${esc(label || STAGE[st].label)}</span>`;
+function hcpMissing(h, kind = 'contract') {
+  if (!h) return ['Chưa chọn BS'];
+  const req = kind === 'contract' ? CONTRACT_REQ : PAY_REQ;
+  const out = req.filter(([k]) => !clean(h[k])).map(([, l]) => l);
+  if (kind === 'contract' && !clean(h.position) && !clean(h.khoa)) out.push('Chức vụ/Khoa');
+  return out;
+}
+const fullAddress = h => [clean(h.street), cityLabel(h.city, 'TP. '), clean(h.country) || 'Việt Nam'].filter(Boolean).join(', ');
+const gmLocation = (e, h, ev) => clean(e.gmLocation) || ([clean(h?.khoa) || clean(h?.position), clean(h?.hospital)].filter(Boolean).join(' - ') + (ev?.online ? ' (trực tuyến)' : ''));
+function findHcp(rec) {
+  const c = digits(rec.cccd);
+  if (c.length >= 9) { const h = state.hcps.find(x => digits(x.cccd) === c); if (h) return h; }
+  const n = norm(rec.name); return n ? state.hcps.find(x => norm(x.name) === n) : null;
+}
+function upsertHcp(rec) {
+  const h = findHcp(rec);
+  if (!h) { const n = {...emptyHcp(), ...Object.fromEntries(Object.entries(rec).filter(([, v]) => v !== undefined && v !== null && v !== ''))}; state.hcps.push(n); return {hcp:n, created:true}; }
+  let changed = false;
+  for (const [k, v] of Object.entries(rec)) {
+    if (v === undefined || v === null || v === '' || k === 'id') continue;
+    const cur = h[k];
+    const empty = cur === undefined || cur === null || cur === '' || cur === 0 || (k === 'city' && cur === 'Hồ Chí Minh' && !clean(h.street));
+    if (empty && cur !== v) { h[k] = v; changed = true; }
+  }
+  if (changed) h.updatedAt = Date.now();
+  return {hcp:h, changed};
+}
+function yearTotals(year) {
+  const map = new Map();
+  for (const e of state.engs) {
+    if (e.cancelled) continue; const ev = evById(e.eventId); if (!ev?.date?.startsWith(year)) continue;
+    const m = map.get(e.hcpId) || {n:0, sum:0}; m.n++; m.sum += Number(e.fee) || 0; map.set(e.hcpId, m);
+  }
+  return map;
+}
+
+/* ================= contract generation ================= */
+function contractData(e) {
+  const ev = evById(e.eventId) || {}, h = hcpById(e.hcpId) || {};
+  const d = {
+    ho_ten:h.name, dia_chi:h.street, thanh_pho:h.city, quoc_gia:h.country || 'Việt Nam', cccd:h.cccd,
+    vai_tro:e.role, ten_su_kien:ev.name, dia_diem:ev.venue, thanh_pho_su_kien:ev.city, quoc_gia_su_kien:ev.country || 'Việt Nam',
+    ngay_su_kien:viLong(ev.date), ngay_su_kien_so:fmtDate(ev.date), chu_de:e.topic, chuyen_mon:e.specialty || h.specialty,
+    thoi_luong:e.duration, thoi_gian_chuan_bi:e.prep, phi:e.fee ? fmtVND(e.fee) : '',
+    chu_tai_khoan:h.bankHolder || h.name, so_tai_khoan:h.bankAccount, ngan_hang:h.bankName, ma_ngan_hang:h.bankCode,
+    ngay_hieu_luc:viLong(e.effectiveDate || ev.date),
+    bayer_ky_1_ten:ev.signer1Name, bayer_ky_1_chuc_vu:ev.signer1Title, bayer_ky_2_ten:ev.signer2Name, bayer_ky_2_chuc_vu:ev.signer2Title,
+    chuc_vu:h.position || h.khoa, benh_vien:h.hospital,
+    danh_xung:h.title, tier:h.tier, khoa:h.khoa, email:h.email, sdt:h.phone, dia_chi_day_du:fullAddress(h),
+  };
+  for (const k in d) { const v = d[k]; d[k] = (v === undefined || v === null || String(v).trim() === '') ? DOTS : String(v); }
+  return d;
+}
+function contractFileName(e) {
+  const ev = evById(e.eventId) || {}, h = hcpById(e.hcpId) || {};
+  const pat = state.settings.filePattern || '{yymmdd} - Draft Speaker Agreement - Dr. {ho_ten}';
+  return safeFile(pat.replace(/\{yymmdd\}/g, yymmdd(ev.date)).replace(/\{ho_ten\}/g, h.name || 'BS').replace(/\{vai_tro\}/g, e.role || '').replace(/\{danh_xung\}/g, h.title || '')) + '.docx';
+}
+async function buildContract(e) {
+  if (!template) throw new Error('Chưa có phôi hợp đồng. Vào Cài đặt → Phôi hợp đồng để tải phôi lên.');
+  const Docx = await needDocx(); const PizZip = window.PizZip;
+  const zip = new PizZip(bufFromB64(template.b64));
+  const doc = new Docx(zip, {paragraphLoop:true, linebreaks:true, delimiters:{start:'{{', end:'}}'}, nullGetter:() => DOTS});
+  doc.render(contractData(e));
+  return doc.getZip().generate({type:'uint8array', compression:'DEFLATE'});
+}
+async function downloadContracts(engIds, zipName) {
+  const list = engIds.map(engById).filter(e => e && !e.cancelled);
+  if (!list.length) return toast('Không có hợp đồng nào để xuất.');
+  try {
+    busy('Đang tạo hợp đồng…');
+    let ok;
+    if (list.length === 1) {
+      const bytes = await buildContract(list[0]);
+      busy(false);
+      ok = await saveFile(contractFileName(list[0]), new Blob([bytes]));
+    } else {
+      const PizZip = await needZip(); const out = new PizZip(); const used = new Set();
+      for (const e of list) { let n = contractFileName(e); while (used.has(n)) n = n.replace(/\.docx$/, ' (2).docx'); used.add(n); out.file(n, await buildContract(e)); }
+      const blob = out.generate({type:'blob', compression:'DEFLATE'});
+      busy(false);
+      ok = await saveFile(zipName, blob);
+    }
+    if (ok) {
+      const t = today(); list.forEach(e => { if (!e.contractAt) e.contractAt = t; }); save(); render();
+      const miss = list.filter(e => hcpMissing(hcpById(e.hcpId)).length || !clean(e.topic));
+      toast(miss.length ? `Đã xuất ${list.length} HĐ. ${miss.length} HĐ còn ô trống “${DOTS}”, kiểm tra trước khi gửi.` : `Đã xuất ${list.length} hợp đồng.`);
+    }
+  } catch (err) {
+    busy(false);
+    const sub = err?.properties?.errors?.map(x => x.properties?.explanation || x.message).filter(Boolean);
+    toast(sub?.length ? 'Phôi hợp đồng có lỗi trường: ' + sub.slice(0, 3).join('; ') : (err.message || String(err)), {kind:'err'});
+  }
+}
+
+/* ================= files ================= */
+let dlCap = null;
+function downloadsCap() {
+  if (!dlCap) dlCap = (window.claude && typeof window.claude.use === 'function') ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+  return dlCap;
+}
+downloadsCap();
+async function saveFile(filename, data) {
+  const blob = data instanceof Blob ? data : new Blob([data]);
+  const dl = await downloadsCap();
+  if (dl) {
+    try { await dl.save({filename, data:blob}); return true; }
+    catch (err) {
+      if (err?.code === 'declined') { toast('Đã huỷ lưu file.'); return false; }
+      if (err?.code === 'rate_limited') { toast('Đang có một hộp thoại lưu file mở. Đợi chút rồi thử lại.'); return false; }
+      if (err?.code === 'rejected_extension' || err?.code === 'extension_not_enabled') { toast('Định dạng file này không lưu được ở đây.', {kind:'err'}); return false; }
+    }
+  }
+  if (window.claude && !dl) { toast('Chế độ xem này không cho tải file. Mở app trong claude.ai để tải.', {kind:'err'}); return false; }
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000); return true;
+}
+function pickFile(id) { const el = $('#' + id); el.value = ''; el.click(); }
+
+/* ================= Excel: payment request ================= */
+const PAY_HEADERS = ['STT','BU','Cost center sản phẩm','SIO của sản phẩm','Họ tên người phụ trách (Staff)','Họ tên HCP','Tier','Email HCP','Ngày sự kiện','Vai trò của HCP','Số tiền (không bao gồm thuế TNCN)','Bệnh viện/ Nhà hàng nơi thực hiện GM','Thành phố diễn ra sự kiện','Địa chỉ của HCP trên hợp đồng','Số căn cước của HCP (Mã số thuế)','Số điện thoại của HCP','Họ tên người quản lý (RFFM/ RKAM)','Hình thức hợp đồng gốc','Ngày nhân viên gởi yêu cầu thanh toán','Ghi chú'];
+const PAY_WIDTHS = [4.9,6.4,11.6,13.1,16.7,18.3,8.4,23.7,13.1,12.9,14,18.4,14,14.6,14.4,14.3,12.1,15.4,14.9,11.7];
+const xlDate = iso => { if (!iso) return null; const {y, m, d} = isoParts(iso); return new Date(Date.UTC(y, m-1, d)); };
+function payRow(e, reqIso) {
+  const ev = evById(e.eventId) || {}, h = hcpById(e.hcpId) || {}, p = productFor(ev), s = state.settings;
+  const sio = /^\d+$/.test(clean(p.sio)) && clean(p.sio).length < 16 ? Number(clean(p.sio)) : p.sio;
+  return [null, p.bu, p.costCenter, sio, s.staffName, h.name, h.tier, h.email, xlDate(ev.date), e.role, Number(e.fee) || 0,
+    gmLocation(e, h, ev), cityLabel(ev.city || s.city, 'Tp. '), fullAddress(h), clean(h.cccd), clean(h.phone), s.manager, s.contractForm, xlDate(reqIso), e.payNote || ''];
+}
+function sortEngs(list) {
+  return list.sort((a, b) => ((evById(a.eventId)?.date || '').localeCompare(evById(b.eventId)?.date || '')) || sortName(hcpById(a.hcpId)?.name || '', hcpById(b.hcpId)?.name || ''));
+}
+async function buildYCTT(engs, reqIso) {
+  const ExcelJS = await needXlsx();
+  const wb = new ExcelJS.Workbook(); wb.creator = state.settings.staffName || ''; wb.created = new Date();
+  const ws = wb.addWorksheet(`YCTT - ${dmyDot(reqIso)}`, {views:[{state:'frozen', xSplit:0, ySplit:4, showGridLines:false}],
+    pageSetup:{orientation:'landscape', paperSize:9, fitToPage:true, fitToWidth:1, fitToHeight:0}});
+  ws.columns = PAY_WIDTHS.map(w => ({width:w}));
+  const border = {top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'}};
+  [[1,25.5],[2,31.5],[3,21],[4,73.5]].forEach(([r, h]) => ws.getRow(r).height = h);
+  const t = ws.getCell('A2'); t.value = 'YÊU CẦU THANH TOÁN '; t.font = {name:'Times New Roman', size:22, bold:true}; t.alignment = {vertical:'middle'};
+  PAY_HEADERS.forEach((hd, i) => {
+    const c = ws.getCell(4, i+1); c.value = hd; c.font = {name:'Calibri', size:11, bold:true}; c.alignment = {horizontal:'center', vertical:'middle', wrapText:true}; c.border = border;
+    const n = ws.getCell(5, i+1); n.value = i+1; n.font = {name:'Calibri', size:11, bold:true}; n.alignment = {horizontal:'center', vertical:'middle', wrapText:true}; n.border = border;
+  });
+  engs.forEach((e, idx) => {
+    const r = 6 + idx; const vals = payRow(e, reqIso); vals[0] = idx + 1;
+    vals.forEach((v, i) => {
+      const c = ws.getCell(r, i+1); c.value = (v === '' || v === undefined) ? null : v;
+      c.font = {name:'Calibri', size:11}; c.border = border; c.alignment = {vertical:'middle', wrapText:true};
+    });
+    ws.getCell(r, 1).alignment = {horizontal:'center', vertical:'middle', wrapText:true};
+    if (typeof vals[3] === 'number') ws.getCell(r, 4).numFmt = '0';
+    ws.getCell(r, 9).numFmt = 'mm-dd-yy'; ws.getCell(r, 9).alignment = {horizontal:'right', vertical:'middle'};
+    ws.getCell(r, 11).numFmt = '#,##0';
+    ws.getCell(r, 15).numFmt = '@'; ws.getCell(r, 16).numFmt = '@';
+    ws.getCell(r, 19).numFmt = 'd-mmm'; ws.getCell(r, 19).alignment = {horizontal:'right', vertical:'middle'};
+    const longest = Math.max(...[11, 13, 5].map(i => String(vals[i] || '').length / (PAY_WIDTHS[i] * 0.95)));
+    ws.getRow(r).height = Math.max(57.6, Math.ceil(longest + 0.2) * 15 + 6);
+  });
+  const buf = await wb.xlsx.writeBuffer();
+  return new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+/* ================= Excel: HCP list export ================= */
+const HCP_COLS = [
+  ['STT', null, 5], ['Họ và tên HCPs','name',22], ['Tier HCPs','tier',9], ['Khoa','khoa',30], ['Vai trò của BS','defaultRole',16], ['Bệnh viện','hospital',30],
+  ['Khoa Phòng - Bệnh viện', h => [h.khoa || h.position, h.hospital].filter(Boolean).join(' - '), 34], ['CCCD/MST','cccd',15], ['Email','email',26],
+  ['Địa chỉ trên hợp đồng', h => fullAddress(h), 40], ['Địa chỉ nhà (nếu có)','homeAddress',30], ['Nơi sinh','birthplace',12], ['Số điện thoại','phone',14],
+  ['Ngày tháng năm sinh', h => xlDate(h.dob), 14], ['Số tiền thường engage', h => Number(h.defaultFee) || null, 16], ['Danh xưng','title',11], ['Chức vụ trên HĐ','position',28],
+  ['Lĩnh vực chuyên môn','specialty',16], ['Chủ tài khoản','bankHolder',22], ['Số tài khoản','bankAccount',18], ['Ngân hàng','bankName',14], ['Mã ngân hàng','bankCode',13], ['Ghi chú','note',24],
+];
+async function exportHcps() {
+  if (!state.hcps.length) return toast('Danh bạ đang trống.');
+  try {
+    busy('Đang tạo file…');
+    const ExcelJS = await needXlsx(); const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Data HCPs', {views:[{state:'frozen', ySplit:1}]});
+    ws.columns = HCP_COLS.map(([h, , w]) => ({header:h, width:w}));
+    ws.getRow(1).font = {bold:true}; ws.getRow(1).alignment = {vertical:'middle', wrapText:true};
+    [...state.hcps].sort((a, b) => sortName(a.name, b.name)).forEach((h, i) => {
+      const row = ws.addRow(HCP_COLS.map(([, k]) => k === null ? i + 1 : typeof k === 'function' ? k(h) : (h[k] ?? '')));
+      [8, 13, 20, 22].forEach(c => row.getCell(c).numFmt = '@');
+      row.getCell(14).numFmt = 'dd/mm/yyyy'; row.getCell(15).numFmt = '#,##0';
+    });
+    const buf = await wb.xlsx.writeBuffer(); busy(false);
+    await saveFile(`Data HCPs - ${dmyDot(today())}.xlsx`, new Blob([buf]));
+  } catch (err) { busy(false); toast(err.message, {kind:'err'}); }
+}
+
+/* ================= import: Excel ================= */
+function cellVal(v) {
+  if (v === null || v === undefined) return '';
+  if (v instanceof Date) return v;
+  if (typeof v === 'object') {
+    if ('result' in v) return cellVal(v.result);
+    if (v.richText) return v.richText.map(r => r.text).join('');
+    if ('text' in v) return cellVal(v.text);
+    if (v.formula || v.sharedFormula || v.error) return '';
+    return '';
+  }
+  return v;
+}
+const cellStr = v => { v = cellVal(v); return v instanceof Date ? '' : clean(v); };
+function cellDate(v) {
+  v = cellVal(v);
+  if (v instanceof Date) return `${v.getUTCFullYear()}-${pad(v.getUTCMonth()+1)}-${pad(v.getUTCDate())}`;
+  if (typeof v === 'number' && v > 20000 && v < 80000) { const d = new Date(Math.round((v - 25569) * 86400000)); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`; }
+  const m = String(v).match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/); if (m) return `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
+  return '';
+}
+function splitGm(gm) {
+  let s = clean(gm).replace(/\((trực tuyến|online|trực tiếp|offline)\)/i, '').trim();
+  const m = s.match(/^(.*?)\s+[-–]\s+((?:Bệnh viện|BV|Phòng khám|PK|Trung tâm|Viện).*)$/i);
+  return m ? {khoa:m[1].trim(), hospital:m[2].trim()} : {khoa:'', hospital:s};
+}
+const DATA_MAP = {'ho va ten hcps':'name','tier hcps':'tier','khoa':'khoa','vai tro cua bs':'defaultRole','benh vien':'hospital','khoa phong - benh vien':'_kp','cccd/mst':'cccd','email':'email',
+  'dia chi tren hop dong':'_addr','dia chi nha (neu co)':'homeAddress','noi sinh':'birthplace','so dien thoai':'phone','ngay thang nam sinh':'dob','so tien thuong engage':'defaultFee',
+  'danh xung':'title','chuc vu tren hd':'position','linh vuc chuyen mon':'specialty','chu tai khoan':'bankHolder','so tai khoan':'bankAccount','ngan hang':'bankName','ma ngan hang':'bankCode','ghi chu':'note'};
+async function parseExcel(file) {
+  const ExcelJS = await needXlsx(); const wb = new ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+  const out = {kind:'excel', file:file.name, hcps:[], history:[], settings:{}, product:null, sheets:[]}; const dataRecs = [], ycttRecs = [];
+  wb.eachSheet(ws => {
+    for (let r = 1; r <= 12; r++) {
+      const heads = {}; ws.getRow(r).eachCell((c, col) => { const v = cellStr(c.value); if (v) heads[norm(v)] = col; });
+      if (heads['ho va ten hcps']) {
+        let n = 0;
+        for (let i = r + 1; i <= ws.rowCount; i++) {
+          const row = ws.getRow(i); const rec = {};
+          for (const [k, f] of Object.entries(DATA_MAP)) { if (!heads[k]) continue; const raw = row.getCell(heads[k]).value; rec[f] = f === 'dob' ? cellDate(raw) : cellStr(raw); }
+          if (!rec.name) continue;
+          if (rec._addr) Object.assign(rec, splitAddress(rec._addr));
+          if (rec._kp && (!rec.khoa || !rec.hospital)) { const g = splitGm(rec._kp); rec.khoa ||= g.khoa; rec.hospital ||= g.hospital; }
+          delete rec._addr; delete rec._kp;
+          rec.cccd = digits(rec.cccd) || rec.cccd; rec.defaultFee = money(rec.defaultFee);
+          if (rec.bankAccount) rec.bankAccount = rec.bankAccount.replace(/\s/g, '');
+          dataRecs.push(rec); n++;
+        }
+        out.sheets.push(`${ws.name}: ${n} BS`); return;
+      }
+      if (heads['ho ten hcp'] && heads['vai tro cua hcp']) {
+        const col = k => heads[k]; let n = 0;
+        const H = {stt:col('stt'), bu:col('bu'), cc:col('cost center san pham'), sio:col('sio cua san pham'), staff:col('ho ten nguoi phu trach (staff)'), name:col('ho ten hcp'), tier:col('tier'),
+          email:col('email hcp'), date:col('ngay su kien'), role:col('vai tro cua hcp'), fee:col('so tien (khong bao gom thue tncn)'), gm:col('benh vien/ nha hang noi thuc hien gm'),
+          city:col('thanh pho dien ra su kien'), addr:col('dia chi cua hcp tren hop dong'), cccd:col('so can cuoc cua hcp (ma so thue)'), phone:col('so dien thoai cua hcp'),
+          manager:col('ho ten nguoi quan ly (rffm/ rkam)'), form:col('hinh thuc hop dong goc'), sent:col('ngay nhan vien goi yeu cau thanh toan'), note:col('ghi chu')};
+        const g = (row, k) => H[k] ? row.getCell(H[k]).value : null;
+        for (let i = r + 1; i <= ws.rowCount; i++) {
+          const row = ws.getRow(i); const name = cellStr(g(row, 'name'));
+          if (!name || /^\d+$/.test(name)) continue;
+          const gm = cellStr(g(row, 'gm')); const sp = splitGm(gm); const ad = splitAddress(cellStr(g(row, 'addr')));
+          const rec = {name, tier:cellStr(g(row, 'tier')), email:cellStr(g(row, 'email')), cccd:digits(cellStr(g(row, 'cccd'))), phone:cellStr(g(row, 'phone')), khoa:sp.khoa, hospital:sp.hospital};
+          if (ad.street) Object.assign(rec, ad);
+          ycttRecs.push(rec);
+          const date = cellDate(g(row, 'date'));
+          if (date) out.history.push({name, cccd:rec.cccd, date, role:cellStr(g(row, 'role')) || 'Báo cáo viên', fee:money(cellVal(g(row, 'fee'))), gm, online:/trực tuyến|online/i.test(gm),
+            city:cellStr(g(row, 'city')).replace(/^tp\.?\s*/i, ''), sent:cellDate(g(row, 'sent')), note:cellStr(g(row, 'note')), sheet:ws.name});
+          const staff = cellStr(g(row, 'staff')), manager = cellStr(g(row, 'manager')), form = cellStr(g(row, 'form'));
+          if (staff) out.settings.staffName = staff; if (manager) out.settings.manager = manager; if (form) out.settings.contractForm = form;
+          const bu = cellStr(g(row, 'bu')), cc = cellVal(g(row, 'cc')), sio = cellVal(g(row, 'sio'));
+          if (bu || cc || sio) out.product = {bu, costCenter:String(cc ?? '').trim(), sio:String(sio ?? '').trim()};
+          n++;
+        }
+        out.sheets.push(`${ws.name}: ${n} dòng thanh toán`); return;
+      }
+    }
+  });
+  out.hcps = [...dataRecs, ...ycttRecs];
+  // de-dupe history rows (same HCP + date + role)
+  const seen = new Set(); out.history = out.history.filter(h => { const k = norm(h.name) + '|' + h.date + '|' + norm(h.role); if (seen.has(k)) return false; seen.add(k); return true; });
+  return out;
+}
+function applyExcel(plan, opts) {
+  checkpoint();
+  let created = 0, updated = 0, hist = 0;
+  // merge duplicate records inside the file first (data sheet first so its richer rows win)
+  for (const rec of plan.hcps) { const r = upsertHcp(rec); if (r.created) created++; else if (r.changed) updated++; }
+  if (opts.settings) {
+    for (const [k, v] of Object.entries(plan.settings)) if (v && !clean(state.settings[k])) state.settings[k] = v;
+    if (plan.product && !state.products.some(p => clean(p.costCenter) === clean(plan.product.costCenter) && clean(p.sio) === clean(plan.product.sio)))
+      state.products.push({id:uid(), name:state.products.length ? 'Sản phẩm ' + (state.products.length + 1) : 'Mặc định', ...plan.product});
+  }
+  if (opts.history) {
+    for (const row of plan.history) {
+      const h = findHcp({name:row.name, cccd:row.cccd}); if (!h) continue;
+      const existing = state.engs.find(e => e.hcpId === h.id && evById(e.eventId)?.date === row.date && norm(e.role) === norm(row.role));
+      const sent = row.sent || row.date;
+      let e = existing;
+      if (!e) {
+        let ev = state.events.find(x => x.date === row.date && x.imported === 'yctt');
+        if (!ev) { ev = newEvent({name:`Sự kiện ${fmtDate(row.date)} (nhập từ YCTT)`, date:row.date, venue:row.online ? 'Trực tuyến' : '', city:row.city || state.settings.city, online:row.online, imported:'yctt'}); state.events.push(ev); }
+        e = newEng({eventId:ev.id, hcpId:h.id, role:row.role, fee:row.fee, gmLocation:row.gm, contractAt:row.date, payNote:row.note, imported:true, topic:'', duration:'', prep:''});
+        state.engs.push(e); hist++;
+      }
+      if (!e.sentAt) {
+        e.sentAt = sent;
+        let b = state.batches.find(x => x.imported && x.date === sent);
+        if (!b) { b = {id:uid(), date:sent, engIds:[], createdAt:Date.now(), fileName:`${row.sheet} (nhập)`, imported:true}; state.batches.push(b); }
+        b.engIds.push(e.id); e.batchId = b.id;
+      }
+    }
+  }
+  save(); render();
+  toast(`Đã nhập: ${created} BS mới, ${updated} BS được bổ sung${opts.history ? `, ${hist} lượt thanh toán cũ` : ''}.`, {action:'Hoàn tác', onAction:undo});
+}
+
+/* ================= import: contracts (.docx) ================= */
+async function docxLines(buf) {
+  const PizZip = await needZip(); let z;
+  try { z = new PizZip(buf); } catch (e) { throw new Error('Không đọc được file. Chỉ hỗ trợ .docx.'); }
+  const f = z.file('word/document.xml'); if (!f) throw new Error('Không phải file Word (.docx) hợp lệ.');
+  const doc = new DOMParser().parseFromString(f.asText(), 'application/xml');
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const lines = [];
+  for (const p of doc.getElementsByTagNameNS(W, 'p')) {
+    let t = '';
+    for (const n of p.getElementsByTagNameNS(W, '*')) { if (n.localName === 't') t += n.textContent; else if (n.localName === 'tab') t += ' '; else if (n.localName === 'br') t += ' '; }
+    lines.push(t);
+  }
+  return lines;
+}
+function parseContract(lines) {
+  const L = lines.map(clean);
+  const r = {hcp:{}, event:{}, eng:{}, signers:{}};
+  const va = L.findIndex(l => l === 'và');
+  if (va < 0) throw new Error('Không nhận ra mẫu Thỏa Thuận Diễn Giả.');
+  const after = [];
+  for (let i = va + 1; i < L.length && after.length < 7; i++) { if (!L[i]) continue; if (/sau đây gọi là/i.test(L[i])) break; after.push(L[i]); }
+  r.hcp.name = after[0] || '';
+  const idIdx = after.findIndex((x, i) => i > 0 && /^\d{9,13}$/.test(x.replace(/\s/g, '')));
+  if (idIdx > 0) {
+    r.hcp.cccd = after[idIdx].replace(/\s/g, '');
+    const mid = after.slice(1, idIdx);
+    if (mid.length >= 3) { r.hcp.street = mid[0]; r.hcp.city = mid[1]; r.hcp.country = mid[2]; }
+    else if (mid.length === 2) { r.hcp.street = mid[0]; r.hcp.city = mid[1]; }
+    else if (mid.length === 1) Object.assign(r.hcp, splitAddress(mid[0]));
+  }
+  const get = re => { for (const l of L) { const m = l.match(re); if (m) return m; } return null; };
+  let m;
+  if ((m = get(/^Mô tả sự kiện:\s*(.+?)\s+cho\s+(.+)$/i))) { r.eng.role = m[1]; r.event.name = m[2]; }
+  if ((m = get(/^Địa điểm tổ chức:\s*(.+)$/i))) r.event.venue = m[1];
+  if ((m = get(/^Thành phố tổ chức:\s*(.+)$/i))) r.event.city = m[1];
+  if ((m = get(/^Quốc Gia tổ chức:\s*(.+)$/i))) r.event.country = m[1];
+  if ((m = get(/^Ngày thuyết trình\/đào tạo:.*?(\d{1,2})\s*tháng\s*(\d{1,2})\s*năm\s*(\d{4})/i))) r.event.date = `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
+  if ((m = get(/^Mô tả dịch vụ:\s*(.+)$/i)) && !r.eng.role) r.eng.role = m[1];
+  if ((m = get(/^Chủ đề:\s*(.+)$/i))) r.eng.topic = m[1];
+  if ((m = get(/^Lĩnh vực chuyên môn của Diễn Giả:\s*(.+)$/i))) { r.hcp.specialty = m[1]; r.eng.specialty = m[1]; }
+  if ((m = get(/^Thời lượng thuyết trình\/đào tạo:\s*(\d+)/i))) r.eng.duration = +m[1];
+  if ((m = get(/^Thời gian chuẩn bị ước tính:\s*(\d+)/i))) r.eng.prep = +m[1];
+  if ((m = get(/tổng cộng là\s*([\d.,]+)\s*VND/i))) r.eng.fee = parseMoney(m[1]);
+  if ((m = get(/^Chủ tài khoản:\s*(.+)$/i))) r.hcp.bankHolder = m[1];
+  if ((m = get(/^Số tài khoản(?: số)?:\s*(.+)$/i))) r.hcp.bankAccount = m[1].replace(/\s/g, '');
+  if ((m = get(/^Ngân hàng:\s*(.+)$/i))) r.hcp.bankName = m[1];
+  if ((m = get(/^Mã ngân hàng:\s*(.+)$/i))) r.hcp.bankCode = m[1];
+  const names = [], titles = [];
+  L.forEach((l, i) => { let x; if ((x = l.match(/^Họ tên:\s*(.+)$/))) names.push({v:x[1], i}); if ((x = l.match(/^Chức vụ:\s*(.+)$/))) titles.push({v:x[1], i}); });
+  const hIdx = names.findIndex(x => norm(x.v) === norm(r.hcp.name));
+  if (hIdx >= 0 && titles[hIdx]) {
+    const t = titles[hIdx]; let pos = t.v, hosp = '';
+    const nxt = L[t.i + 1] || '';
+    if (nxt && !/^(Họ tên|Chức vụ|_|\()/.test(nxt)) hosp = nxt;
+    else { const sm = pos.match(/^(.*?)\s+[–-]\s+((?:Bệnh viện|BV).*)$/i); if (sm) { pos = sm[1]; hosp = sm[2]; } }
+    r.hcp.position = pos; r.hcp.hospital = hosp;
+    const k = pos.match(/(Khoa .+)$/i); if (k) r.hcp.khoa = k[1];
+  }
+  const bay = names.map((x, i) => ({...x, t:titles[i]?.v || ''})).filter((_, i) => i !== hIdx);
+  if (bay[0]) { r.signers.signer1Name = bay[0].v; r.signers.signer1Title = bay[0].t; }
+  if (bay[1]) { r.signers.signer2Name = bay[1].v; r.signers.signer2Title = bay[1].t; }
+  r.event.online = /zoom|trực tuyến|online|teams|webex/i.test(r.event.venue || '');
+  if (!r.hcp.name) throw new Error('Không tìm thấy tên bác sĩ trong hợp đồng.');
+  return r;
+}
+async function parseContracts(files) {
+  const items = [];
+  for (const f of files) {
+    try { items.push({file:f.name, ...parseContract(await docxLines(await f.arrayBuffer()))}); }
+    catch (err) { items.push({file:f.name, error:err.message}); }
+  }
+  return {kind:'contracts', items};
+}
+function applyContracts(plan, opts) {
+  checkpoint();
+  let created = 0, updated = 0, engN = 0, merged = 0;
+  for (const it of plan.items) {
+    if (it.error) continue;
+    const {hcp, created:c, changed} = upsertHcp(it.hcp); if (c) created++; else if (changed) updated++;
+    for (const [k, v] of Object.entries(it.signers)) if (v && !clean(state.settings[k])) state.settings[k] = v;
+    if (!opts.events || !it.event.date) continue;
+    let ev = state.events.find(x => x.date === it.event.date && norm(x.name) === norm(it.event.name))
+      || state.events.find(x => x.date === it.event.date && x.imported === 'yctt');
+    if (!ev) { ev = newEvent({name:it.event.name || `Sự kiện ${fmtDate(it.event.date)}`, date:it.event.date, venue:it.event.venue || '', city:it.event.city || '', country:it.event.country || 'Việt Nam', online:it.event.online, ...it.signers}); state.events.push(ev); }
+    else {
+      if (ev.imported === 'yctt') { ev.name = it.event.name || ev.name; ev.imported = 'contract'; ev.online = it.event.online; ev.venue = it.event.venue || ev.venue; }
+      for (const k of ['venue','city','country']) if (!clean(ev[k]) && it.event[k]) ev[k] = it.event[k];
+      for (const [k, v] of Object.entries(it.signers)) if (v && !clean(ev[k])) ev[k] = v;
+    }
+    let e = state.engs.find(x => x.eventId === ev.id && x.hcpId === hcp.id);
+    if (!e) { e = newEng({eventId:ev.id, hcpId:hcp.id, ...it.eng, contractAt:ev.date}); state.engs.push(e); engN++; }
+    else { merged++; for (const k of ['role','topic','duration','prep','specialty','fee']) if ((e[k] === '' || e[k] == null || e[k] === 0) && it.eng[k]) e[k] = it.eng[k]; e.contractAt ||= ev.date; }
+  }
+  save(); render();
+  toast(`Đã nhập: ${created} BS mới, ${updated} BS được bổ sung${opts.events ? `, ${engN} hợp đồng mới${merged ? `, ${merged} ghép vào lịch sử có sẵn` : ''}` : ''}.`, {action:'Hoàn tác', onAction:undo});
+}
+
+/* ================= template ================= */
+async function onTemplateFile(file) {
+  try {
+    const buf = await file.arrayBuffer();
+    const lines = await docxLines(buf);
+    const text = lines.join('\n');
+    const tags = [...new Set([...text.matchAll(/\{\{\s*([a-z0-9_]+)\s*\}\}/g)].map(m => m[1]))];
+    if (!tags.length) {
+      toast('File này chưa có trường {{...}} nào. Dùng file “Phoi_Speaker_Agreement.docx”, hoặc tự chèn trường vào Word theo bảng bên dưới.', {kind:'err'}); return;
+    }
+    const known = new Set(TAGS.map(t => t[0]));
+    const unknown = tags.filter(t => !known.has(t));
+    saveTemplate({name:file.name, b64:b64FromBuf(buf), uploadedAt:Date.now(), tags});
+    render();
+    toast(unknown.length ? `Đã nạp phôi. Trường không nhận ra sẽ để trống: ${unknown.join(', ')}` : `Đã nạp phôi (${tags.length} trường).`);
+  } catch (err) { toast(err.message, {kind:'err'}); }
+}
+
+/* ================= backup ================= */
+async function backup() {
+  const data = JSON.stringify({app:'so-hop-dong-hcp', exportedAt:new Date().toISOString(), state, template}, null, 1);
+  const ok = await saveFile(`So hop dong HCP - sao luu ${dmyDot(today())}.json`, new Blob([data], {type:'application/json'}));
+  if (ok) { state.lastBackupAt = Date.now(); state.changes = 0; try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} render(); toast('Đã sao lưu.'); }
+}
+async function onRestoreFile(file) {
+  try {
+    const obj = JSON.parse(await file.text());
+    if (obj.app !== 'so-hop-dong-hcp' || !obj.state) throw new Error('File này không phải bản sao lưu của Sổ hợp đồng HCP.');
+    const s = obj.state;
+    openModal(`
+      <div class="modal-h"><div><h2>Khôi phục từ sao lưu</h2><p>${esc(file.name)} · tạo lúc ${esc(new Date(obj.exportedAt).toLocaleString('vi-VN'))}</p></div></div>
+      <div class="modal-b"><div class="callout warn"><b>Dữ liệu hiện tại sẽ bị thay thế.</b> Bản sao lưu có ${s.hcps?.length || 0} BS, ${s.events?.length || 0} sự kiện, ${s.engs?.length || 0} hợp đồng${obj.template ? ', kèm phôi hợp đồng' : ''}. Bạn có thể Hoàn tác ngay sau khi khôi phục.</div></div>
+      <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="do-restore">Khôi phục</button></div>`, {size:'narrow'});
+    pendingRestore = obj;
+  } catch (err) { toast(err.message || 'File sao lưu bị lỗi.', {kind:'err'}); }
+}
+let pendingRestore = null;
+
+/* ================= UI state ================= */
+const ROUTES = {'tong-quan':'home', 'su-kien':'events', 'thanh-toan':'pay', 'bac-si':'hcps', 'cai-dat':'settings'};
+const ROUTE_OF = Object.fromEntries(Object.entries(ROUTES).map(([k, v]) => [v, k]));
+const ui = {view:'home', eventId:null, hcpQ:'', hcpHosp:'', evQ:'', evFilter:'open', paySel:new Set(), payTouched:false, payFuture:false, reqDate:today(), openBatch:null};
+function go(view, extra = {}) {
+  ui.view = view; Object.assign(ui, {eventId:null}, extra);
+  setHash(ROUTE_OF[view]);
+  render(); window.scrollTo({top:0});
+}
+function setHash(tok) { try { if (location.hash !== '#' + tok) history.replaceState(null, '', '#' + tok); } catch (e) {} }
+window.addEventListener('hashchange', () => { const v = ROUTES[location.hash.slice(1)]; if (v && v !== ui.view) { ui.view = v; ui.eventId = null; render(); } });
+{ const v = ROUTES[location.hash.slice(1)]; if (v) ui.view = v; }
+
+/* ================= icons ================= */
+const I = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
+  events:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  pay:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
+  hcps:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14a6.5 6.5 0 0 1 3 6"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg>',
+  back:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+};
+
+/* ================= rail ================= */
+function renderRail() {
+  const held = state.engs.filter(e => stageOf(e) === 'held').length;
+  const upcoming = state.events.filter(ev => ev.date >= today()).length;
+  const nav = [['home','Tổng quan',''], ['events','Sự kiện & HĐ', upcoming ? `<span class="cnt">${upcoming}</span>` : ''], ['pay','Thanh toán', held ? `<span class="cnt hot">${held}</span>` : ''],
+    ['hcps','Bác sĩ', state.hcps.length ? `<span class="cnt">${state.hcps.length}</span>` : ''], ['settings','Cài đặt','']];
+  const days = state.lastBackupAt ? Math.floor((Date.now() - state.lastBackupAt) / 86400000) : null;
+  const due = state.changes > 0 && (days === null || days >= 7) && state.hcps.length > 0;
+  $('#rail').innerHTML = `
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="var(--accent)"/><path d="M5 18h6l2.5-6 4 12 3-9 1.5 3H29" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>Sổ hợp đồng HCP</b><span>Speaker Agreement · YCTT</span></div>
+    </div>
+    <nav class="nav">${nav.map(([v, l, c]) => `<a href="#${ROUTE_OF[v]}" data-act="nav" data-v="${v}" ${ui.view === v ? 'aria-current="page"' : ''}>${I[v]}<span>${l}</span>${c}</a>`).join('')}</nav>
+    <div class="store">
+      <div class="row">${storageOK ? 'Dữ liệu lưu trong trình duyệt này' : '<span class="due">Trình duyệt chặn lưu dữ liệu</span>'}</div>
+      <div class="row ${due ? 'due' : ''}">${state.lastBackupAt ? `Sao lưu ${days === 0 ? 'hôm nay' : days + ' ngày trước'}` : 'Chưa sao lưu lần nào'}${state.changes ? ` · ${state.changes} thay đổi` : ''}</div>
+      <button class="btn sm" data-act="backup">${I.down} Sao lưu ra file</button>
+    </div>`;
+}
+
+/* ================= views ================= */
+function pageHead(title, sub, actions = '') { return `<div class="page-h"><div><h1>${title}</h1>${sub ? `<p>${sub}</p>` : ''}</div><div class="actions">${actions}</div></div>`; }
+
+function viewHome() {
+  const t = today(); const year = t.slice(0, 4);
+  const live = state.engs.filter(e => !e.cancelled);
+  const by = st => live.filter(e => stageOf(e) === st);
+  const sum = l => l.reduce((a, e) => a + (Number(e.fee) || 0), 0);
+  const paidYear = by('paid').filter(e => evById(e.eventId)?.date?.startsWith(year));
+  const k = [
+    ['prep','Chuẩn bị (HĐ, Veeva)', by('prep'), 'events'], ['ready','Chờ diễn ra', by('ready'), 'events'], ['held','Chờ gửi thanh toán', by('held'), 'pay'],
+    ['sent','Đã gửi admin', by('sent'), 'pay'], ['paid',`Đã thanh toán ${year}`, paidYear, 'pay']];
+  const onboard = !template || !state.hcps.length;
+  const todos = buildTodos();
+  const totals = [...yearTotals(year)].map(([id, v]) => ({h:hcpById(id), ...v})).filter(x => x.h).sort((a, b) => b.sum - a.sum).slice(0, 8);
+  const cap = Number(state.settings.annualCap) || 0;
+  const maxV = Math.max(cap, ...totals.map(x => x.sum), 1);
+  return pageHead('Tổng quan', `Hôm nay ${weekday(t)}, ${fmtDate(t)}.`, `<button class="btn" data-act="new-hcp">${I.plus} Bác sĩ</button><button class="btn primary" data-act="new-event">${I.plus} Sự kiện mới</button>`) + `
+  <div class="stack">
+    ${onboard ? onboardHtml() : ''}
+    <div class="kpis">${k.map(([st, l, list, v]) => `<button class="kpi ${STAGE[st].cls}" data-act="nav" data-v="${v}"><span class="k-l"><i></i>${l}</span><span class="k-n">${list.length}</span><span class="k-a mono">${fmtVND(sum(list))} VND</span></button>`).join('')}</div>
+    <div class="grid-2">
+      <section class="panel"><div class="panel-h"><h2>Việc cần làm</h2><span class="muted small">${todos.length ? todos.length + ' việc' : ''}</span></div>
+        ${todos.length ? `<div class="todo">${todos.map(td => `<div class="todo-i"><span class="sev ${td.sev}">${td.sevL}</span><div class="t-body"><div class="t-title">${td.title}</div>${td.sub ? `<div class="t-sub">${td.sub}</div>` : ''}</div>${td.btn || ''}</div>`).join('')}</div>`
+          : `<div class="empty"><b>Không có việc tồn đọng</b>Sự kiện sắp tới, hợp đồng thiếu thông tin và khoản chờ gửi admin sẽ hiện ở đây.</div>`}
+      </section>
+      <section class="panel"><div class="panel-h"><h2>Thù lao năm ${year} theo BS</h2>${cap ? `<span class="tag crit">Trần ${fmtVND(cap)}</span>` : `<button class="btn sm ghost" data-act="nav" data-v="settings">Đặt trần/năm</button>`}</div>
+        <div class="panel-b">${totals.length ? `<div class="bars">${totals.map(x => {
+          const over = cap && x.sum >= cap * 0.8;
+          return `<div class="bar-r" title="${esc(x.h.name)}: ${x.n} lượt, ${fmtVND(x.sum)} VND"><span class="nm">${esc(x.h.name)}</span><span class="bar-t"><span class="bar-f ${over ? 'over' : ''}" style="width:${(x.sum / maxV * 100).toFixed(1)}%"></span>${cap ? `<span class="bar-cap" style="left:${(cap / maxV * 100).toFixed(1)}%"></span>` : ''}</span><span class="mono small">${fmtVND(x.sum)} <span class="muted">· ${x.n}</span></span></div>`; }).join('')}</div>`
+          : `<div class="empty" style="padding:18px"><b>Chưa có dữ liệu năm ${year}</b>Tổng thù lao từng BS tính theo ngày sự kiện, để theo dõi tần suất engage.</div>`}
+        </div>
+      </section>
+    </div>
+  </div>`;
+}
+function onboardHtml() {
+  const s1 = !!template, s2 = state.hcps.length > 0, s3 = state.engs.some(e => e.contractAt);
+  return `<section class="panel"><div class="panel-h"><h2>Bắt đầu trong 3 bước</h2>
+    <div class="flow">${['prep','ready','held','sent','paid'].map((s, i) => (i ? '→ ' : '') + chip(s, ['Tạo HĐ','Raise Veeva','Event','Gửi admin','Đã chi'][i])).join(' ')}</div></div>
+    <div class="panel-b"><div class="onboard">
+      <div class="ob ${s1 ? 'done' : ''}"><span class="ob-n">${s1 ? 'XONG' : 'BƯỚC 1'}</span><b>Nạp phôi hợp đồng</b><p>Tải file “Phoi_Speaker_Agreement.docx” lên. Phôi chỉ lưu trong trình duyệt này.</p><div><button class="btn sm ${s1 ? '' : 'primary'}" data-act="pick" data-f="f-template">${I.up} Chọn file phôi</button></div></div>
+      <div class="ob ${s2 ? 'done' : ''}"><span class="ob-n">${s2 ? 'XONG' : 'BƯỚC 2'}</span><b>Nhập danh sách bác sĩ</b><p>Từ file Excel YCTT cũ (sheet Data HCPs và các sheet YCTT), và từ hợp đồng cũ để lấy số tài khoản.</p><div class="actions"><button class="btn sm ${s2 ? '' : 'primary'}" data-act="pick" data-f="f-excel">Từ Excel</button><button class="btn sm" data-act="pick" data-f="f-contracts">Từ hợp đồng .docx</button></div></div>
+      <div class="ob ${s3 ? 'done' : ''}"><span class="ob-n">${s3 ? 'XONG' : 'BƯỚC 3'}</span><b>Tạo sự kiện đầu tiên</b><p>Chọn BS, nhập chủ đề và phí, bấm xuất: mỗi BS ra một file hợp đồng đúng phôi.</p><div><button class="btn sm" data-act="new-event">${I.plus} Sự kiện mới</button></div></div>
+    </div></div></section>`;
+}
+function buildTodos() {
+  const t = today(); const out = [];
+  const upcoming = state.events.filter(ev => ev.date && ev.date >= t && daysFrom(t, ev.date) <= 21).sort((a, b) => a.date.localeCompare(b.date));
+  for (const ev of upcoming) {
+    const es = engsOf(ev.id).filter(e => !e.cancelled); const d = daysFrom(t, ev.date);
+    const noC = es.filter(e => !e.contractAt), noV = es.filter(e => !e.veevaAt);
+    const miss = es.filter(e => hcpMissing(hcpById(e.hcpId)).length);
+    const btn = `<button class="btn sm" data-act="open-event" data-id="${ev.id}">Mở</button>`;
+    const sub = `${esc(ev.name)} · ${weekday(ev.date)} ${fmtDate(ev.date)} (${relDays(ev.date)})`;
+    if (miss.length) out.push({sev:'crit', sevL:'Thiếu', title:`Thiếu thông tin HĐ: ${miss.map(e => esc(hcpById(e.hcpId)?.name)).join(', ')}`, sub, btn, o:0});
+    if (noC.length) out.push({sev:d <= 7 ? 'crit' : d <= 14 ? 'warn' : 'info', sevL:'HĐ', title:`Chưa xuất hợp đồng cho ${noC.length} BS`, sub, btn:`<button class="btn sm" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất</button>`, o:1});
+    if (noV.length && d <= 14) out.push({sev:d <= 7 ? 'crit' : 'warn', sevL:'Veeva', title:`Chưa raise Veeva: ${noV.map(e => esc(hcpById(e.hcpId)?.name)).join(', ')}`, sub, btn, o:2});
+  }
+  const held = state.engs.filter(e => stageOf(e) === 'held');
+  if (held.length) {
+    const {y, m} = isoParts(t); const eom = new Date(Date.UTC(y, m, 0)).getUTCDate(); const left = eom - isoParts(t).d;
+    out.push({sev:left <= 5 ? 'warn' : 'info', sevL:'Chi trả', title:`${held.length} BS chờ gửi thanh toán · ${fmtVND(held.reduce((a, e) => a + (+e.fee || 0), 0))} VND`,
+      sub:left === 0 ? 'Hôm nay là ngày cuối tháng.' : `Còn ${left} ngày đến cuối tháng.`, btn:`<button class="btn sm primary" data-act="nav" data-v="pay">Tạo file YCTT</button>`, o:3});
+  }
+  const stale = state.engs.filter(e => stageOf(e) === 'sent' && e.sentAt && daysFrom(e.sentAt, t) > 30 && !state.batches.find(b => b.id === e.batchId)?.imported);
+  if (stale.length) out.push({sev:'warn', sevL:'Nhắc', title:`${stale.length} BS đã gửi admin hơn 30 ngày, chưa ghi nhận đã chi`, sub:'Hỏi lại admin, hoặc đánh dấu đã thanh toán.', btn:`<button class="btn sm" data-act="nav" data-v="pay">Xem</button>`, o:4});
+  const days = state.lastBackupAt ? Math.floor((Date.now() - state.lastBackupAt) / 86400000) : null;
+  if (state.hcps.length && state.changes > 0 && (days === null || days >= 7))
+    out.push({sev:'info', sevL:'Sao lưu', title:days === null ? 'Chưa có bản sao lưu nào' : `Lần sao lưu gần nhất ${days} ngày trước`, sub:'Dữ liệu chỉ nằm trong trình duyệt này. Lưu một file .json để phòng khi trình duyệt bị xoá dữ liệu.', btn:`<button class="btn sm" data-act="backup">Sao lưu</button>`, o:5});
+  return out;
+}
+
+function viewHcps() {
+  const hosp = [...new Set(state.hcps.map(h => clean(h.hospital)).filter(Boolean))].sort();
+  return pageHead('Bác sĩ', 'Hồ sơ dùng để điền hợp đồng và file thanh toán. Nhập một lần, dùng lại cho mọi sự kiện.',
+    `<button class="btn" data-act="pick" data-f="f-excel">${I.up} Nhập Excel</button><button class="btn" data-act="pick" data-f="f-contracts">${I.up} Nhập từ HĐ cũ</button><button class="btn" data-act="export-hcps">${I.down} Xuất Excel</button><button class="btn primary" data-act="new-hcp">${I.plus} Thêm bác sĩ</button>`) + `
+  <section class="panel">
+    <div class="toolbar"><input class="input search" id="hcp-q" placeholder="Tìm tên, khoa, CCCD, SĐT…" value="${esc(ui.hcpQ)}" autocomplete="off">
+      <select class="input" id="hcp-hosp" style="max-width:280px"><option value="">Tất cả bệnh viện</option>${hosp.map(h => `<option ${ui.hcpHosp === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select></div>
+    <div id="hcp-table">${hcpTable()}</div>
+  </section>`;
+}
+function hcpTable() {
+  if (!state.hcps.length) return `<div class="empty"><b>Chưa có bác sĩ nào</b>Nhập từ file Excel YCTT / hợp đồng cũ, hoặc thêm tay.</div>`;
+  const q = norm(ui.hcpQ); const year = today().slice(0, 4); const tot = yearTotals(year);
+  const list = state.hcps.filter(h => (!ui.hcpHosp || clean(h.hospital) === ui.hcpHosp) && (!q || norm([h.name, h.khoa, h.hospital, h.cccd, h.phone, h.email, h.specialty].join(' ')).includes(q)))
+    .sort((a, b) => sortName(a.name, b.name));
+  if (!list.length) return `<div class="empty"><b>Không tìm thấy</b>Thử từ khoá khác.</div>`;
+  return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Bác sĩ</th><th>Khoa · Bệnh viện</th><th>CCCD/MST</th><th>Ngân hàng</th><th>Liên hệ</th><th class="num">Năm ${year}</th><th>Hồ sơ</th></tr></thead><tbody>
+  ${list.map(h => { const miss = hcpMissing(h); const mp = hcpMissing(h, 'pay').filter(x => !miss.includes(x)); const t = tot.get(h.id);
+    return `<tr class="clickable" data-act="edit-hcp" data-id="${h.id}">
+      <td><div class="t-main">${esc(h.title ? h.title + ' ' : '')}${esc(h.name)}</div><div class="t-sub">${[h.tier, h.specialty].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</div></td>
+      <td><div>${esc(h.position || h.khoa) || '<span class="muted">—</span>'}</div><div class="t-sub">${esc(h.hospital)}</div></td>
+      <td class="mono">${esc(h.cccd) || '<span class="muted">—</span>'}</td>
+      <td>${h.bankAccount ? `<div class="mono">${esc(h.bankAccount)}</div><div class="t-sub">${esc(h.bankName)}${h.bankCode ? ' · ' + esc(h.bankCode) : ''}</div>` : '<span class="muted">—</span>'}</td>
+      <td><div class="mono">${esc(h.phone)}</div><div class="t-sub">${esc(h.email)}</div></td>
+      <td class="num">${t ? `<div class="mono">${fmtVND(t.sum)}</div><div class="t-sub">${t.n} lượt</div>` : '<span class="muted">—</span>'}</td>
+      <td>${miss.length || mp.length ? `<div class="miss">${miss.map(m => `<span class="tag crit">${m}</span>`).join('')}${mp.map(m => `<span class="tag warn">${m}</span>`).join('')}</div>` : '<span class="tag ok">Đủ</span>'}</td></tr>`; }).join('')}
+  </tbody></table></div>`;
+}
+
+function viewEvents() {
+  if (ui.eventId && evById(ui.eventId)) return viewEventDetail(evById(ui.eventId));
+  const t = today(); const q = norm(ui.evQ);
+  let list = state.events.filter(ev => !q || norm(ev.name + ' ' + engsOf(ev.id).map(e => hcpById(e.hcpId)?.name).join(' ')).includes(q));
+  if (ui.evFilter === 'open') list = list.filter(ev => ev.date >= t || engsOf(ev.id).some(e => ['prep','ready','held'].includes(stageOf(e))));
+  const up = list.filter(ev => ev.date >= t).sort((a, b) => a.date.localeCompare(b.date));
+  const past = list.filter(ev => !ev.date || ev.date < t).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const row = ev => { const es = engsOf(ev.id); const live = es.filter(e => !e.cancelled); const sum = live.reduce((a, e) => a + (+e.fee || 0), 0);
+    const counts = {}; live.forEach(e => { const s = stageOf(e); counts[s] = (counts[s] || 0) + 1; });
+    const {d, m, y} = ev.date ? isoParts(ev.date) : {};
+    return `<tr class="clickable" data-act="open-event" data-id="${ev.id}">
+      <td class="nowrap"><div class="ev-date">${ev.date ? `${pad(d)}/${pad(m)}<small>${weekday(ev.date)} · ${y}</small>` : '—'}</div></td>
+      <td><div class="t-main">${esc(ev.name)}</div><div class="t-sub">${[ev.venue, ev.city].filter(Boolean).map(esc).join(' · ')}${ev.imported === 'yctt' ? ' <span class="tag">nhập từ YCTT</span>' : ''}</div></td>
+      <td><div>${live.map(e => esc(hcpById(e.hcpId)?.name || '?')).join(', ') || '<span class="muted">Chưa có BS</span>'}</div><div class="t-sub">${live.length} BS</div></td>
+      <td class="num mono">${fmtVND(sum)}</td>
+      <td><div class="mini" title="${Object.entries(counts).map(([s, n]) => `${STAGE[s].label}: ${n}`).join(' · ')}">${['prep','ready','held','sent','paid'].map(s => counts[s] ? `<span class="${STAGE[s].cls}" style="flex:${counts[s]}"></span>` : '').join('')}</div>
+        <div class="t-sub" style="margin-top:4px">${Object.entries(counts).map(([s, n]) => `${n} ${STAGE[s].label.toLowerCase()}`).join(' · ') || '&nbsp;'}</div></td></tr>`; };
+  const table = (title, rows) => rows.length ? `<div class="group-h">${title} · ${rows.length}</div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ngày</th><th>Sự kiện</th><th>Bác sĩ</th><th class="num">Tổng phí</th><th>Tiến độ</th></tr></thead><tbody>${rows.map(row).join('')}</tbody></table></div>` : '';
+  return pageHead('Sự kiện & hợp đồng', 'Mỗi sự kiện gồm nhiều BS. Xuất hợp đồng, đánh dấu Veeva, theo dõi đến khi admin chi.',
+    `<button class="btn primary" data-act="new-event">${I.plus} Sự kiện mới</button>`) + `
+  <section class="panel">
+    <div class="toolbar"><input class="input search" id="ev-q" placeholder="Tìm sự kiện hoặc tên BS…" value="${esc(ui.evQ)}" autocomplete="off">
+      <div class="seg" role="group"><button data-act="ev-filter" data-v="open" aria-pressed="${ui.evFilter === 'open'}">Còn việc</button><button data-act="ev-filter" data-v="all" aria-pressed="${ui.evFilter === 'all'}">Tất cả</button></div></div>
+    ${up.length || past.length ? table('Sắp diễn ra', up) + table(ui.evFilter === 'open' ? 'Đã diễn ra, còn việc' : 'Đã diễn ra', past)
+      : `<div class="empty"><b>${state.events.length ? 'Không còn việc tồn đọng' : 'Chưa có sự kiện'}</b>${state.events.length ? 'Chọn “Tất cả” để xem lịch sử.' : 'Tạo sự kiện, thêm BS, rồi xuất hợp đồng.'}</div>`}
+  </section>`;
+}
+function stepper(e) {
+  const ev = evById(e.eventId); const held = ev?.date && ev.date <= today();
+  const steps = [
+    ['contract','HĐ', !!e.contractAt, false, e.contractAt ? `Đã xuất ${fmtDate(e.contractAt)} — bấm để bỏ đánh dấu` : 'Bấm để đánh dấu đã có HĐ'],
+    ['veeva','Veeva', !!e.veevaAt, false, e.veevaAt ? `Đã raise ${fmtDate(e.veevaAt)} — bấm để bỏ` : 'Bấm khi đã raise Veeva'],
+    ['held','Event', !!held, true, held ? 'Sự kiện đã diễn ra' : 'Chưa đến ngày sự kiện'],
+    ['sent','Gửi admin', !!e.sentAt, true, e.sentAt ? `Đã gửi ${fmtDate(e.sentAt)}` : 'Gửi qua mục Thanh toán'],
+    ['paid','Đã chi', !!e.paidAt, !e.sentAt, e.paidAt ? `Đã chi ${fmtDate(e.paidAt)} — bấm để bỏ` : (e.sentAt ? 'Bấm khi admin đã chi' : 'Cần gửi admin trước')],
+  ];
+  const cls = {contract:'s-prep', veeva:'s-ready', held:'s-held', sent:'s-sent', paid:'s-paid'};
+  return `<div class="steps">${steps.map(([k, l, on, dis, tip]) => {
+    const late = !on && held && !e.sentAt && (k === 'contract' || k === 'veeva');
+    return `<button class="step ${cls[k]}" ${on ? 'data-on' : ''} ${late ? 'data-late' : ''} ${dis || e.cancelled ? 'disabled' : ''} data-act="toggle-step" data-k="${k}" data-id="${e.id}" title="${esc(tip)}"><span class="dot"></span><span class="lbl">${l}</span></button>`; }).join('')}</div>`;
+}
+function viewEventDetail(ev) {
+  const es = engsOf(ev.id).sort((a, b) => sortName(hcpById(a.hcpId)?.name || '', hcpById(b.hcpId)?.name || ''));
+  const live = es.filter(e => !e.cancelled);
+  const sum = live.reduce((a, e) => a + (+e.fee || 0), 0);
+  const {d, m, y} = ev.date ? isoParts(ev.date) : {};
+  const p = productFor(ev);
+  const anySent = es.some(e => e.sentAt);
+  return `<button class="back" data-act="nav" data-v="events">${I.back} Sự kiện</button>
+  <div class="page-h"><div class="ev-head">
+      <div class="big-date">${ev.date ? `<b>${pad(d)}/${pad(m)}</b><span>${weekday(ev.date)} · ${y}</span>` : '<b>—</b>'}</div>
+      <div><h1>${esc(ev.name)}</h1>
+        <div class="ev-meta"><span>${esc(ev.venue || 'Chưa có địa điểm')}</span><span>${esc(ev.city)}${ev.country && ev.country !== 'Việt Nam' ? ', ' + esc(ev.country) : ''}</span><span class="tag ${ev.online ? 'acc' : ''}">${ev.online ? 'Trực tuyến' : 'Trực tiếp'}</span>${ev.date ? `<span>${relDays(ev.date)}</span>` : ''}${p.costCenter ? `<span class="mono">${esc(p.name || '')} ${esc(p.costCenter)}</span>` : ''}</div>
+        <div class="ev-meta"><span>Bayer ký: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || '—')}</span><span class="mono">${live.length} BS · ${fmtVND(sum)} VND</span></div></div></div>
+    <div class="actions"><button class="btn" data-act="edit-event" data-id="${ev.id}">Sửa</button><button class="btn" data-act="clone-event" data-id="${ev.id}">Nhân bản</button>
+      <button class="btn" data-act="veeva-all" data-id="${ev.id}">Đã raise Veeva tất cả</button><button class="btn primary" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất ${live.length > 1 ? 'tất cả HĐ (.zip)' : 'hợp đồng'}</button></div>
+  </div>
+  <section class="panel">
+    ${es.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Bác sĩ</th><th>Vai trò · Chủ đề</th><th class="num">Phí</th><th>Trạng thái</th><th>Tiến độ</th><th></th></tr></thead><tbody>
+    ${es.map(e => { const h = hcpById(e.hcpId); const miss = hcpMissing(h); const st = stageOf(e);
+      return `<tr>
+        <td><a href="#bac-si" class="t-main" data-act="edit-hcp" data-id="${e.hcpId}">${esc(h?.name || 'BS đã xoá')}</a><div class="t-sub">${esc(h?.position || h?.khoa || '')}${h?.hospital ? ' · ' + esc(h.hospital) : ''}</div>${miss.length ? `<div class="miss">${miss.map(x => `<span class="tag crit">${x}</span>`).join('')}</div>` : ''}</td>
+        <td style="max-width:340px"><div>${esc(e.role)}${e.duration ? ` · ${esc(e.duration)} phút` : ''}</div><div class="t-sub">${esc(e.topic) || '<span class="tag warn">Chưa có chủ đề</span>'}</div></td>
+        <td class="num mono">${fmtVND(e.fee)}</td>
+        <td>${chip(st, stageLabel(e))}</td>
+        <td>${stepper(e)}</td>
+        <td class="nowrap"><button class="btn sm" data-act="dl-one" data-id="${e.id}" ${e.cancelled ? 'disabled' : ''} title="Tải hợp đồng .docx">${I.down} HĐ</button>
+          <button class="btn sm ghost" data-act="copy-veeva" data-id="${e.id}" title="Copy thông tin để nhập Veeva">${I.copy}</button>
+          ${e.sentAt ? '' : `<button class="btn sm ghost" data-act="toggle-cancel" data-id="${e.id}">${e.cancelled ? 'Khôi phục' : 'Huỷ'}</button>`}</td></tr>`; }).join('')}
+    </tbody></table></div>` : `<div class="empty"><b>Chưa có bác sĩ</b><button class="btn sm" data-act="edit-event" data-id="${ev.id}">Thêm bác sĩ</button></div>`}
+  </section>
+  ${ev.note ? `<p class="muted" style="margin-top:14px">Ghi chú: ${esc(ev.note)}</p>` : ''}
+  <div class="actions" style="margin-top:18px"><button class="btn danger sm" data-act="del-event" data-id="${ev.id}" data-confirm="Bấm lần nữa để xoá sự kiện" ${anySent ? 'disabled title="Đã có BS gửi thanh toán, không xoá được"' : ''}>Xoá sự kiện</button></div>`;
+}
+
+function payEligible() {
+  const t = today();
+  return state.engs.filter(e => !e.sentAt && !e.cancelled && evById(e.eventId) && (ui.payFuture || (evById(e.eventId).date && evById(e.eventId).date <= t)));
+}
+function viewPay() {
+  const list = sortEngs(payEligible());
+  if (!ui.payTouched) { ui.paySel = new Set(list.filter(e => stageOf(e) === 'held').map(e => e.id)); }
+  for (const id of [...ui.paySel]) if (!list.some(e => e.id === id)) ui.paySel.delete(id);
+  const sel = list.filter(e => ui.paySel.has(e.id));
+  const sum = sel.reduce((a, e) => a + (+e.fee || 0), 0);
+  const noProd = !state.products.length || !clean(state.products[0].costCenter);
+  const noStaff = !clean(state.settings.staffName) || !clean(state.settings.manager);
+  const batches = [...state.batches].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+  return pageHead('Thanh toán', 'Chọn các BS đã xong sự kiện, xuất file “Yêu cầu thanh toán” đúng mẫu admin. Thường làm một lần cuối tháng.', '') + `
+  ${noProd || noStaff ? `<div class="callout warn" style="margin-bottom:14px"><b>Thiếu thông tin cho file YCTT:</b> ${[noProd ? 'BU / Cost center / SIO' : '', noStaff ? 'tên Staff / người quản lý' : ''].filter(Boolean).join(', ')}. <a href="#cai-dat" data-act="nav" data-v="settings">Điền trong Cài đặt</a> hoặc nhập file Excel YCTT cũ.</div>` : ''}
+  <section class="panel">
+    <div class="panel-h"><h2>Chờ gửi admin</h2><label class="check small"><input type="checkbox" id="pay-future" ${ui.payFuture ? 'checked' : ''}> Hiện cả sự kiện chưa diễn ra</label></div>
+    ${list.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th class="c-check"><input type="checkbox" id="pay-all" ${sel.length === list.length ? 'checked' : ''} aria-label="Chọn tất cả"></th><th>Bác sĩ</th><th>Sự kiện</th><th>Vai trò</th><th class="num">Số tiền</th><th>Kiểm tra</th><th>Ghi chú (cột T)</th></tr></thead><tbody>
+      ${list.map(e => { const h = hcpById(e.hcpId), ev = evById(e.eventId); const mp = hcpMissing(h, 'pay'); const flags = [];
+        if (!e.veevaAt) flags.push('<span class="tag warn">Chưa Veeva</span>'); if (ev.date > today()) flags.push('<span class="tag">Chưa diễn ra</span>');
+        return `<tr><td class="c-check"><input type="checkbox" data-pay="${e.id}" ${ui.paySel.has(e.id) ? 'checked' : ''} aria-label="Chọn ${esc(h?.name)}"></td>
+        <td><a href="#bac-si" class="t-main" data-act="edit-hcp" data-id="${e.hcpId}">${esc(h?.name)}</a><div class="t-sub">${esc(h?.tier || '')}</div></td>
+        <td><div class="mono small">${fmtDate(ev.date)}</div><div class="t-sub">${esc(ev.name)}</div></td>
+        <td>${esc(e.role)}</td><td class="num mono">${fmtVND(e.fee)}</td>
+        <td><div class="miss">${mp.map(x => `<span class="tag crit">${x}</span>`).join('')}${flags.join('')}${!mp.length && !flags.length ? '<span class="tag ok">Đủ</span>' : ''}</div></td>
+        <td><input class="inline-note" data-note="${e.id}" value="${esc(e.payNote)}" placeholder="—"></td></tr>`; }).join('')}
+    </tbody></table></div>` : `<div class="empty"><b>Không có khoản nào chờ gửi</b>BS sẽ hiện ở đây khi sự kiện của họ đã diễn ra.</div>`}
+  </section>
+  ${list.length ? `<div class="paybar"><div class="sum">Đã chọn <b>${sel.length}</b> BS · <b class="mono">${fmtVND(sum)}</b> VND</div>
+    <div class="actions"><label class="field"><span>Ngày gửi YC</span><input type="date" class="input" id="req-date" value="${esc(ui.reqDate)}" style="width:auto"></label>
+    <button class="btn primary" data-act="export-pay" ${sel.length ? '' : 'disabled'}>${I.down} Xuất file YCTT (.xlsx)</button></div></div>` : ''}
+  <section class="panel" style="margin-top:22px">
+    <div class="panel-h"><h2>Các đợt đã gửi</h2><span class="muted small">${batches.length} đợt</span></div>
+    ${batches.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ngày gửi</th><th>Bác sĩ</th><th class="num">Tổng</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+      ${batches.map(b => { const es = b.engIds.map(engById).filter(Boolean); const paid = es.filter(e => e.paidAt).length; const s = es.reduce((a, e) => a + (+e.fee || 0), 0);
+        const open = ui.openBatch === b.id;
+        return `<tr><td class="nowrap"><div class="mono">${fmtDate(b.date)}</div><div class="t-sub">${esc(b.fileName || '')}</div></td>
+          <td>${es.map(e => esc(hcpById(e.hcpId)?.name)).join(', ')}</td><td class="num mono">${fmtVND(s)}</td>
+          <td>${paid === es.length && es.length ? chip('paid') : paid ? chip('sent', `Đã chi ${paid}/${es.length}`) : chip('sent', 'Chờ admin chi')}</td>
+          <td class="nowrap"><button class="btn sm" data-act="batch-open" data-id="${b.id}">${open ? 'Thu gọn' : 'Chi tiết'}</button>
+            ${paid < es.length ? `<button class="btn sm" data-act="batch-paid" data-id="${b.id}">Đã chi tất cả</button>` : ''}
+            <button class="btn sm ghost" data-act="batch-dl" data-id="${b.id}" title="Tải lại file YCTT">${I.down}</button></td></tr>
+          ${open ? `<tr><td colspan="5" style="background:var(--surface-2)">
+            <div class="tbl-wrap"><table class="tbl"><tbody>${es.map(e => `<tr><td>${esc(hcpById(e.hcpId)?.name)}</td><td class="mono small">${fmtDate(evById(e.eventId)?.date)}</td><td>${esc(e.role)}</td><td class="num mono">${fmtVND(e.fee)}</td>
+              <td><label class="check small"><input type="checkbox" data-paid="${e.id}" ${e.paidAt ? 'checked' : ''}> ${e.paidAt ? 'Đã chi ' + fmtDate(e.paidAt) : 'Chưa chi'}</label></td></tr>`).join('')}</tbody></table></div>
+            <div class="actions" style="margin-top:10px"><button class="btn sm danger" data-act="batch-undo" data-id="${b.id}" data-confirm="Bấm lần nữa: đưa ${es.length} BS về “chờ gửi”" ${paid ? 'disabled title="Đã có BS được chi"' : ''}>Huỷ đợt này</button></div></td></tr>` : ''}`; }).join('')}
+    </tbody></table></div>` : `<div class="empty"><b>Chưa có đợt nào</b>Mỗi lần xuất file YCTT sẽ lưu thành một đợt để theo dõi admin đã chi chưa.</div>`}
+  </section>`;
+}
+
+function viewSettings() {
+  const s = state.settings;
+  const f = (k, label, attrs = '') => `<label class="field"><span>${label}</span><input class="input" data-set="${k}" value="${esc(attrs.includes('data-money') ? (s[k] ? fmtVND(s[k]) : '0') : s[k])}" ${attrs}></label>`;
+  return pageHead('Cài đặt', 'Thông tin cố định dùng cho hợp đồng và file thanh toán. Tự lưu khi bạn sửa.') + `
+  <div class="stack">
+  <section class="panel"><div class="panel-h"><h2>Phôi hợp đồng</h2>${template ? '<span class="tag ok">Đã nạp</span>' : '<span class="tag crit">Chưa có phôi</span>'}</div>
+    <div class="panel-b stack">
+      <div class="actions">${template ? `<span><b>${esc(template.name)}</b> <span class="muted small">· nạp ${new Date(template.uploadedAt).toLocaleDateString('vi-VN')} · ${template.tags?.length || '?'} trường</span></span>` : '<span class="muted">Tải lên file phôi .docx có các trường dạng {{ho_ten}}.</span>'}</div>
+      <div class="actions"><button class="btn ${template ? '' : 'primary'}" data-act="pick" data-f="f-template">${I.up} ${template ? 'Thay phôi' : 'Tải phôi lên'}</button>${template ? `<button class="btn" data-act="dl-template">${I.down} Tải phôi đang dùng</button><button class="btn danger" data-act="del-template" data-confirm="Bấm lần nữa để gỡ phôi">Gỡ phôi</button>` : ''}</div>
+      <details><summary class="small" style="cursor:pointer">Danh sách trường dùng được trong phôi (khi Legal đổi mẫu, mở phôi bằng Word và giữ nguyên các trường này)</summary>
+        <div class="tbl-wrap" style="margin-top:10px"><table class="tbl"><tbody>${TAGS.map(([k, d]) => `<tr><td class="mono">{{${k}}}</td><td>${esc(d)}</td></tr>`).join('')}</tbody></table></div></details>
+    </div></section>
+
+  <section class="panel"><div class="panel-h"><h2>Thông tin file YCTT</h2></div><div class="panel-b stack">
+    <div class="fgrid">${f('staffName', 'Họ tên Staff (cột E)')}${f('manager', 'Người quản lý RFFM/RKAM (cột Q)')}${f('contractForm', 'Hình thức HĐ gốc (cột R)')}</div>
+    <div><div class="field"><span>Sản phẩm · BU · Cost center · SIO (cột B, C, D). Mỗi sự kiện chọn một dòng.</span></div>
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Tên</th><th>BU</th><th>Cost center</th><th>SIO</th><th></th></tr></thead><tbody>
+      ${state.products.map(p => `<tr>${['name','bu','costCenter','sio'].map(k => `<td><input class="input" data-prod="${p.id}" data-k="${k}" value="${esc(p[k])}"></td>`).join('')}<td><button class="btn sm ghost danger" data-act="del-prod" data-id="${p.id}" data-confirm="Xoá?">${I.x}</button></td></tr>`).join('')}
+      </tbody></table></div>
+      <button class="btn sm" style="margin-top:8px" data-act="add-prod">${I.plus} Thêm dòng</button></div>
+  </div></section>
+
+  <section class="panel"><div class="panel-h"><h2>Người ký phía Bayer (mặc định cho sự kiện mới)</h2></div><div class="panel-b">
+    <div class="fgrid">${f('signer1Name', 'Người ký 1')}${f('signer1Title', 'Chức vụ người ký 1')}${f('signer2Name', 'Người ký 2')}${f('signer2Title', 'Chức vụ người ký 2')}</div>
+  </div></section>
+
+  <section class="panel"><div class="panel-h"><h2>Giá trị mặc định</h2></div><div class="panel-b stack">
+    <div class="fgrid">${f('venue', 'Địa điểm tổ chức')}${f('city', 'Thành phố tổ chức')}${f('country', 'Quốc gia')}
+      ${f('fee', 'Phí mặc định (VND)', 'inputmode="numeric" data-money')}${f('duration', 'Thời lượng Báo cáo viên (phút)', 'inputmode="numeric"')}${f('chairDuration', 'Thời lượng Chủ tọa (phút)', 'inputmode="numeric"')}${f('prep', 'Thời gian chuẩn bị (phút)', 'inputmode="numeric"')}
+      ${f('annualCap', 'Trần thù lao/BS/năm (0 = không theo dõi)', 'inputmode="numeric" data-money')}</div>
+    <div class="fgrid"><div class="span2">${f('filePattern', 'Tên file hợp đồng')}<div class="hint" style="margin-top:4px">Dùng {yymmdd}, {ho_ten}, {vai_tro}, {danh_xung}. Ví dụ: ${esc(safeFile((s.filePattern || '').replace('{yymmdd}', '260824').replace('{ho_ten}', 'Châu Minh Thông').replace('{vai_tro}', 'Báo cáo viên').replace('{danh_xung}', 'ThS.BS.')))}.docx</div></div></div>
+  </div></section>
+
+  <section class="panel"><div class="panel-h"><h2>Dữ liệu</h2></div><div class="panel-b stack">
+    <p class="muted" style="margin:0">Mọi thông tin (kể cả CCCD, số tài khoản) chỉ lưu trong trình duyệt trên máy này, không gửi lên máy chủ. Mở app ở trình duyệt hay máy khác sẽ không thấy dữ liệu: dùng Sao lưu rồi Khôi phục để chuyển. Xoá dữ liệu duyệt web cũng xoá luôn dữ liệu app.</p>
+    <div class="actions"><button class="btn primary" data-act="backup">${I.down} Sao lưu (.json)</button><button class="btn" data-act="pick" data-f="f-restore">${I.up} Khôi phục từ file</button>
+      <button class="btn" data-act="pick" data-f="f-excel">${I.up} Nhập Excel</button><button class="btn" data-act="pick" data-f="f-contracts">${I.up} Nhập từ HĐ cũ</button><button class="btn" data-act="export-hcps">${I.down} Xuất danh sách BS</button></div>
+    <div><button class="btn danger sm" data-act="wipe" data-confirm="Bấm lần nữa: xoá TOÀN BỘ dữ liệu">Xoá toàn bộ dữ liệu</button></div>
+  </div></section>
+  </div>`;
+}
+
+const VIEWS = {home:viewHome, events:viewEvents, pay:viewPay, hcps:viewHcps, settings:viewSettings};
+function render() { renderRail(); $('#main').innerHTML = VIEWS[ui.view](); document.title = 'Sổ hợp đồng HCP'; }
+
+/* ================= modals ================= */
+const modals = [];
+function openModal(html, {size, onClose} = {}) {
+  const wrap = document.createElement('div'); wrap.className = 'overlay';
+  wrap.innerHTML = `<div class="modal ${size || ''}" role="dialog" aria-modal="true">${html}</div>`;
+  wrap.addEventListener('mousedown', e => { if (e.target === wrap) closeModal(); });
+  document.body.appendChild(wrap); modals.push({el:wrap, onClose});
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => { if (wrap.contains(document.activeElement)) return; const f = wrap.querySelector('[autofocus]') || wrap.querySelector('input:not([type=hidden]),select,textarea'); f?.focus(); }, 30);
+  return wrap;
+}
+function closeModal() { const m = modals.pop(); if (!m) return; m.el.remove(); m.onClose?.(); if (!modals.length) document.body.style.overflow = ''; }
+const topModal = () => modals[modals.length - 1]?.el;
+
+function readForm(root) {
+  const o = {};
+  root.querySelectorAll('[name]').forEach(el => { o[el.name] = el.type === 'checkbox' ? el.checked : el.value; });
+  return o;
+}
+
+/* --- HCP modal --- */
+function knownBankCodes() { const m = {}; state.hcps.forEach(h => { if (h.bankName && h.bankCode) m[norm(h.bankName)] = h.bankCode; }); return m; }
+function openHcpModal(id, {prefill = {}, onSaved} = {}) {
+  const h = id ? {...hcpById(id)} : {...emptyHcp(), ...prefill};
+  const isNew = !id;
+  const fl = (k, label, attrs = '', cls = '') => `<label class="field ${cls}"><span>${label}</span><input class="input" name="${k}" value="${esc(k === 'defaultFee' ? (h[k] ? fmtVND(h[k]) : '') : h[k])}" ${attrs}></label>`;
+  const hist = id ? state.engs.filter(e => e.hcpId === id).map(e => ({e, ev:evById(e.eventId)})).filter(x => x.ev).sort((a, b) => (b.ev.date || '').localeCompare(a.ev.date || '')) : [];
+  const miss = id ? hcpMissing(hcpById(id)).concat(hcpMissing(hcpById(id), 'pay')) : [];
+  const banks = [...new Set([...BANKS, ...state.hcps.map(x => x.bankName).filter(Boolean)])];
+  const codes = [...new Set(state.hcps.map(x => x.bankCode).filter(Boolean))];
+  const w = openModal(`
+    <div class="modal-h"><div><h2>${isNew ? 'Thêm bác sĩ' : esc(h.name)}</h2><p>${isNew ? 'Trường có dấu * cần cho hợp đồng.' : esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · '))}</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
+    <form class="modal-b" id="hcp-form" autocomplete="off">
+      <div class="fsec"><h3>Cá nhân</h3><div class="fgrid">
+        ${fl('name', 'Họ tên <em>*</em>', 'required autofocus', 'span2')}${fl('title', 'Danh xưng', 'placeholder="ThS.BS., TS.BS.…"')}${fl('tier', 'Tier', 'list="dl-tier"')}
+        ${fl('cccd', 'CCCD / MST <em>*</em>', 'inputmode="numeric"')}${fl('dob', 'Ngày sinh', 'type="date"')}${fl('birthplace', 'Nơi sinh')}
+      </div></div>
+      <div class="fsec"><h3>Công tác</h3><div class="fgrid">
+        ${fl('khoa', 'Khoa', '', 'span2')}${fl('hospital', 'Bệnh viện <em>*</em>', 'list="dl-hosp"', 'span2')}
+        ${fl('position', 'Chức vụ ghi trên HĐ', 'placeholder="Bỏ trống = dùng Khoa"', 'span2')}${fl('specialty', 'Lĩnh vực chuyên môn <em>*</em>', 'list="dl-spec" placeholder="Tim Mạch, Nội thận…"')}
+        ${fl('defaultRole', 'Vai trò thường', 'list="dl-role"')}${fl('defaultFee', 'Phí thường engage (VND)', 'inputmode="numeric" data-money')}
+      </div></div>
+      <div class="fsec"><h3>Liên hệ & địa chỉ trên HĐ</h3><div class="fgrid">
+        ${fl('phone', 'Số điện thoại', 'inputmode="tel"')}${fl('email', 'Email', 'type="email"', 'span2')}
+        ${fl('street', 'Địa chỉ (số nhà, đường, phường) <em>*</em>', '', 'span2')}${fl('city', 'Thành phố <em>*</em>')}${fl('country', 'Quốc gia')}
+        ${fl('homeAddress', 'Địa chỉ nhà (nếu có)', '', 'spanall')}
+      </div></div>
+      <div class="fsec"><h3>Ngân hàng</h3><div class="fgrid">
+        ${fl('bankHolder', 'Chủ tài khoản', 'placeholder="Bỏ trống = Họ tên"', 'span2')}${fl('bankAccount', 'Số tài khoản <em>*</em>', 'inputmode="numeric"')}
+        ${fl('bankName', 'Ngân hàng <em>*</em>', 'list="dl-bank"')}${fl('bankCode', 'Mã ngân hàng <em>*</em>', 'list="dl-code" inputmode="numeric"')}
+      </div><div class="hint" id="bank-hint"></div></div>
+      <div class="fsec"><h3>Ghi chú</h3><textarea class="input" name="note" rows="2">${esc(h.note)}</textarea></div>
+      ${!isNew ? `<div class="fsec"><h3>Tiện ích</h3>
+        <div class="actions"><button type="button" class="btn sm" data-act="copy-hcp" data-id="${id}">${I.copy} Copy thông tin (Veeva)</button>
+        ${miss.length ? `<button type="button" class="btn sm" data-act="ask-info" data-id="${id}">${I.copy} Copy tin nhắn xin bổ sung (${[...new Set(miss)].length} mục)</button>` : ''}</div></div>
+      <div class="fsec"><h3>Lịch sử engage · ${hist.length}</h3>${hist.length ? `<div class="tbl-wrap"><table class="tbl"><tbody>${hist.map(({e, ev}) => `<tr class="clickable" data-act="open-event" data-id="${ev.id}"><td class="mono small nowrap">${fmtDate(ev.date)}</td><td>${esc(ev.name)}<div class="t-sub">${esc(e.role)}${e.topic ? ' · ' + esc(e.topic) : ''}</div></td><td class="num mono">${fmtVND(e.fee)}</td><td>${chip(stageOf(e), stageLabel(e))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small" style="margin:0">Chưa có.</p>'}</div>` : ''}
+      <datalist id="dl-tier"><option>Tier 1</option><option>Tier 2</option><option>Tier 3</option><option>TL Tier1</option><option>TL Tier2</option></datalist>
+      <datalist id="dl-role">${ROLES.map(r => `<option>${r}</option>`).join('')}</datalist>
+      <datalist id="dl-hosp">${[...new Set(state.hcps.map(x => x.hospital).filter(Boolean))].map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
+      <datalist id="dl-spec">${[...new Set(['Tim Mạch','Nội thận','Nội tiết','Nội tổng quát','Thần kinh', ...state.hcps.map(x => x.specialty).filter(Boolean)])].map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
+      <datalist id="dl-bank">${banks.map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
+      <datalist id="dl-code">${codes.map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
+    </form>
+    <div class="modal-f">${!isNew ? `<button class="btn danger sm left" data-act="del-hcp" data-id="${id}" data-confirm="Bấm lần nữa để xoá BS">Xoá</button>` : ''}<button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="save-hcp">Lưu</button></div>`);
+  w._hcp = {id, onSaved};
+  const form = $('#hcp-form', w);
+  form.addEventListener('submit', e => { e.preventDefault(); ACT['save-hcp'](); });
+  const bn = form.elements.bankName, bc = form.elements.bankCode;
+  bn.addEventListener('change', () => { const c = knownBankCodes()[norm(bn.value)]; if (c && !bc.value) { bc.value = c; $('#bank-hint', w).textContent = `Đã điền mã ${c} theo BS khác cùng ngân hàng ${bn.value}. Kiểm tra lại chi nhánh.`; } });
+}
+function saveHcpFromModal() {
+  const w = topModal(); if (!w?._hcp) return;
+  const f = readForm($('#hcp-form', w));
+  if (!clean(f.name)) { toast('Cần nhập họ tên.', {kind:'err'}); $('#hcp-form', w).elements.name.focus(); return; }
+  const rec = {};
+  for (const [k, v] of Object.entries(f)) rec[k] = k === 'defaultFee' ? money(v) : (k === 'note' ? v.trim() : clean(v));
+  rec.cccd = rec.cccd.replace(/\s/g, ''); rec.bankAccount = rec.bankAccount.replace(/\s/g, '');
+  const dup = findHcp(rec); const {id, onSaved} = w._hcp;
+  if (dup && dup.id !== id) { toast(`Trùng với hồ sơ “${dup.name}” (cùng ${digits(dup.cccd) === digits(rec.cccd) && digits(rec.cccd) ? 'CCCD' : 'họ tên'}).`, {kind:'err'}); return; }
+  let h;
+  if (id) { h = hcpById(id); Object.assign(h, rec, {updatedAt:Date.now()}); }
+  else { h = {...emptyHcp(), ...rec}; state.hcps.push(h); }
+  save(); closeModal(); if (onSaved) onSaved(h); else render();
+  toast(id ? 'Đã lưu hồ sơ.' : `Đã thêm ${h.name}.`);
+}
+
+/* --- copy helpers --- */
+async function copyText(text, okMsg = 'Đã copy.') {
+  try { await navigator.clipboard.writeText(text); toast(okMsg); }
+  catch (e) {
+    openModal(`<div class="modal-h"><div><h2>Copy thủ công</h2><p>Trình duyệt chặn copy tự động. Chọn đoạn dưới rồi Ctrl/Cmd + C.</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
+      <div class="modal-b"><textarea class="input" rows="10" readonly id="copy-ta">${esc(text)}</textarea></div><div class="modal-f"><button class="btn" data-act="close">Đóng</button></div>`, {size:'narrow'});
+    setTimeout(() => { const t = $('#copy-ta'); t?.focus(); t?.select(); }, 50);
+  }
+}
+function hcpCopyText(h) {
+  return [['Họ tên', h.name], ['CCCD/MST', h.cccd], ['Ngày sinh', fmtDate(h.dob)], ['SĐT', h.phone], ['Email', h.email], ['Chức vụ', h.position || h.khoa], ['Bệnh viện', h.hospital],
+    ['Chuyên môn', h.specialty], ['Tier', h.tier], ['Địa chỉ', fullAddress(h)], ['Chủ TK', h.bankHolder || h.name], ['Số TK', h.bankAccount], ['Ngân hàng', h.bankName], ['Mã NH', h.bankCode]]
+    .filter(([, v]) => clean(v)).map(([k, v]) => `${k}: ${v}`).join('\n');
+}
+function engCopyText(e) {
+  const ev = evById(e.eventId), h = hcpById(e.hcpId) || {};
+  return [`Sự kiện: ${ev.name}`, `Ngày: ${fmtDate(ev.date)}`, `Địa điểm: ${[ev.venue, ev.city].filter(Boolean).join(', ')}`, `HCP: ${h.name}`, `Chức vụ: ${[h.position || h.khoa, h.hospital].filter(Boolean).join(' – ')}`,
+    `CCCD/MST: ${h.cccd || ''}`, `Vai trò: ${e.role}`, `Chủ đề: ${e.topic || ''}`, `Thời lượng: ${e.duration || ''} phút · Chuẩn bị: ${e.prep || ''} phút`, `Thù lao: ${fmtVND(e.fee)} VND`].join('\n');
+}
+function askInfoText(h) {
+  const miss = new Set([...hcpMissing(h), ...hcpMissing(h, 'pay')]);
+  const asks = [];
+  if (miss.has('CCCD/MST')) asks.push('Số CCCD (hoặc MST cá nhân)');
+  if (miss.has('Số TK') || miss.has('Ngân hàng') || miss.has('Mã NH')) asks.push('Số tài khoản, tên ngân hàng và chi nhánh');
+  if (miss.has('Địa chỉ') || miss.has('Thành phố')) asks.push('Địa chỉ ghi trên hợp đồng');
+  if (miss.has('Email')) asks.push('Email'); if (miss.has('SĐT')) asks.push('Số điện thoại');
+  if (miss.has('Chuyên môn')) asks.push('Lĩnh vực chuyên môn');
+  if (miss.has('Bệnh viện') || miss.has('Chức vụ/Khoa')) asks.push('Chức vụ, khoa và bệnh viện công tác');
+  const given = titleCase(lastWord(h.name)); const me = lastWord(state.settings.staffName) || 'em';
+  return `Dạ em chào BS ${given}, em là ${me} bên Bayer. Để làm hợp đồng cho chương trình sắp tới, BS gửi giúp em thêm thông tin sau nhé:\n${asks.map(a => '- ' + a).join('\n')}\nEm cảm ơn BS ạ!`;
+}
+
+/* --- event editor --- */
+let edit = null; // {evId, ev:{...}, rows:[{rid, engId, hcpId, hcpName, role, topic, duration, prep, fee, specialty}]}
+function openEventEditor(evId, {clone} = {}) {
+  const src = evId ? evById(evId) : null;
+  const ev = src ? {...src} : newEvent({date:addDays(today(), 7)});
+  if (clone) { delete ev.imported; ev.date = ev.date && ev.date >= today() ? ev.date : addDays(today(), 7); ev.name = ev.name.replace(/^\d{8}/, ev.date.replace(/-/g, '')); }
+  const rows = src ? engsOf(src.id).map(e => ({rid:uid(), engId:clone ? null : e.id, hcpId:e.hcpId, hcpName:hcpById(e.hcpId)?.name || '', role:e.role, topic:e.topic, duration:e.duration, prep:e.prep, fee:e.fee, specialty:e.specialty, locked:!clone && !!e.sentAt})) : [];
+  if (!rows.length) rows.push(blankRow());
+  edit = {evId:clone ? null : evId, ev, rows};
+  const venues = [...new Set([state.settings.venue, ...state.events.map(x => x.venue)].filter(Boolean))];
+  const s = state.settings;
+  const w = openModal(`
+    <div class="modal-h"><div><h2>${clone ? 'Nhân bản sự kiện' : evId ? 'Sửa sự kiện' : 'Sự kiện mới'}</h2><p>Thông tin chung điền một lần cho mọi hợp đồng trong sự kiện.</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
+    <form class="modal-b" id="ev-form" autocomplete="off">
+      <div class="fsec"><h3>Sự kiện</h3><div class="fgrid">
+        <label class="field spanall"><span>Tên sự kiện <em>*</em></span><input class="input" name="name" value="${esc(ev.name)}" placeholder="${esc((ev.date || today()).replace(/-/g, ''))} - HCM Hospital - XMeeting BV …" autofocus></label>
+        <label class="field"><span>Ngày thuyết trình <em>*</em></span><input class="input" type="date" name="date" value="${esc(ev.date)}"></label>
+        <label class="field span2"><span>Địa điểm tổ chức</span><input class="input" name="venue" list="dl-venue" value="${esc(ev.venue)}"></label>
+        <label class="field"><span>Hình thức</span><select class="input" name="online"><option value="1" ${ev.online ? 'selected' : ''}>Trực tuyến</option><option value="0" ${!ev.online ? 'selected' : ''}>Trực tiếp</option></select></label>
+        <label class="field"><span>Thành phố tổ chức</span><input class="input" name="city" value="${esc(ev.city)}"></label>
+        <label class="field"><span>Quốc gia</span><input class="input" name="country" value="${esc(ev.country)}"></label>
+        ${state.products.length > 1 ? `<label class="field"><span>Sản phẩm / Cost center</span><select class="input" name="productId">${state.products.map(p => `<option value="${p.id}" ${p.id === ev.productId ? 'selected' : ''}>${esc(p.name || p.costCenter)}</option>`).join('')}</select></label>` : ''}
+      </div></div>
+      <details class="fsec"><summary class="small" style="cursor:pointer;font-weight:600">Người ký phía Bayer: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || 'chưa có')}</summary>
+        <div class="fgrid" style="margin-top:12px">
+          <label class="field"><span>Người ký 1</span><input class="input" name="signer1Name" value="${esc(ev.signer1Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer1Title" value="${esc(ev.signer1Title)}"></label>
+          <label class="field"><span>Người ký 2</span><input class="input" name="signer2Name" value="${esc(ev.signer2Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer2Title" value="${esc(ev.signer2Title)}"></label>
+        </div></details>
+      <label class="field fsec"><span>Ghi chú nội bộ</span><input class="input" name="note" value="${esc(ev.note)}"></label>
+      <div class="fsec"><h3>Bác sĩ tham gia</h3><div class="eng-rows" id="eng-rows"></div>
+        <div><button type="button" class="btn sm" data-act="add-row">${I.plus} Thêm bác sĩ</button></div></div>
+      <datalist id="dl-venue">${venues.map(v => `<option>${esc(v)}</option>`).join('')}</datalist>
+      <datalist id="dl-role">${ROLES.map(r => `<option>${r}</option>`).join('')}</datalist>
+      <datalist id="dl-spec2">${[...new Set(['Tim Mạch','Nội thận','Nội tiết', ...state.hcps.map(x => x.specialty).filter(Boolean)])].map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
+    </form>
+    <div class="modal-f"><span class="muted small left" id="ev-sum"></span><button class="btn" data-act="close">Huỷ</button><button class="btn" data-act="save-event">Lưu</button><button class="btn primary" data-act="save-event" data-dl="1">${I.down} Lưu & xuất HĐ</button></div>`, {size:'wide', onClose:() => { edit = null; }});
+  const form = $('#ev-form', w);
+  form.addEventListener('submit', e => e.preventDefault());
+  form.elements.date.addEventListener('change', () => {
+    const n = form.elements.name; const d = form.elements.date.value.replace(/-/g, '');
+    if (d && /^\d{8}\b/.test(n.value)) n.value = n.value.replace(/^\d{8}/, d);
+    n.placeholder = `${d || ''} - HCM Hospital - XMeeting BV …`;
+  });
+  renderRows();
+}
+function blankRow() { return {rid:uid(), engId:null, hcpId:'', hcpName:'', role:'Báo cáo viên', topic:'', duration:state.settings.duration, prep:state.settings.prep, fee:state.settings.fee, specialty:''}; }
+function syncRows() {
+  const w = topModal(); if (!edit || !w) return;
+  for (const r of edit.rows) {
+    const g = n => w.querySelector(`[name="r.${r.rid}.${n}"]`);
+    if (!g('role')) continue;
+    r.hcpName = g('hcpName').value; r.role = clean(g('role').value); r.topic = clean(g('topic').value); r.specialty = clean(g('specialty').value);
+    r.duration = digits(g('duration').value); r.prep = digits(g('prep').value); r.fee = money(g('fee').value);
+  }
+}
+function renderRows() {
+  const box = $('#eng-rows'); if (!box || !edit) return;
+  const topicsOf = id => [...new Set(state.engs.filter(e => e.hcpId === id && e.topic).map(e => e.topic))];
+  box.innerHTML = edit.rows.map((r, i) => {
+    const h = hcpById(r.hcpId); const miss = h ? hcpMissing(h) : [];
+    const n = k => `name="r.${r.rid}.${k}"`;
+    return `<div class="eng-row" data-rid="${r.rid}">
+      <div class="er-h"><span class="er-n">#${i + 1}${r.locked ? ' · đã gửi thanh toán' : ''}</span>${r.locked ? '' : `<button type="button" class="btn sm ghost" data-act="del-row" data-rid="${r.rid}" aria-label="Bỏ dòng">${I.x}</button>`}</div>
+      <div class="eng-grid">
+        <div class="field hcp-col"><span>Bác sĩ <em>*</em></span><div class="combo"><input class="input combo-in" ${n('hcpName')} value="${esc(r.hcpName)}" placeholder="Gõ tên để tìm…" data-rid="${r.rid}" ${r.locked ? 'disabled' : ''} role="combobox" aria-expanded="false"><div class="combo-list" hidden></div></div></div>
+        <label class="field"><span>Vai trò</span><input class="input" ${n('role')} list="dl-role" value="${esc(r.role)}"></label>
+        <label class="field"><span>Phí (VND)</span><input class="input mono" ${n('fee')} value="${r.fee ? fmtVND(r.fee) : ''}" inputmode="numeric" data-money></label>
+        <label class="field"><span>Thời lượng</span><input class="input" ${n('duration')} value="${esc(r.duration)}" inputmode="numeric"></label>
+        <label class="field"><span>Chuẩn bị</span><input class="input" ${n('prep')} value="${esc(r.prep)}" inputmode="numeric"></label>
+        <label class="field full"><span>Chủ đề</span><input class="input" ${n('topic')} value="${esc(r.topic)}" list="dl-topic-${r.rid}" placeholder="Tên bài báo cáo / phiên chủ tọa"></label>
+        <label class="field"><span>Lĩnh vực chuyên môn</span><input class="input" ${n('specialty')} value="${esc(r.specialty)}" list="dl-spec2"></label>
+        <div class="field er-status">${h ? (miss.length ? `<div class="miss">Hồ sơ thiếu: ${miss.map(x => `<span class="tag crit">${x}</span>`).join('')} <button type="button" class="btn sm" data-act="row-edit-hcp" data-rid="${r.rid}">Bổ sung</button></div>` : `<div class="miss"><span class="tag ok">Hồ sơ đủ</span> <span class="muted small">${esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · '))}</span></div>`) : ''}</div>
+      </div>
+      <datalist id="dl-topic-${r.rid}">${topicsOf(r.hcpId).map(t => `<option>${esc(t)}</option>`).join('')}</datalist>
+    </div>`; }).join('');
+  const live = edit.rows.filter(r => r.hcpId);
+  const sumEl = $('#ev-sum'); if (sumEl) sumEl.textContent = live.length ? `${live.length} BS · ${fmtVND(live.reduce((a, r) => a + (+r.fee || 0), 0))} VND` : '';
+}
+function pickHcpForRow(rid, h) {
+  syncRows(); const r = edit.rows.find(x => x.rid === rid); if (!r) return;
+  r.hcpId = h.id; r.hcpName = h.name;
+  const last = state.engs.filter(e => e.hcpId === h.id).map(e => ({e, d:evById(e.eventId)?.date || ''})).sort((a, b) => b.d.localeCompare(a.d))[0]?.e;
+  if (h.defaultRole && (!r.role || r.role === 'Báo cáo viên')) r.role = h.defaultRole;
+  r.fee = h.defaultFee || last?.fee || r.fee || state.settings.fee;
+  r.specialty = h.specialty || r.specialty;
+  const sameRole = state.engs.filter(e => e.hcpId === h.id && norm(e.role) === norm(r.role) && e.duration).pop();
+  r.duration = sameRole?.duration || (norm(r.role) === norm('Chủ tọa') ? state.settings.chairDuration : state.settings.duration);
+  renderRows();
+  setTimeout(() => { topModal()?.querySelector(`[name="r.${rid}.topic"]`)?.focus(); }, 0);
+}
+function comboRender(input) {
+  const list = input.parentElement.querySelector('.combo-list'); const q = norm(input.value);
+  const used = new Set(edit.rows.filter(r => r.rid !== input.dataset.rid).map(r => r.hcpId));
+  const hits = state.hcps.filter(h => !q || norm(h.name + ' ' + h.hospital + ' ' + h.khoa).includes(q)).sort((a, b) => sortName(a.name, b.name)).slice(0, 8);
+  list.innerHTML = hits.map((h, i) => `<button type="button" class="combo-opt" data-act="combo-pick" data-rid="${input.dataset.rid}" data-id="${h.id}" aria-selected="${i === 0}">${esc(h.name)}${used.has(h.id) ? ' <span class="tag warn">đã có trong sự kiện</span>' : ''}<small>${esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · ') || '—')}</small></button>`).join('')
+    + (clean(input.value) ? `<button type="button" class="combo-opt new" data-act="combo-new" data-rid="${input.dataset.rid}" aria-selected="${!hits.length}">${I.plus.replace('<svg', '<svg width="14" height="14"')} Tạo hồ sơ “${esc(clean(input.value))}”</button>` : '');
+  list.hidden = !list.innerHTML; input.setAttribute('aria-expanded', String(!list.hidden));
+}
+function saveEvent(dl) {
+  const w = topModal(); if (!edit || !w) return;
+  syncRows();
+  const f = readForm($('#ev-form', w));
+  const name = clean(f.name), date = f.date;
+  if (!name || !date) { toast('Cần nhập tên và ngày sự kiện.', {kind:'err'}); return; }
+  const rows = edit.rows.filter(r => r.hcpId);
+  const typedNoPick = edit.rows.filter(r => !r.hcpId && clean(r.hcpName));
+  if (typedNoPick.length) { toast(`Chưa chọn BS cho “${typedNoPick[0].hcpName}”. Chọn trong danh sách gợi ý hoặc bấm Tạo hồ sơ.`, {kind:'err'}); return; }
+  checkpoint();
+  let ev = edit.evId ? evById(edit.evId) : null;
+  const evData = {name, date, venue:clean(f.venue), city:clean(f.city), country:clean(f.country) || 'Việt Nam', online:f.online === '1', note:clean(f.note),
+    signer1Name:clean(f.signer1Name), signer1Title:clean(f.signer1Title), signer2Name:clean(f.signer2Name), signer2Title:clean(f.signer2Title)};
+  if (f.productId) evData.productId = f.productId;
+  if (ev) { Object.assign(ev, evData); if (ev.imported === 'yctt') ev.imported = 'edited'; }
+  else { ev = newEvent({...evData, productId:f.productId || state.products[0]?.id || ''}); state.events.push(ev); }
+  const keep = new Set();
+  for (const r of rows) {
+    const data = {hcpId:r.hcpId, role:r.role || 'Báo cáo viên', topic:r.topic, duration:r.duration, prep:r.prep, fee:r.fee, specialty:r.specialty};
+    let e = r.engId ? engById(r.engId) : null;
+    if (e) { if (!e.sentAt) Object.assign(e, data); } else { e = newEng({eventId:ev.id, ...data}); state.engs.push(e); }
+    keep.add(e.id);
+    const h = hcpById(r.hcpId); if (h && !h.specialty && r.specialty) h.specialty = r.specialty;
+  }
+  state.engs = state.engs.filter(e => e.eventId !== ev.id || keep.has(e.id) || e.sentAt);
+  save(); const id = ev.id; closeModal();
+  ui.view = 'events'; ui.eventId = id; setHash('su-kien'); render();
+  toast('Đã lưu sự kiện.');
+  if (dl) downloadContracts(engsOf(id).map(e => e.id), zipNameFor(evById(id)));
+}
+const zipNameFor = ev => safeFile(`${yymmdd(ev.date)} - Speaker Agreements - ${ev.name.replace(/^\d{8}\s*-\s*/, '')}`).slice(0, 150) + '.zip';
+
+/* --- import preview modals --- */
+function showExcelPlan(plan) {
+  const news = plan.hcps.filter((r, i, arr) => !findHcp(r) && arr.findIndex(x => norm(x.name) === norm(r.name)) === i);
+  const exist = new Set(plan.hcps.map(findHcp).filter(Boolean).map(h => h.id));
+  const setKeys = Object.entries(plan.settings).filter(([k, v]) => v && !clean(state.settings[k]));
+  openModal(`
+    <div class="modal-h"><div><h2>Nhập từ Excel</h2><p>${esc(plan.file)}</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
+    <div class="modal-b stack">
+      ${plan.sheets.length ? `<div class="callout">Đọc được: ${plan.sheets.map(esc).join(' · ')}</div>` : `<div class="callout warn"><b>Không tìm thấy sheet phù hợp.</b> Cần sheet có cột “Họ và tên HCPs” (danh sách BS) hoặc mẫu YCTT có cột “Họ tên HCP”.</div>`}
+      <dl class="kv"><dt>BS mới</dt><dd>${news.length ? news.map(r => esc(r.name)).join(', ') : '—'}</dd><dd></dd>
+        <dt>BS đã có</dt><dd>${exist.size} (chỉ điền thêm ô đang trống, không ghi đè)</dd><dd></dd>
+        <dt>Dòng thanh toán</dt><dd>${plan.history.length}</dd><dd></dd></dl>
+      ${plan.history.length ? `<label class="check"><input type="checkbox" id="opt-hist" checked><span>Nhập ${plan.history.length} dòng thanh toán cũ làm lịch sử (đánh dấu “đã gửi admin”), để tính thù lao năm và tránh gửi trùng.</span></label>` : ''}
+      ${setKeys.length || plan.product ? `<label class="check"><input type="checkbox" id="opt-set" checked><span>Lấy thông tin YCTT từ file: ${[...setKeys.map(([k, v]) => esc(v)), plan.product ? `${esc(plan.product.bu)} · ${esc(plan.product.costCenter)} · ${esc(plan.product.sio)}` : ''].filter(Boolean).join(' · ')}</span></label>` : ''}
+    </div>
+    <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="apply-excel" ${plan.hcps.length ? '' : 'disabled'}>Nhập</button></div>`, {size:'narrow'});
+  pendingPlan = plan;
+}
+function showContractPlan(plan) {
+  const ok = plan.items.filter(i => !i.error);
+  openModal(`
+    <div class="modal-h"><div><h2>Nhập từ hợp đồng cũ</h2><p>${plan.items.length} file · đọc được ${ok.length}</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
+    <div class="modal-b stack">
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Bác sĩ</th><th>Sự kiện</th><th>Lấy được</th></tr></thead><tbody>
+      ${plan.items.map(it => it.error ? `<tr><td colspan="3"><b>${esc(it.file)}</b><div class="t-sub" style="color:var(--crit)">${esc(it.error)}</div></td></tr>` :
+        `<tr><td><div class="t-main">${esc(it.hcp.name)}</div><div class="t-sub">${findHcp(it.hcp) ? 'Đã có · bổ sung ô trống' : 'BS mới'}</div></td><td><div class="mono small">${fmtDate(it.event.date)}</div><div class="t-sub">${esc(it.eng.role || '')} · ${esc(it.event.name || '')}</div></td>
+         <td><div class="miss">${[['cccd','CCCD'],['bankAccount','Số TK'],['bankCode','Mã NH'],['street','Địa chỉ'],['hospital','Bệnh viện']].map(([k, l]) => `<span class="tag ${it.hcp[k] ? 'ok' : 'warn'}">${l}</span>`).join('')}</div></td></tr>`).join('')}
+      </tbody></table></div>
+      <label class="check"><input type="checkbox" id="opt-ev" checked><span>Tạo luôn sự kiện và hợp đồng tương ứng (gộp theo tên + ngày sự kiện; nếu đã nhập lịch sử từ Excel thì ghép vào đúng dòng đó).</span></label>
+      <p class="hint" style="margin:0">Người ký phía Bayer trong hợp đồng sẽ được lưu làm mặc định nếu Cài đặt đang trống.</p>
+    </div>
+    <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="apply-contracts" ${ok.length ? '' : 'disabled'}>Nhập ${ok.length} hồ sơ</button></div>`);
+  pendingPlan = plan;
+}
+let pendingPlan = null;
+
+/* ================= toast & busy ================= */
+function toast(msg, {kind, action, onAction} = {}) {
+  const el = document.createElement('div'); el.className = 'toast' + (kind === 'err' ? ' err' : '');
+  el.innerHTML = `<span>${esc(msg)}</span>${action ? `<button>${esc(action)}</button>` : ''}`;
+  if (action) el.querySelector('button').onclick = () => { el.remove(); onAction(); };
+  const box = $('#toasts'); box.appendChild(el); while (box.children.length > 2) box.firstElementChild.remove();
+  setTimeout(() => el.remove(), action ? 9000 : kind === 'err' ? 7000 : 3500);
+}
+let busyEl = null;
+function busy(msg) {
+  if (!msg) { busyEl?.remove(); busyEl = null; return; }
+  if (!busyEl) { busyEl = document.createElement('div'); busyEl.className = 'busy'; document.body.appendChild(busyEl); }
+  busyEl.innerHTML = `<div>${esc(msg)}</div>`;
+}
+
+/* ================= actions ================= */
+const ACT = {
+  nav: t => go(t.dataset.v),
+  close: () => closeModal(),
+  pick: t => pickFile(t.dataset.f),
+  backup: () => backup(),
+  'new-hcp': () => openHcpModal(null),
+  'edit-hcp': t => openHcpModal(t.dataset.id),
+  'save-hcp': () => saveHcpFromModal(),
+  'del-hcp': t => {
+    const id = t.dataset.id; const n = state.engs.filter(e => e.hcpId === id).length;
+    if (n) { toast(`BS này có ${n} hợp đồng trong lịch sử, không xoá được.`, {kind:'err'}); return; }
+    checkpoint(); state.hcps = state.hcps.filter(h => h.id !== id); save(); closeModal(); render(); toast('Đã xoá.', {action:'Hoàn tác', onAction:undo});
+  },
+  'copy-hcp': t => copyText(hcpCopyText(hcpById(t.dataset.id)), 'Đã copy thông tin BS.'),
+  'ask-info': t => copyText(askInfoText(hcpById(t.dataset.id)), 'Đã copy tin nhắn. Dán vào Zalo gửi BS.'),
+  'export-hcps': () => exportHcps(),
+  'new-event': () => openEventEditor(null),
+  'edit-event': t => openEventEditor(t.dataset.id),
+  'clone-event': t => openEventEditor(t.dataset.id, {clone:true}),
+  'open-event': t => { while (modals.length) closeModal(); go('events', {eventId:t.dataset.id}); },
+  'save-event': t => saveEvent(!!t.dataset.dl),
+  'add-row': () => { syncRows(); edit.rows.push(blankRow()); renderRows(); const last = edit.rows[edit.rows.length - 1]; topModal()?.querySelector(`[name="r.${last.rid}.hcpName"]`)?.focus(); },
+  'del-row': t => { syncRows(); edit.rows = edit.rows.filter(r => r.rid !== t.dataset.rid); if (!edit.rows.length) edit.rows.push(blankRow()); renderRows(); },
+  'combo-pick': t => pickHcpForRow(t.dataset.rid, hcpById(t.dataset.id)),
+  'combo-new': t => {
+    const rid = t.dataset.rid; syncRows(); const r = edit.rows.find(x => x.rid === rid);
+    openHcpModal(null, {prefill:{name:clean(r.hcpName)}, onSaved:h => pickHcpForRow(rid, h)});
+  },
+  'row-edit-hcp': t => { syncRows(); const r = edit.rows.find(x => x.rid === t.dataset.rid); openHcpModal(r.hcpId, {onSaved:() => renderRows()}); },
+  'dl-event': t => { const ev = evById(t.dataset.id); downloadContracts(engsOf(ev.id).map(e => e.id), zipNameFor(ev)); },
+  'dl-one': t => downloadContracts([t.dataset.id]),
+  'copy-veeva': t => copyText(engCopyText(engById(t.dataset.id)), 'Đã copy thông tin để nhập Veeva.'),
+  'veeva-all': t => { checkpoint(); const d = today(); engsOf(t.dataset.id).forEach(e => { if (!e.cancelled && !e.veevaAt) e.veevaAt = d; }); save(); render(); toast('Đã đánh dấu raise Veeva.', {action:'Hoàn tác', onAction:undo}); },
+  'toggle-step': t => {
+    const e = engById(t.dataset.id); const k = t.dataset.k; const d = today();
+    if (k === 'contract') e.contractAt = e.contractAt ? null : d;
+    if (k === 'veeva') e.veevaAt = e.veevaAt ? null : d;
+    if (k === 'paid') e.paidAt = e.paidAt ? null : d;
+    save(); render();
+  },
+  'toggle-cancel': t => { const e = engById(t.dataset.id); e.cancelled = !e.cancelled; save(); render(); toast(e.cancelled ? 'Đã huỷ hợp đồng này (không tính vào thanh toán).' : 'Đã khôi phục.'); },
+  'del-event': t => { checkpoint(); const id = t.dataset.id; state.engs = state.engs.filter(e => e.eventId !== id); state.events = state.events.filter(e => e.id !== id); save(); go('events'); toast('Đã xoá sự kiện.', {action:'Hoàn tác', onAction:undo}); },
+  'ev-filter': t => { ui.evFilter = t.dataset.v; render(); },
+  'export-pay': async () => {
+    const ids = sortEngs(payEligible().filter(e => ui.paySel.has(e.id))).map(e => e.id);
+    if (!ids.length) return toast('Chưa chọn BS nào.');
+    const reqDate = ui.reqDate || today();
+    try {
+      busy('Đang tạo file YCTT…');
+      const blob = await buildYCTT(ids.map(engById), reqDate); busy(false);
+      const fname = `Yêu cầu thanh toán hợp đồng HCP - ${dmyDot(reqDate)}.xlsx`;
+      if (!(await saveFile(fname, blob))) return;
+      checkpoint();
+      const b = {id:uid(), date:reqDate, engIds:ids, createdAt:Date.now(), fileName:fname}; state.batches.push(b);
+      ids.forEach(id => { const e = engById(id); e.sentAt = reqDate; e.batchId = b.id; });
+      ui.paySel.clear(); ui.payTouched = false; save(); render();
+      toast(`Đã xuất file và đánh dấu ${ids.length} BS “đã gửi admin”.`, {action:'Hoàn tác', onAction:undo});
+    } catch (err) { busy(false); toast(err.message, {kind:'err'}); }
+  },
+  'batch-open': t => { ui.openBatch = ui.openBatch === t.dataset.id ? null : t.dataset.id; render(); },
+  'batch-paid': t => { checkpoint(); const b = state.batches.find(x => x.id === t.dataset.id); const d = today(); b.engIds.map(engById).filter(Boolean).forEach(e => { if (!e.paidAt) e.paidAt = d; }); save(); render(); toast('Đã đánh dấu đã chi.', {action:'Hoàn tác', onAction:undo}); },
+  'batch-dl': async t => {
+    const b = state.batches.find(x => x.id === t.dataset.id);
+    try { busy('Đang tạo file…'); const blob = await buildYCTT(sortEngs(b.engIds.map(engById).filter(Boolean)), b.date); busy(false); await saveFile(b.imported ? `Yêu cầu thanh toán hợp đồng HCP - ${dmyDot(b.date)}.xlsx` : b.fileName, blob); }
+    catch (err) { busy(false); toast(err.message, {kind:'err'}); }
+  },
+  'batch-undo': t => { checkpoint(); const b = state.batches.find(x => x.id === t.dataset.id); b.engIds.map(engById).filter(Boolean).forEach(e => { e.sentAt = null; e.batchId = null; }); state.batches = state.batches.filter(x => x !== b); ui.openBatch = null; save(); render(); toast('Đã huỷ đợt, các BS về “chờ gửi”.', {action:'Hoàn tác', onAction:undo}); },
+  'apply-excel': () => { const p = pendingPlan; const w = topModal(); const opts = {history:!!$('#opt-hist', w)?.checked, settings:!!$('#opt-set', w)?.checked}; closeModal(); applyExcel(p, opts); },
+  'apply-contracts': () => { const p = pendingPlan; const opts = {events:!!$('#opt-ev', topModal())?.checked}; closeModal(); applyContracts(p, opts); },
+  'do-restore': () => { checkpoint(); const o = pendingRestore; const f = fresh(); state = {...f, ...o.state, settings:{...f.settings, ...(o.state.settings || {})}, lastBackupAt:Date.parse(o.exportedAt) || Date.now(), changes:0}; if (o.template) saveTemplate(o.template); save(); closeModal(); render(); toast('Đã khôi phục.', {action:'Hoàn tác', onAction:undo}); },
+  'dl-template': () => saveFile(template.name || 'Phoi_Speaker_Agreement.docx', new Blob([bufFromB64(template.b64)])),
+  'del-template': () => { saveTemplate(null); render(); toast('Đã gỡ phôi.'); },
+  'add-prod': () => { state.products.push({id:uid(), name:state.products.length ? '' : 'Mặc định', bu:'', costCenter:'', sio:''}); save(); render(); },
+  'del-prod': t => { state.products = state.products.filter(p => p.id !== t.dataset.id); save(); render(); },
+  wipe: () => { checkpoint(); state = fresh(); save(); render(); toast('Đã xoá toàn bộ dữ liệu (phôi vẫn giữ).', {action:'Hoàn tác', onAction:undo}); },
+};
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
+  if (t.dataset.confirm && !t.dataset.armed) {
+    e.preventDefault(); e.stopPropagation(); t.dataset.armed = '1'; t._label = t.innerHTML; t.textContent = t.dataset.confirm;
+    setTimeout(() => { if (t.isConnected && t.dataset.armed) { delete t.dataset.armed; t.innerHTML = t._label; } }, 3500); return;
+  }
+  const fn = ACT[t.dataset.act]; if (!fn) return;
+  if (t.tagName === 'A' || t.tagName === 'BUTTON') e.preventDefault();
+  if (t.closest('tr.clickable') && t !== t.closest('tr.clickable')) e.stopPropagation();
+  fn(t, e);
+});
+document.addEventListener('mousedown', e => { if (e.target.closest('.combo-opt')) e.preventDefault(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { const open = document.querySelector('.combo-list:not([hidden])'); if (open) { open.hidden = true; return; } if (modals.length) closeModal(); }
+  const ci = e.target.closest?.('.combo-in');
+  if (ci && ['ArrowDown','ArrowUp','Enter'].includes(e.key)) {
+    const list = ci.parentElement.querySelector('.combo-list'); if (list.hidden) { if (e.key !== 'Enter') comboRender(ci); return; }
+    const opts = $$('.combo-opt', list); let i = opts.findIndex(o => o.getAttribute('aria-selected') === 'true');
+    if (e.key === 'Enter') { e.preventDefault(); opts[Math.max(i, 0)]?.click(); return; }
+    e.preventDefault(); i = (i + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
+    opts.forEach((o, k) => o.setAttribute('aria-selected', String(k === i))); opts[i]?.scrollIntoView({block:'nearest'});
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'hcp-q') { ui.hcpQ = t.value; $('#hcp-table').innerHTML = hcpTable(); return; }
+  if (t.id === 'ev-q') { ui.evQ = t.value; const pos = t.selectionStart; render(); const n = $('#ev-q'); n.focus(); n.setSelectionRange(pos, pos); return; }
+  if (t.classList.contains('combo-in')) {
+    const r = edit?.rows.find(x => x.rid === t.dataset.rid); if (r && r.hcpId && norm(t.value) !== norm(hcpById(r.hcpId)?.name)) { r.hcpId = ''; }
+    comboRender(t); return;
+  }
+  if (t.dataset.note) { const en = engById(t.dataset.note); if (en) { en.payNote = t.value; save(true); } return; }
+});
+document.addEventListener('focusin', e => { if (e.target.classList?.contains('combo-in')) comboRender(e.target); });
+document.addEventListener('focusout', e => { if (e.target.classList?.contains('combo-in')) setTimeout(() => { const l = e.target.parentElement?.querySelector('.combo-list'); if (l) l.hidden = true; }, 120); });
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.matches('[data-money]')) { const v = money(t.value); t.value = v ? fmtVND(v) : ''; }
+  if (t.id === 'hcp-hosp') { ui.hcpHosp = t.value; $('#hcp-table').innerHTML = hcpTable(); return; }
+  if (t.dataset.pay) { ui.payTouched = true; t.checked ? ui.paySel.add(t.dataset.pay) : ui.paySel.delete(t.dataset.pay); render(); return; }
+  if (t.id === 'pay-all') { ui.payTouched = true; const ids = payEligible().map(x => x.id); ui.paySel = t.checked ? new Set(ids) : new Set(); render(); return; }
+  if (t.id === 'pay-future') { ui.payFuture = t.checked; render(); return; }
+  if (t.id === 'req-date') { ui.reqDate = t.value || today(); return; }
+  if (t.dataset.paid) { const en = engById(t.dataset.paid); en.paidAt = t.checked ? today() : null; save(); render(); return; }
+  if (t.dataset.set) {
+    const k = t.dataset.set; const numeric = ['fee','duration','chairDuration','prep','annualCap'].includes(k);
+    state.settings[k] = numeric ? money(t.value) : clean(t.value); save(); renderRail(); toast('Đã lưu cài đặt.'); return;
+  }
+  if (t.dataset.prod) { const p = state.products.find(x => x.id === t.dataset.prod); if (p) { p[t.dataset.k] = clean(t.value); save(); toast('Đã lưu.'); } return; }
+  if (t.closest('#eng-rows') && t.name?.endsWith('.role')) {
+    syncRows(); const rid = t.name.split('.')[1]; const r = edit.rows.find(x => x.rid === rid);
+    if (r && norm(r.role) === norm('Chủ tọa') && Number(r.duration) === Number(state.settings.duration)) { r.duration = state.settings.chairDuration; renderRows(); }
+  }
+  if (t.closest('#eng-rows') && t.name?.endsWith('.fee')) { syncRows(); const live = edit.rows.filter(r => r.hcpId); const s = $('#ev-sum'); if (s) s.textContent = live.length ? `${live.length} BS · ${fmtVND(live.reduce((a, r) => a + (+r.fee || 0), 0))} VND` : ''; }
+});
+$('#f-excel').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { busy('Đang đọc file Excel…'); const plan = await parseExcel(f); busy(false); showExcelPlan(plan); }
+  catch (err) { busy(false); toast('Không đọc được file Excel: ' + (err.message || err), {kind:'err'}); }
+});
+$('#f-contracts').addEventListener('change', async e => {
+  const fs = [...e.target.files]; if (!fs.length) return;
+  try { busy('Đang đọc hợp đồng…'); const plan = await parseContracts(fs); busy(false); showContractPlan(plan); }
+  catch (err) { busy(false); toast(err.message, {kind:'err'}); }
+});
+$('#f-template').addEventListener('change', e => { const f = e.target.files[0]; if (f) onTemplateFile(f); });
+$('#f-restore').addEventListener('change', e => { const f = e.target.files[0]; if (f) onRestoreFile(f); });
+window.addEventListener('storage', e => { if (e.key === STORE_KEY && e.newValue) { try { state = {...fresh(), ...JSON.parse(e.newValue)}; render(); } catch (_) {} } });
+
+render();
+</script>
+
+</body>
+</html>

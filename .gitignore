@@ -1,0 +1,8 @@
+# Không bao giờ đẩy phôi hợp đồng, file dữ liệu hay bản sao lưu lên repo
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.json
+*.zip
+.DS_Store
