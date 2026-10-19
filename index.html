@@ -560,7 +560,13 @@ function hcpMissing(h, kind = 'contract') {
   return out;
 }
 const fullAddress = h => [clean(h.street), cityLabel(h.city, 'TP. '), clean(h.country) || 'Việt Nam'].filter(Boolean).join(', ');
-const gmLocation = (e, h, ev) => clean(e.gmLocation) || ([clean(h?.khoa) || clean(h?.position), clean(h?.hospital)].filter(Boolean).join(' - ') + (ev?.online ? ' (trực tuyến)' : ''));
+// Nơi tổ chức trực tuyến: nhận theo chữ trong ô Địa điểm tổ chức (Zoom, Teams, trực tuyến, online...)
+const ONLINE_RE = /zoom|truc tuyen|online|teams|webex|google meet|livestream|phan mem/;
+const isOnlineVenue = venue => ONLINE_RE.test(norm(venue));
+const isOnlineEvent = ev => clean(ev?.venue) ? isOnlineVenue(ev.venue) : !!ev?.online;
+const khoaHosp = h => [clean(h?.khoa) || clean(h?.position), clean(h?.hospital)].filter(Boolean).join(' - ');
+// Cột "Bệnh viện/Nhà hàng nơi thực hiện GM": trực tuyến → Khoa phòng - Bệnh viện của BS + (trực tuyến); còn lại → giữ nguyên nơi tổ chức trên hợp đồng
+const gmLocation = (e, h, ev) => clean(e.gmLocation) || (isOnlineEvent(ev) ? (khoaHosp(h) ? khoaHosp(h) + ' (trực tuyến)' : '') : clean(ev?.venue));
 function findHcp(rec) {
   const c = digits(rec.cccd);
   if (c.length >= 9) { const h = state.hcps.find(x => digits(x.cccd) === c); if (h) return h; }
@@ -922,7 +928,7 @@ function parseContract(lines) {
   const bay = names.map((x, i) => ({...x, t:titles[i]?.v || ''})).filter((_, i) => i !== hIdx);
   if (bay[0]) { r.signers.signer1Name = bay[0].v; r.signers.signer1Title = bay[0].t; }
   if (bay[1]) { r.signers.signer2Name = bay[1].v; r.signers.signer2Title = bay[1].t; }
-  r.event.online = /zoom|trực tuyến|online|teams|webex/i.test(r.event.venue || '');
+  r.event.online = isOnlineVenue(r.event.venue || '');
   if (!r.hcp.name) throw new Error('Không tìm thấy tên bác sĩ trong hợp đồng.');
   return r;
 }
@@ -1201,7 +1207,7 @@ function viewEventDetail(ev) {
   <div class="page-h"><div class="ev-head">
       <div class="big-date">${ev.date ? `<b>${pad(d)}/${pad(m)}</b><span>${weekday(ev.date)} · ${y}</span>` : '<b>—</b>'}</div>
       <div><h1>${esc(ev.name)}</h1>
-        <div class="ev-meta"><span>${esc(ev.venue || 'Chưa có địa điểm')}</span><span>${esc(ev.city)}${ev.country && ev.country !== 'Việt Nam' ? ', ' + esc(ev.country) : ''}</span><span class="tag ${ev.online ? 'acc' : ''}">${ev.online ? 'Trực tuyến' : 'Trực tiếp'}</span>${ev.date ? `<span>${relDays(ev.date)}</span>` : ''}${p ? `<span class="tag acc">${esc(prodLabel(p))}</span><span class="mono">${esc(p.costCenter)} · SIO ${esc(p.sio)}</span>` : `<span class="tag crit">Chưa chọn sản phẩm</span>`}</div>
+        <div class="ev-meta"><span>${esc(ev.venue || 'Chưa có địa điểm')}</span><span>${esc(ev.city)}${ev.country && ev.country !== 'Việt Nam' ? ', ' + esc(ev.country) : ''}</span><span class="tag ${isOnlineEvent(ev) ? 'acc' : ''}">${isOnlineEvent(ev) ? 'Trực tuyến' : 'Trực tiếp'}</span>${ev.date ? `<span>${relDays(ev.date)}</span>` : ''}${p ? `<span class="tag acc">${esc(prodLabel(p))}</span><span class="mono">${esc(p.costCenter)} · SIO ${esc(p.sio)}</span>` : `<span class="tag crit">Chưa chọn sản phẩm</span>`}</div>
         <div class="ev-meta"><span>Bayer ký: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || '—')}</span><span class="mono">${live.length} BS · ${fmtVND(sum)} VND</span></div></div></div>
     <div class="actions"><button class="btn" data-act="edit-event" data-id="${ev.id}">Sửa</button><button class="btn" data-act="clone-event" data-id="${ev.id}">Nhân bản</button>
       <button class="btn" data-act="veeva-all" data-id="${ev.id}">Đã raise Veeva tất cả</button><button class="btn primary" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất ${live.length > 1 ? 'tất cả HĐ (.zip)' : 'hợp đồng'}</button></div>
@@ -1245,9 +1251,10 @@ function viewPay() {
       ${list.map(e => { const h = hcpById(e.hcpId), ev = evById(e.eventId); const mp = hcpMissing(h, 'pay'); const flags = [];
         if (!productFor(ev)) flags.push(`<a href="#su-kien" class="tag crit" data-act="edit-event" data-id="${ev.id}" title="Không có UDA/SIO cho file YCTT">Chưa chọn sản phẩm</a>`);
         if (!e.veevaAt) flags.push('<span class="tag warn">Chưa Veeva</span>'); if (ev.date > today()) flags.push('<span class="tag">Chưa diễn ra</span>');
+        const gm = gmLocation(e, h, ev); if (!gm) flags.push(`<a href="#su-kien" class="tag crit" data-act="edit-event" data-id="${ev.id}">Thiếu nơi tổ chức</a>`);
         return `<tr><td class="c-check"><input type="checkbox" data-pay="${e.id}" ${ui.paySel.has(e.id) ? 'checked' : ''} aria-label="Chọn ${esc(h?.name)}"></td>
         <td><a href="#bac-si" class="t-main" data-act="edit-hcp" data-id="${e.hcpId}">${esc(h?.name)}</a><div class="t-sub">${esc(h?.tier || '')}</div></td>
-        <td><div class="mono small">${fmtDate(ev.date)}</div><div class="t-sub">${esc(ev.name)}</div></td>
+        <td><div class="mono small">${fmtDate(ev.date)}</div><div class="t-sub">${esc(ev.name)}</div>${gm ? `<div class="t-sub">GM: ${esc(gm)}</div>` : ''}</td>
         <td>${esc(e.role)}</td><td class="num mono">${fmtVND(e.fee)}</td>
         <td><div class="miss">${mp.map(x => `<span class="tag crit">${x}</span>`).join('')}${flags.join('')}${!mp.length && !flags.length ? '<span class="tag ok">Đủ</span>' : ''}</div></td>
         <td><input class="inline-note" data-note="${e.id}" value="${esc(e.payNote)}" placeholder="—"></td></tr>`; }).join('')}
@@ -1464,6 +1471,9 @@ function productOptions(selId) {
   for (const p of state.products) { const g = p.brand || 'Khác'; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(p); }
   return [...groups].map(([g, ps]) => `<optgroup label="${esc(g)}">${ps.map(p => `<option value="${p.id}" ${p.id === selId ? 'selected' : ''}>${esc(prodLabel(p))}</option>`).join('')}</optgroup>`).join('');
 }
+const gmHint = venue => !clean(venue) ? 'Ghi đúng như trên hợp đồng. Cột “Bệnh viện/Nhà hàng nơi thực hiện GM” trong file YCTT lấy theo ô này.'
+  : isOnlineVenue(venue) ? 'Trực tuyến → file YCTT ghi: <b>Khoa phòng - Bệnh viện của từng BS (trực tuyến)</b>'
+  : `Tổ chức trực tiếp → file YCTT ghi nguyên: <b>${esc(clean(venue))}</b>`;
 const prodHint = p => p ? `${esc(p.bu || '')} · <b class="mono">${esc(p.costCenter || '—')}</b> · SIO <b class="mono">${esc(p.sio || '—')}</b>${p.signer2Name ? ` · Marketing ký: ${esc(p.signer2Name)}` : ''}` : 'UDA, SIO và người ký Marketing lấy theo sản phẩm.';
 function openEventEditor(evId, {clone} = {}) {
   const src = evId ? evById(evId) : null;
@@ -1483,8 +1493,7 @@ function openEventEditor(evId, {clone} = {}) {
         <div class="field span2" style="justify-content:flex-end"><span class="hint" id="prod-hint">${prodHint(productFor(ev))}</span></div>
         <label class="field spanall"><span>Tên sự kiện <em>*</em></span><input class="input" name="name" value="${esc(ev.name)}" placeholder="${esc((ev.date || today()).replace(/-/g, ''))} - HCM Hospital - XMeeting BV …" ${evId && !clone ? 'autofocus' : ''}></label>
         <label class="field"><span>Ngày thuyết trình <em>*</em></span><input class="input" type="date" name="date" value="${esc(ev.date)}"></label>
-        <label class="field span2"><span>Địa điểm tổ chức</span><input class="input" name="venue" list="dl-venue" value="${esc(ev.venue)}"></label>
-        <label class="field"><span>Hình thức</span><select class="input" name="online"><option value="1" ${ev.online ? 'selected' : ''}>Trực tuyến</option><option value="0" ${!ev.online ? 'selected' : ''}>Trực tiếp</option></select></label>
+        <label class="field spanall"><span>Địa điểm tổ chức <em>*</em></span><input class="input" name="venue" list="dl-venue" value="${esc(ev.venue)}" placeholder="Trực tiếp qua phần mềm Zoom · Khoa Nội Tim Mạch - Bệnh viện… · Nhà hàng…"><span class="hint" id="gm-hint">${gmHint(ev.venue)}</span></label>
         <label class="field"><span>Thành phố tổ chức</span><input class="input" name="city" value="${esc(ev.city)}"></label>
         <label class="field"><span>Quốc gia</span><input class="input" name="country" value="${esc(ev.country)}"></label>
       </div></div>
@@ -1514,6 +1523,7 @@ function openEventEditor(evId, {clone} = {}) {
     $('#sign-sum', w).textContent = 'Người ký phía Bayer: ' + ([form.elements.signer1Name.value, n2.value].filter(x => clean(x)).join(', ') || 'chưa có');
     prevProd = p;
   });
+  form.elements.venue.addEventListener('input', () => { $('#gm-hint', w).innerHTML = gmHint(form.elements.venue.value); });
   form.elements.date.addEventListener('change', () => {
     const n = form.elements.name; const d = form.elements.date.value.replace(/-/g, '');
     if (d && /^\d{8}\b/.test(n.value)) n.value = n.value.replace(/^\d{8}/, d);
@@ -1586,7 +1596,8 @@ function saveEvent(dl) {
   if (typedNoPick.length) { toast(`Chưa chọn BS cho “${typedNoPick[0].hcpName}”. Chọn trong danh sách gợi ý hoặc bấm Tạo hồ sơ.`, {kind:'err'}); return; }
   checkpoint();
   let ev = edit.evId ? evById(edit.evId) : null;
-  const evData = {name, date, venue:clean(f.venue), city:clean(f.city), country:clean(f.country) || 'Việt Nam', online:f.online === '1', note:clean(f.note),
+  if (!clean(f.venue)) { toast('Nhập địa điểm tổ chức (như trên hợp đồng). File YCTT cần thông tin này.', {kind:'err'}); $('#ev-form', w).elements.venue.focus(); return; }
+  const evData = {name, date, venue:clean(f.venue), city:clean(f.city), country:clean(f.country) || 'Việt Nam', online:isOnlineVenue(f.venue), note:clean(f.note),
     signer1Name:clean(f.signer1Name), signer1Title:clean(f.signer1Title), signer2Name:clean(f.signer2Name), signer2Title:clean(f.signer2Title)};
   if (f.productId) evData.productId = f.productId;
   if (ev) { Object.assign(ev, evData); if (ev.imported === 'yctt') ev.imported = 'edited'; }
