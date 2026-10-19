@@ -136,6 +136,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
 .tbl td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
 .tbl tr:last-child td{border-bottom:0}
+.tbl-prod td{padding:6px 4px}.tbl-prod td .input{min-width:110px}.tbl-prod td:nth-child(2) .input{min-width:165px}.tbl-prod td:nth-child(3) .input{min-width:80px}.tbl-prod td:nth-child(4) .input{min-width:135px}.tbl-prod td:nth-child(5) .input{min-width:145px}.tbl-prod td:nth-child(6) .input{min-width:175px}.tbl-prod td:nth-child(7) .input{min-width:210px}
 .tbl-hcp td{padding-left:10px;padding-right:10px}.tbl-hcp td:nth-child(1){min-width:165px}.tbl-hcp td:nth-child(7){min-width:150px}
 .tbl tbody tr.clickable{cursor:pointer}
 .tbl tbody tr.clickable:hover td{background:var(--surface-2)}
@@ -402,12 +403,34 @@ function defaultSettings() {
     venue:'Trực tiếp qua phần mềm Zoom', city:'Hồ Chí Minh', country:'Việt Nam', prep:120, duration:15, chairDuration:60, fee:5000000,
     filePattern:'{yymmdd} - Draft Speaker Agreement - Dr. {ho_ten}', annualCap:0 };
 }
-function fresh() { return { v:1, hcps:[], events:[], engs:[], batches:[], products:[], settings:defaultSettings(), lastBackupAt:null, changes:0 }; }
+function fresh() { return { v:1, hcps:[], events:[], engs:[], batches:[], products:presetProducts(), settings:defaultSettings(), lastBackupAt:null, changes:0 }; }
+/* Sản phẩm / hoạt động: quyết định BU, UDA (cost center), SIO trên file YCTT và người ký Marketing trên hợp đồng */
+const PRODUCT_PRESETS = [
+  {id:'p-adalat-gm',   brand:'Adalat U', activity:'Group Meeting',   bu:'CVRM', costCenter:'UDA3086355', sio:'530430010357', signer2Name:'Phan Anh Dũng',       signer2Title:'Quản lý sản phẩm'},
+  {id:'p-adalat-gits', brand:'Adalat U', activity:'GITS Ambassador', bu:'CVRM', costCenter:'UDA3086355', sio:'530430010366', signer2Name:'Phan Anh Dũng',       signer2Title:'Quản lý sản phẩm'},
+  {id:'p-xarelto-gm',  brand:'Xarelto',  activity:'Group Meeting',   bu:'CVRM', costCenter:'UDA3086379', sio:'530430010401', signer2Name:'Đinh Thị Hồng Hòa',   signer2Title:'Quản lý sản phẩm cấp cao'},
+  {id:'p-xarelto-xa',  brand:'Xarelto',  activity:'Xa Ambassador',   bu:'CVRM', costCenter:'UDA3086379', sio:'530430010408', signer2Name:'Đinh Thị Hồng Hòa',   signer2Title:'Quản lý sản phẩm cấp cao'},
+  {id:'p-firialta-gm', brand:'Firialta', activity:'Group Meeting',   bu:'CVRM', costCenter:'UDA3086364', sio:'530430010420', signer2Name:'Phạm Minh Yến',       signer2Title:'Quản lý sản phẩm cấp cao'},
+];
+const presetProducts = () => PRODUCT_PRESETS.map(p => ({...p}));
+const prodLabel = p => !p ? '' : p.brand ? `${p.brand} · ${p.activity || ''}`.replace(/ · $/, '') : (p.name || p.costCenter || 'Sản phẩm');
+// Gộp bộ sản phẩm chuẩn vào dữ liệu cũ: dòng trùng UDA + SIO được nâng cấp (giữ id để sự kiện cũ không đổi), thiếu thì thêm
+function ensurePresets(st) {
+  if (!st || !Array.isArray(st.products)) { if (st) st.products = []; else return false; }
+  let changed = false;
+  for (const pre of PRODUCT_PRESETS) {
+    if (st.products.some(p => p.id === pre.id)) continue;
+    const same = st.products.find(p => !p.brand && clean(p.costCenter) === pre.costCenter && clean(p.sio) === pre.sio);
+    if (same) { const keepId = same.id; Object.assign(same, pre, {id:keepId, presetId:pre.id}); changed = true; }
+    else if (!st.products.some(p => p.presetId === pre.id)) { st.products.push({...pre}); changed = true; }
+  }
+  return changed;
+}
 let storageOK = true;
 function load() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) { const s = JSON.parse(raw); const f = fresh(); return {...f, ...s, settings:{...f.settings, ...(s.settings || {})}}; }
+    if (raw) { const s = JSON.parse(raw); const f = fresh(); const st = {...f, ...s, settings:{...f.settings, ...(s.settings || {})}}; ensurePresets(st); return st; }
   } catch (e) { storageOK = false; }
   return fresh();
 }
@@ -495,7 +518,7 @@ const hcpById = id => state.hcps.find(h => h.id === id);
 const evById = id => state.events.find(e => e.id === id);
 const engById = id => state.engs.find(e => e.id === id);
 const engsOf = evId => state.engs.filter(e => e.eventId === evId);
-const productFor = ev => state.products.find(p => p.id === ev?.productId) || state.products[0] || {bu:'', costCenter:'', sio:''};
+const productFor = ev => state.products.find(p => p.id === ev?.productId) || null;
 function emptyHcp() {
   return { id:uid(), name:'', title:'', tier:'', khoa:'', position:'', hospital:'', specialty:'', defaultRole:'', defaultFee:0,
     cccd:'', dob:'', birthplace:'', phone:'', email:'', street:'', city:'Hồ Chí Minh', country:'Việt Nam', homeAddress:'',
@@ -503,7 +526,7 @@ function emptyHcp() {
 }
 function newEvent(o = {}) {
   const s = state.settings;
-  return { id:uid(), name:'', date:'', venue:s.venue, city:s.city, country:s.country, online:true, productId:state.products[0]?.id || '',
+  return { id:uid(), name:'', date:'', venue:s.venue, city:s.city, country:s.country, online:true, productId:'',
     signer1Name:s.signer1Name, signer1Title:s.signer1Title, signer2Name:s.signer2Name, signer2Title:s.signer2Title, note:'', createdAt:Date.now(), ...o };
 }
 function newEng(o = {}) {
@@ -647,8 +670,8 @@ const PAY_HEADERS = ['STT','BU','Cost center sản phẩm','SIO của sản ph�
 const PAY_WIDTHS = [4.9,6.4,11.6,13.1,16.7,18.3,8.4,23.7,13.1,12.9,14,18.4,14,14.6,14.4,14.3,12.1,15.4,14.9,11.7];
 const xlDate = iso => { if (!iso) return null; const {y, m, d} = isoParts(iso); return new Date(Date.UTC(y, m-1, d)); };
 function payRow(e, reqIso) {
-  const ev = evById(e.eventId) || {}, h = hcpById(e.hcpId) || {}, p = productFor(ev), s = state.settings;
-  const sio = /^\d+$/.test(clean(p.sio)) && clean(p.sio).length < 16 ? Number(clean(p.sio)) : p.sio;
+  const ev = evById(e.eventId) || {}, h = hcpById(e.hcpId) || {}, p = productFor(ev) || {}, s = state.settings;
+  const sio = /^\d+$/.test(clean(p.sio)) && clean(p.sio).length < 16 ? Number(clean(p.sio)) : (p.sio || '');
   return [null, p.bu, p.costCenter, sio, s.staffName, h.name, h.tier, h.email, xlDate(ev.date), e.role, Number(e.fee) || 0,
     gmLocation(e, h, ev), cityLabel(ev.city || s.city, 'Tp. '), fullAddress(h), clean(h.cccd), clean(h.phone), s.manager, s.contractForm, xlDate(reqIso), e.payNote || ''];
 }
@@ -803,7 +826,7 @@ function applyExcel(plan, opts) {
   if (opts.settings) {
     for (const [k, v] of Object.entries(plan.settings)) if (v && !clean(state.settings[k])) state.settings[k] = v;
     if (plan.product && !state.products.some(p => clean(p.costCenter) === clean(plan.product.costCenter) && clean(p.sio) === clean(plan.product.sio)))
-      state.products.push({id:uid(), name:state.products.length ? 'Sản phẩm ' + (state.products.length + 1) : 'Mặc định', ...plan.product});
+      state.products.push({id:uid(), name:'Nhập từ YCTT ' + clean(plan.product.costCenter), ...plan.product});
   }
   if (opts.history) {
     for (const row of plan.history) {
@@ -813,7 +836,7 @@ function applyExcel(plan, opts) {
       let e = existing;
       if (!e) {
         let ev = state.events.find(x => x.date === row.date && x.imported === 'yctt');
-        if (!ev) { ev = newEvent({name:`Sự kiện ${fmtDate(row.date)} (nhập từ YCTT)`, date:row.date, venue:row.online ? 'Trực tuyến' : '', city:row.city || state.settings.city, online:row.online, imported:'yctt'}); state.events.push(ev); }
+        if (!ev) { const pr = plan.product && state.products.find(p => clean(p.costCenter) === clean(plan.product.costCenter) && clean(p.sio) === clean(plan.product.sio)); ev = newEvent({name:`Sự kiện ${fmtDate(row.date)} (nhập từ YCTT)`, date:row.date, venue:row.online ? 'Trực tuyến' : '', city:row.city || state.settings.city, online:row.online, imported:'yctt', productId:pr?.id || ''}); state.events.push(ev); }
         e = newEng({eventId:ev.id, hcpId:h.id, role:row.role, fee:row.fee, gmLocation:row.gm, contractAt:row.date, payNote:row.note, imported:true, topic:'', duration:'', prep:''});
         state.engs.push(e); hist++;
       }
@@ -1130,7 +1153,7 @@ function viewEvents() {
     const {d, m, y} = ev.date ? isoParts(ev.date) : {};
     return `<tr class="clickable" data-act="open-event" data-id="${ev.id}">
       <td class="nowrap"><div class="ev-date">${ev.date ? `${pad(d)}/${pad(m)}<small>${weekday(ev.date)} · ${y}</small>` : '—'}</div></td>
-      <td><div class="t-main">${esc(ev.name)}</div><div class="t-sub">${[ev.venue, ev.city].filter(Boolean).map(esc).join(' · ')}${ev.imported === 'yctt' ? ' <span class="tag">nhập từ YCTT</span>' : ''}</div></td>
+      <td><div class="t-main">${esc(ev.name)}</div><div class="t-sub">${productFor(ev) ? `<span class="tag acc">${esc(prodLabel(productFor(ev)))}</span> ` : '<span class="tag crit">Chưa chọn SP</span> '}${[ev.venue, ev.city].filter(Boolean).map(esc).join(' · ')}${ev.imported === 'yctt' ? ' <span class="tag">nhập từ YCTT</span>' : ''}</div></td>
       <td><div>${live.map(e => esc(hcpById(e.hcpId)?.name || '?')).join(', ') || '<span class="muted">Chưa có BS</span>'}</div><div class="t-sub">${live.length} BS</div></td>
       <td class="num mono">${fmtVND(sum)}</td>
       <td><div class="mini" title="${Object.entries(counts).map(([s, n]) => `${STAGE[s].label}: ${n}`).join(' · ')}">${['prep','ready','held','sent','paid'].map(s => counts[s] ? `<span class="${STAGE[s].cls}" style="flex:${counts[s]}"></span>` : '').join('')}</div>
@@ -1170,7 +1193,7 @@ function viewEventDetail(ev) {
   <div class="page-h"><div class="ev-head">
       <div class="big-date">${ev.date ? `<b>${pad(d)}/${pad(m)}</b><span>${weekday(ev.date)} · ${y}</span>` : '<b>—</b>'}</div>
       <div><h1>${esc(ev.name)}</h1>
-        <div class="ev-meta"><span>${esc(ev.venue || 'Chưa có địa điểm')}</span><span>${esc(ev.city)}${ev.country && ev.country !== 'Việt Nam' ? ', ' + esc(ev.country) : ''}</span><span class="tag ${ev.online ? 'acc' : ''}">${ev.online ? 'Trực tuyến' : 'Trực tiếp'}</span>${ev.date ? `<span>${relDays(ev.date)}</span>` : ''}${p.costCenter ? `<span class="mono">${esc(p.name || '')} ${esc(p.costCenter)}</span>` : ''}</div>
+        <div class="ev-meta"><span>${esc(ev.venue || 'Chưa có địa điểm')}</span><span>${esc(ev.city)}${ev.country && ev.country !== 'Việt Nam' ? ', ' + esc(ev.country) : ''}</span><span class="tag ${ev.online ? 'acc' : ''}">${ev.online ? 'Trực tuyến' : 'Trực tiếp'}</span>${ev.date ? `<span>${relDays(ev.date)}</span>` : ''}${p ? `<span class="tag acc">${esc(prodLabel(p))}</span><span class="mono">${esc(p.costCenter)} · SIO ${esc(p.sio)}</span>` : `<span class="tag crit">Chưa chọn sản phẩm</span>`}</div>
         <div class="ev-meta"><span>Bayer ký: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || '—')}</span><span class="mono">${live.length} BS · ${fmtVND(sum)} VND</span></div></div></div>
     <div class="actions"><button class="btn" data-act="edit-event" data-id="${ev.id}">Sửa</button><button class="btn" data-act="clone-event" data-id="${ev.id}">Nhân bản</button>
       <button class="btn" data-act="veeva-all" data-id="${ev.id}">Đã raise Veeva tất cả</button><button class="btn primary" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất ${live.length > 1 ? 'tất cả HĐ (.zip)' : 'hợp đồng'}</button></div>
@@ -1203,7 +1226,7 @@ function viewPay() {
   for (const id of [...ui.paySel]) if (!list.some(e => e.id === id)) ui.paySel.delete(id);
   const sel = list.filter(e => ui.paySel.has(e.id));
   const sum = sel.reduce((a, e) => a + (+e.fee || 0), 0);
-  const noProd = !state.products.length || !clean(state.products[0].costCenter);
+  const noProd = !state.products.some(p => clean(p.costCenter));
   const noStaff = !clean(state.settings.staffName) || !clean(state.settings.manager);
   const batches = [...state.batches].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
   return pageHead('Thanh toán', 'Chọn các BS đã xong sự kiện, xuất file “Yêu cầu thanh toán” đúng mẫu admin. Thường làm một lần cuối tháng.', '') + `
@@ -1212,6 +1235,7 @@ function viewPay() {
     <div class="panel-h"><h2>Chờ gửi admin</h2><label class="check small"><input type="checkbox" id="pay-future" ${ui.payFuture ? 'checked' : ''}> Hiện cả sự kiện chưa diễn ra</label></div>
     ${list.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th class="c-check"><input type="checkbox" id="pay-all" ${sel.length === list.length ? 'checked' : ''} aria-label="Chọn tất cả"></th><th>Bác sĩ</th><th>Sự kiện</th><th>Vai trò</th><th class="num">Số tiền</th><th>Kiểm tra</th><th>Ghi chú (cột T)</th></tr></thead><tbody>
       ${list.map(e => { const h = hcpById(e.hcpId), ev = evById(e.eventId); const mp = hcpMissing(h, 'pay'); const flags = [];
+        if (!productFor(ev)) flags.push(`<a href="#su-kien" class="tag crit" data-act="edit-event" data-id="${ev.id}" title="Không có UDA/SIO cho file YCTT">Chưa chọn sản phẩm</a>`);
         if (!e.veevaAt) flags.push('<span class="tag warn">Chưa Veeva</span>'); if (ev.date > today()) flags.push('<span class="tag">Chưa diễn ra</span>');
         return `<tr><td class="c-check"><input type="checkbox" data-pay="${e.id}" ${ui.paySel.has(e.id) ? 'checked' : ''} aria-label="Chọn ${esc(h?.name)}"></td>
         <td><a href="#bac-si" class="t-main" data-act="edit-hcp" data-id="${e.hcpId}">${esc(h?.name)}</a><div class="t-sub">${esc(h?.tier || '')}</div></td>
@@ -1259,15 +1283,17 @@ function viewSettings() {
 
   <section class="panel"><div class="panel-h"><h2>Thông tin file YCTT</h2></div><div class="panel-b stack">
     <div class="fgrid">${f('staffName', 'Họ tên Staff (cột E)')}${f('manager', 'Người quản lý RFFM/RKAM (cột Q)')}${f('contractForm', 'Hình thức HĐ gốc (cột R)')}</div>
-    <div><div class="field"><span>Sản phẩm · BU · Cost center · SIO (cột B, C, D). Mỗi sự kiện chọn một dòng.</span></div>
-      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Tên</th><th>BU</th><th>Cost center</th><th>SIO</th><th></th></tr></thead><tbody>
-      ${state.products.map(p => `<tr>${['name','bu','costCenter','sio'].map(k => `<td><input class="input" data-prod="${p.id}" data-k="${k}" value="${esc(p[k])}"></td>`).join('')}<td><button class="btn sm ghost danger" data-act="del-prod" data-id="${p.id}" data-confirm="Xoá?">${I.x}</button></td></tr>`).join('')}
+    <div><div class="field"><span>Sản phẩm / hoạt động: BU, UDA, SIO (cột B, C, D) và người ký Marketing trên hợp đồng. Mỗi sự kiện chọn một dòng.</span></div>
+      <div class="tbl-wrap"><table class="tbl tbl-prod"><thead><tr><th>Sản phẩm</th><th>Hoạt động</th><th>BU</th><th>UDA / Cost center</th><th>SIO</th><th>Marketing ký</th><th>Chức vụ</th><th></th></tr></thead><tbody>
+      ${state.products.map(p => `<tr>${['brand','activity','bu','costCenter','sio','signer2Name','signer2Title'].map(k => `<td><input class="input" data-prod="${p.id}" data-k="${k}" value="${esc(k === 'brand' && !p.brand ? (p.name || '') : p[k])}"></td>`).join('')}<td><button class="btn sm ghost danger" data-act="del-prod" data-id="${p.id}" data-confirm="Xoá?">${I.x}</button></td></tr>`).join('')}
       </tbody></table></div>
-      <button class="btn sm" style="margin-top:8px" data-act="add-prod">${I.plus} Thêm dòng</button></div>
+      <div class="actions" style="margin-top:8px"><button class="btn sm" data-act="add-prod">${I.plus} Thêm dòng</button><button class="btn sm ghost" data-act="reset-prod">Bổ sung bộ mặc định CVRM</button></div></div>
   </div></section>
 
-  <section class="panel"><div class="panel-h"><h2>Người ký phía Bayer (mặc định cho sự kiện mới)</h2></div><div class="panel-b">
-    <div class="fgrid">${f('signer1Name', 'Người ký 1')}${f('signer1Title', 'Chức vụ người ký 1')}${f('signer2Name', 'Người ký 2')}${f('signer2Title', 'Chức vụ người ký 2')}</div>
+  <section class="panel"><div class="panel-h"><h2>Người ký phía Bayer</h2></div><div class="panel-b stack">
+    <div class="fgrid">${f('signer1Name', 'Người ký 1 (Sales)')}${f('signer1Title', 'Chức vụ người ký 1')}</div>
+    <p class="hint" style="margin:0">Người ký 2 (Marketing) lấy theo sản phẩm ở bảng trên. Ô dưới chỉ dùng khi sản phẩm chưa có người ký.</p>
+    <div class="fgrid">${f('signer2Name', 'Người ký 2 dự phòng')}${f('signer2Title', 'Chức vụ người ký 2 dự phòng')}</div>
   </div></section>
 
   <section class="panel"><div class="panel-h"><h2>Giá trị mặc định</h2></div><div class="panel-b stack">
@@ -1407,7 +1433,7 @@ function hcpCopyText(h) {
 }
 function engCopyText(e) {
   const ev = evById(e.eventId), h = hcpById(e.hcpId) || {};
-  return [`Sự kiện: ${ev.name}`, `Ngày: ${fmtDate(ev.date)}`, `Địa điểm: ${[ev.venue, ev.city].filter(Boolean).join(', ')}`, `HCP: ${h.name}`, `Chức vụ: ${[h.position || h.khoa, h.hospital].filter(Boolean).join(' – ')}`,
+  return [`Sự kiện: ${ev.name}`, `Sản phẩm: ${prodLabel(productFor(ev)) || '—'}`, `Ngày: ${fmtDate(ev.date)}`, `Địa điểm: ${[ev.venue, ev.city].filter(Boolean).join(', ')}`, `HCP: ${h.name}`, `Chức vụ: ${[h.position || h.khoa, h.hospital].filter(Boolean).join(' – ')}`,
     `CCCD/MST: ${h.cccd || ''}`, `Vai trò: ${e.role}`, `Chủ đề: ${e.topic || ''}`, `Thời lượng: ${e.duration || ''} phút · Chuẩn bị: ${e.prep || ''} phút`, `Thù lao: ${fmtVND(e.fee)} VND`].join('\n');
 }
 function askInfoText(h) {
@@ -1425,6 +1451,12 @@ function askInfoText(h) {
 
 /* --- event editor --- */
 let edit = null; // {evId, ev:{...}, rows:[{rid, engId, hcpId, hcpName, role, topic, duration, prep, fee, specialty}]}
+function productOptions(selId) {
+  const groups = new Map();
+  for (const p of state.products) { const g = p.brand || 'Khác'; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(p); }
+  return [...groups].map(([g, ps]) => `<optgroup label="${esc(g)}">${ps.map(p => `<option value="${p.id}" ${p.id === selId ? 'selected' : ''}>${esc(prodLabel(p))}</option>`).join('')}</optgroup>`).join('');
+}
+const prodHint = p => p ? `${esc(p.bu || '')} · <b class="mono">${esc(p.costCenter || '—')}</b> · SIO <b class="mono">${esc(p.sio || '—')}</b>${p.signer2Name ? ` · Marketing ký: ${esc(p.signer2Name)}` : ''}` : 'UDA, SIO và người ký Marketing lấy theo sản phẩm.';
 function openEventEditor(evId, {clone} = {}) {
   const src = evId ? evById(evId) : null;
   const ev = src ? {...src} : newEvent({date:addDays(today(), 7)});
@@ -1438,18 +1470,20 @@ function openEventEditor(evId, {clone} = {}) {
     <div class="modal-h"><div><h2>${clone ? 'Nhân bản sự kiện' : evId ? 'Sửa sự kiện' : 'Sự kiện mới'}</h2><p>Thông tin chung điền một lần cho mọi hợp đồng trong sự kiện.</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
     <form class="modal-b" id="ev-form" autocomplete="off">
       <div class="fsec"><h3>Sự kiện</h3><div class="fgrid">
-        <label class="field spanall"><span>Tên sự kiện <em>*</em></span><input class="input" name="name" value="${esc(ev.name)}" placeholder="${esc((ev.date || today()).replace(/-/g, ''))} - HCM Hospital - XMeeting BV …" autofocus></label>
+        <label class="field span2"><span>Sản phẩm / hoạt động <em>*</em></span><select class="input" name="productId" ${evId && !clone ? '' : 'autofocus'}>
+          <option value="">Chọn sản phẩm…</option>${productOptions(ev.productId)}</select></label>
+        <div class="field span2" style="justify-content:flex-end"><span class="hint" id="prod-hint">${prodHint(productFor(ev))}</span></div>
+        <label class="field spanall"><span>Tên sự kiện <em>*</em></span><input class="input" name="name" value="${esc(ev.name)}" placeholder="${esc((ev.date || today()).replace(/-/g, ''))} - HCM Hospital - XMeeting BV …" ${evId && !clone ? 'autofocus' : ''}></label>
         <label class="field"><span>Ngày thuyết trình <em>*</em></span><input class="input" type="date" name="date" value="${esc(ev.date)}"></label>
         <label class="field span2"><span>Địa điểm tổ chức</span><input class="input" name="venue" list="dl-venue" value="${esc(ev.venue)}"></label>
         <label class="field"><span>Hình thức</span><select class="input" name="online"><option value="1" ${ev.online ? 'selected' : ''}>Trực tuyến</option><option value="0" ${!ev.online ? 'selected' : ''}>Trực tiếp</option></select></label>
         <label class="field"><span>Thành phố tổ chức</span><input class="input" name="city" value="${esc(ev.city)}"></label>
         <label class="field"><span>Quốc gia</span><input class="input" name="country" value="${esc(ev.country)}"></label>
-        ${state.products.length > 1 ? `<label class="field"><span>Sản phẩm / Cost center</span><select class="input" name="productId">${state.products.map(p => `<option value="${p.id}" ${p.id === ev.productId ? 'selected' : ''}>${esc(p.name || p.costCenter)}</option>`).join('')}</select></label>` : ''}
       </div></div>
-      <details class="fsec"><summary class="small" style="cursor:pointer;font-weight:600">Người ký phía Bayer: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || 'chưa có')}</summary>
+      <details class="fsec"><summary class="small" style="cursor:pointer;font-weight:600" id="sign-sum">Người ký phía Bayer: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || 'chưa có')}</summary>
         <div class="fgrid" style="margin-top:12px">
-          <label class="field"><span>Người ký 1</span><input class="input" name="signer1Name" value="${esc(ev.signer1Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer1Title" value="${esc(ev.signer1Title)}"></label>
-          <label class="field"><span>Người ký 2</span><input class="input" name="signer2Name" value="${esc(ev.signer2Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer2Title" value="${esc(ev.signer2Title)}"></label>
+          <label class="field"><span>Người ký 1 (Sales)</span><input class="input" name="signer1Name" value="${esc(ev.signer1Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer1Title" value="${esc(ev.signer1Title)}"></label>
+          <label class="field"><span>Người ký 2 (Marketing, theo sản phẩm)</span><input class="input" name="signer2Name" value="${esc(ev.signer2Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer2Title" value="${esc(ev.signer2Title)}"></label>
         </div></details>
       <label class="field fsec"><span>Ghi chú nội bộ</span><input class="input" name="note" value="${esc(ev.note)}"></label>
       <div class="fsec"><h3>Bác sĩ tham gia</h3><div class="eng-rows" id="eng-rows"></div>
@@ -1461,6 +1495,17 @@ function openEventEditor(evId, {clone} = {}) {
     <div class="modal-f"><span class="muted small left" id="ev-sum"></span><button class="btn" data-act="close">Huỷ</button><button class="btn" data-act="save-event">Lưu</button><button class="btn primary" data-act="save-event" data-dl="1">${I.down} Lưu & xuất HĐ</button></div>`, {size:'wide', onClose:() => { edit = null; }});
   const form = $('#ev-form', w);
   form.addEventListener('submit', e => e.preventDefault());
+  let prevProd = productFor(ev);
+  form.elements.productId.addEventListener('change', () => {
+    const p = state.products.find(x => x.id === form.elements.productId.value) || null;
+    $('#prod-hint', w).innerHTML = prodHint(p);
+    const n2 = form.elements.signer2Name, t2 = form.elements.signer2Title;
+    // đổi người ký Marketing theo sản phẩm, trừ khi người dùng đã tự sửa tay khác với sản phẩm cũ
+    const untouched = !clean(n2.value) || (prevProd && clean(n2.value) === clean(prevProd.signer2Name)) || clean(n2.value) === clean(state.settings.signer2Name);
+    if (p?.signer2Name && untouched) { n2.value = p.signer2Name; t2.value = p.signer2Title || ''; }
+    $('#sign-sum', w).textContent = 'Người ký phía Bayer: ' + ([form.elements.signer1Name.value, n2.value].filter(x => clean(x)).join(', ') || 'chưa có');
+    prevProd = p;
+  });
   form.elements.date.addEventListener('change', () => {
     const n = form.elements.name; const d = form.elements.date.value.replace(/-/g, '');
     if (d && /^\d{8}\b/.test(n.value)) n.value = n.value.replace(/^\d{8}/, d);
@@ -1526,6 +1571,7 @@ function saveEvent(dl) {
   syncRows();
   const f = readForm($('#ev-form', w));
   const name = clean(f.name), date = f.date;
+  if (!f.productId) { toast('Chọn sản phẩm / hoạt động để file thanh toán có đúng UDA và SIO.', {kind:'err'}); $('#ev-form', w).elements.productId.focus(); return; }
   if (!name || !date) { toast('Cần nhập tên và ngày sự kiện.', {kind:'err'}); return; }
   const rows = edit.rows.filter(r => r.hcpId);
   const typedNoPick = edit.rows.filter(r => !r.hcpId && clean(r.hcpName));
@@ -1536,7 +1582,7 @@ function saveEvent(dl) {
     signer1Name:clean(f.signer1Name), signer1Title:clean(f.signer1Title), signer2Name:clean(f.signer2Name), signer2Title:clean(f.signer2Title)};
   if (f.productId) evData.productId = f.productId;
   if (ev) { Object.assign(ev, evData); if (ev.imported === 'yctt') ev.imported = 'edited'; }
-  else { ev = newEvent({...evData, productId:f.productId || state.products[0]?.id || ''}); state.events.push(ev); }
+  else { ev = newEvent(evData); state.events.push(ev); }
   const keep = new Set();
   for (const r of rows) {
     const data = {hcpId:r.hcpId, role:r.role || 'Báo cáo viên', topic:r.topic, duration:r.duration, prep:r.prep, fee:r.fee, specialty:r.specialty};
@@ -1636,6 +1682,7 @@ async function doPull() {
 function adopt(row) {
   const f = fresh(); const d = row.data || {};
   state = {...f, ...d, settings:{...f.settings, ...(d.settings || {})}, ownerId:sync.user.id, syncedAt:row.updated_at, pending:false};
+  if (ensurePresets(state)) { state.pending = true; schedulePush(); }
   if (row.template) { template = row.template; persistTemplate(); } else if (template) { sync.tplDirty = true; schedulePush(); }
   persistLocal(); sync.at = Date.now(); setSync('synced'); render();
 }
@@ -1836,11 +1883,12 @@ const ACT = {
   'batch-undo': t => { checkpoint(); const b = state.batches.find(x => x.id === t.dataset.id); b.engIds.map(engById).filter(Boolean).forEach(e => { e.sentAt = null; e.batchId = null; }); state.batches = state.batches.filter(x => x !== b); ui.openBatch = null; save(); render(); toast('Đã huỷ đợt, các BS về “chờ gửi”.', {action:'Hoàn tác', onAction:undo}); },
   'apply-excel': () => { const p = pendingPlan; const w = topModal(); const opts = {history:!!$('#opt-hist', w)?.checked, settings:!!$('#opt-set', w)?.checked}; closeModal(); applyExcel(p, opts); },
   'apply-contracts': () => { const p = pendingPlan; const opts = {events:!!$('#opt-ev', topModal())?.checked}; closeModal(); applyContracts(p, opts); },
-  'do-restore': () => { checkpoint(); const o = pendingRestore; const f = fresh(); const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...f, ...o.state, settings:{...f.settings, ...(o.state.settings || {})}, lastBackupAt:Date.parse(o.exportedAt) || Date.now(), changes:0, ...keep}; if (o.template) saveTemplate(o.template); save(); closeModal(); render(); toast('Đã khôi phục.', {action:'Hoàn tác', onAction:undo}); },
+  'do-restore': () => { checkpoint(); const o = pendingRestore; const f = fresh(); const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...f, ...o.state, settings:{...f.settings, ...(o.state.settings || {})}, lastBackupAt:Date.parse(o.exportedAt) || Date.now(), changes:0, ...keep}; ensurePresets(state); if (o.template) saveTemplate(o.template); save(); closeModal(); render(); toast('Đã khôi phục.', {action:'Hoàn tác', onAction:undo}); },
   'dl-template': () => saveFile(template.name || 'Phoi_Speaker_Agreement.docx', new Blob([bufFromB64(template.b64)])),
   'del-template': () => { saveTemplate(null); render(); toast('Đã gỡ phôi.'); },
-  'add-prod': () => { state.products.push({id:uid(), name:state.products.length ? '' : 'Mặc định', bu:'', costCenter:'', sio:''}); save(); render(); },
-  'del-prod': t => { state.products = state.products.filter(p => p.id !== t.dataset.id); save(); render(); },
+  'add-prod': () => { state.products.push({id:uid(), brand:'', activity:'', bu:'CVRM', costCenter:'', sio:'', signer2Name:'', signer2Title:''}); save(); render(); },
+  'reset-prod': () => { const ch = ensurePresets(state); if (ch) { save(); render(); } toast(ch ? 'Đã bổ sung các dòng mặc định còn thiếu.' : 'Đã có đủ bộ mặc định.'); },
+  'del-prod': t => { const n = state.events.filter(e => e.productId === t.dataset.id).length; if (n) { toast(`Có ${n} sự kiện đang dùng dòng này, không xoá được.`, {kind:'err'}); return; } state.products = state.products.filter(p => p.id !== t.dataset.id); save(); render(); },
   account: t => openAccount(t.dataset.m || 'login'),
   'auth-mode': t => { const w = topModal(); const em = w?.querySelector('[name=email]')?.value || ''; openAccount(t.dataset.m, em); },
   'auth-submit': () => authSubmit(),
@@ -1850,7 +1898,7 @@ const ACT = {
   'sync-fresh': () => { closeModal(); state = fresh(); state.ownerId = sync.user.id; persistLocal(); sync.tplDirty = !!template; push(true).then(() => render()); },
   'sync-use-cloud': () => { closeModal(); if (conflictRow) adopt(conflictRow); conflictRow = null; toast('Đã dùng bản trên tài khoản.'); },
   'sync-keep-local': () => { closeModal(); state.ownerId = sync.user.id; state.syncedAt = conflictRow?.updated_at || null; sync.tplDirty = !!template; conflictRow = null; push(true).then(() => toast('Đã ghi bản máy này lên tài khoản.')); },
-  wipe: () => { checkpoint(); const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...fresh(), ...keep}; save(); render(); toast('Đã xoá toàn bộ dữ liệu (phôi vẫn giữ).', {action:'Hoàn tác', onAction:undo}); },
+  wipe: () => { checkpoint(); const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt, products:state.products}; state = {...fresh(), ...keep}; save(); render(); toast('Đã xoá toàn bộ dữ liệu (phôi vẫn giữ).', {action:'Hoàn tác', onAction:undo}); },
 };
 
 document.addEventListener('click', e => {
@@ -1901,7 +1949,7 @@ document.addEventListener('change', e => {
     const k = t.dataset.set; const numeric = ['fee','duration','chairDuration','prep','annualCap'].includes(k);
     state.settings[k] = numeric ? money(t.value) : clean(t.value); save(); renderRail(); toast('Đã lưu cài đặt.'); return;
   }
-  if (t.dataset.prod) { const p = state.products.find(x => x.id === t.dataset.prod); if (p) { p[t.dataset.k] = clean(t.value); save(); toast('Đã lưu.'); } return; }
+  if (t.dataset.prod) { const p = state.products.find(x => x.id === t.dataset.prod); if (p) { p[t.dataset.k] = clean(t.value); if (t.dataset.k === 'brand') p.name = clean(t.value); save(); toast('Đã lưu.'); } return; }
   if (t.closest('#eng-rows') && t.name?.endsWith('.role')) {
     syncRows(); const rid = t.name.split('.')[1]; const r = edit.rows.find(x => x.rid === rid);
     if (r && norm(r.role) === norm('Chủ tọa') && Number(r.duration) === Number(state.settings.duration)) { r.duration = state.settings.chairDuration; renderRows(); }

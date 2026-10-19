@@ -4,9 +4,10 @@ App web một trang để làm hợp đồng Speaker Agreement và file Yêu c�
 
 ## Tính năng
 - Danh bạ bác sĩ: lưu thông tin để điền hợp đồng và file thanh toán; nhập từ Excel YCTT cũ hoặc từ hợp đồng .docx cũ.
-- Sự kiện & hợp đồng: chọn BS, điền chủ đề/phí, xuất hợp đồng .docx từ phôi (nhiều BS → 1 file .zip).
+- Sự kiện & hợp đồng: chọn sản phẩm/hoạt động (Adalat U, Xarelto, Firialta), chọn BS, điền chủ đề/phí, xuất hợp đồng .docx từ phôi (nhiều BS → 1 file .zip). Người ký Marketing tự đổi theo sản phẩm.
+- Mã ngân hàng tự điền theo bảng mã Citi 31/03/2025.
 - Theo dõi tiến độ: HĐ → Raise Veeva → Event → Gửi admin → Đã chi.
-- Thanh toán: chọn nhiều BS, xuất file "Yêu cầu thanh toán hợp đồng HCP" đúng mẫu 20 cột.
+- Thanh toán: chọn nhiều BS, xuất file "Yêu cầu thanh toán hợp đồng HCP" đúng mẫu 20 cột; BU/UDA/SIO lấy theo sản phẩm của từng sự kiện.
 - Tổng quan: việc cần làm, thù lao theo năm từng BS, nhắc sao lưu.
 
 ## Dữ liệu
