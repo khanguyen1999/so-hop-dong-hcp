@@ -144,6 +144,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
 .tbl td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
 .tbl tr:last-child td{border-bottom:0}
+.qf-sum{cursor:pointer;font-weight:600;color:var(--accent)}
+.qf-box{display:grid;gap:8px;margin-top:10px;border:1.5px dashed var(--line-strong);border-radius:12px;padding:10px}
+.qf-box.drag{border-color:var(--accent);background:var(--accent-soft)}
+.input.qf-filled{background:var(--warn-soft);border-color:var(--warn)}
 .tbl-prod td{padding:6px 4px}.tbl-prod td .input{min-width:110px}.tbl-prod td:nth-child(2) .input{min-width:165px}.tbl-prod td:nth-child(3) .input{min-width:80px}.tbl-prod td:nth-child(4) .input{min-width:135px}.tbl-prod td:nth-child(5) .input{min-width:145px}.tbl-prod td:nth-child(6) .input{min-width:175px}.tbl-prod td:nth-child(7) .input{min-width:210px}
 .tbl-hcp td{padding-left:10px;padding-right:10px}.tbl-hcp td:nth-child(1){min-width:165px}.tbl-hcp td:nth-child(7){min-width:150px}
 .tbl tbody tr.clickable{cursor:pointer}
@@ -310,6 +314,7 @@ const LIBS = {
   docx: 'https://cdn.jsdelivr.net/npm/docxtemplater@3.67.0/build/docxtemplater.min.js',
   xlsx: 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
   supa: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js',
+  ocr: 'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js',
 };
 /* Đồng bộ tài khoản (Supabase). Để trống = chỉ lưu trên máy. Chỉ điền Project URL + publishable/anon key, KHÔNG điền secret key. */
 const SUPABASE_URL = 'https://kbxnrkxfmobwisbzkehl.supabase.co';
@@ -520,6 +525,166 @@ function bankLookup(name) {
   return {bank:info.name, code:best[0], branch:best[1], all};
 }
 const bankCodeName = code => BANK_CODES.find(([c]) => c === clean(code))?.[1] || '';
+
+/* ================= thêm nhanh: tách thông tin BS từ tin nhắn / ảnh ================= */
+const QF_FIELDS = {name:'Họ tên', title:'Danh xưng', cccd:'CCCD', dob:'Ngày sinh', birthplace:'Nơi sinh', phone:'SĐT', email:'Email', street:'Địa chỉ HĐ', city:'Thành phố',
+  homeAddress:'Địa chỉ nhà', khoa:'Khoa', position:'Chức vụ', hospital:'Bệnh viện', specialty:'Chuyên môn', bankHolder:'Chủ TK', bankAccount:'Số TK', bankName:'Ngân hàng', bankCode:'Mã NH'};
+const QF_LABEL = [
+  ['bankHolder', ['chu tai khoan','chu tk','ten tai khoan','ten tk','ten chu tai khoan','ten chu tk','account name','ctk','nguoi thu huong','ten nguoi nhan']],
+  ['bankCode', ['ma ngan hang','ma nh','bank code','ma chi nhanh','ma citad']],
+  ['bankAccount', ['so tai khoan','so tai khoan so','so tk','stk','tai khoan','tk','account','account number','account no','so tai khoan ngan hang']],
+  ['bankName', ['ngan hang','ten ngan hang','bank','nh','ngan hang chi nhanh','chi nhanh']],
+  ['phone', ['so dien thoai','sdt','dien thoai','dt','dtdd','phone','tel','mobile','zalo','so dt','di dong']],
+  ['email', ['email','e-mail','mail','gmail','dia chi email']],
+  ['cccd', ['so cccd','cccd','cmnd','so cmnd','can cuoc','can cuoc cong dan','so can cuoc','so dinh danh','so dinh danh ca nhan','ma so thue','ma so thue ca nhan','mst','so / no','so/no','so','no','id']],
+  ['dob', ['ngay sinh','ngay thang nam sinh','sinh ngay','date of birth','dob','ngay sinh / date of birth']],
+  ['homeAddress', ['noi thuong tru','thuong tru','dia chi thuong tru','dia chi nha','place of residence','noi o','cho o','noi o hien tai','noi thuong tru / place of residence']],
+  ['address', ['dia chi','dc','address','dia chi lam viec','dia chi hop dong','dia chi tren hop dong','dia chi lien he']],
+  ['birthplace', ['que quan','noi sinh','place of origin','place of birth','que quan / place of origin']],
+  ['position', ['chuc vu','chuc danh','vi tri']],
+  ['khoa', ['khoa','khoa phong','khoa/phong','phong','don vi cong tac','khoa cong tac']],
+  ['hospital', ['benh vien','noi cong tac','co quan','bv','don vi','noi lam viec','co quan cong tac']],
+  ['specialty', ['chuyen khoa','chuyen nganh','linh vuc','linh vuc chuyen mon','chuyen mon']],
+  ['title', ['hoc ham','hoc vi','danh xung','hoc ham hoc vi']],
+  ['name', ['ho va ten','ho ten','ten','ten bac si','ten bs','full name','name','ho va ten / full name','bac si','bs']],
+];
+const QF_LABEL_MAP = new Map(QF_LABEL.flatMap(([f, ls]) => ls.map(l => [l, f])));
+const TITLE_RE = /^((?:PGS|GS)\.?\s*(?:TS\.?)?\s*(?:BS\.?)?|TS\.?\s*BS\.?|ThS\.?\s*BS\.?|BSCK\s*(?:I{1,2}|1|2)\.?|BS\.?\s*CK\s*(?:I{1,2}|1|2)\.?|BS\.?|Bác\s*sĩ|Dr\.?)\s+/i;
+const qfLabelKey = s => norm(s).replace(/[^a-z0-9/ ]/g, ' ').replace(/\s+/g, ' ').trim();
+const isNameLike = s => { const w = clean(s).split(' '); return w.length >= 2 && w.length <= 6 && w.every(x => /^[A-Za-zÀ-ỹĐđ]+$/.test(x)); };
+const nameCase = s => s === s.toUpperCase() ? titleCase(s) : clean(s);
+const okPhone = d => /^0[35789]\d{8}$/.test(d);
+const okCccd = d => /^0\d{11}$/.test(d) || /^\d{9}$/.test(d);
+const BANK_CTX = /\b(ngan hang|nh|bank|stk|so tk|tk|tai khoan|chi nhanh|cn|account)\b/;
+const BANK_COMMON = new Set(['saigon','quandoi','ngoaithuong','congthuong','achau','quocte','phuongdong','tienphong','baoviet','daichung','hanghai','kythuong','locphat','anbinh','quocdan','xaydung','hiendai','daiduong','banviet','thuongtin','nama','baca','vieta','public','agri','vietin','donga','techcom','hongleong','cake','timo','pvcom','kienlong','lienviet','nongnghiep','dautuphattrien','dongnama','saigonhanoi','daukhitoancau','xuatnhapkhau','saigonthuongtin','vietnamthinhvuong','thinhvuong','vietcapital']);
+function qfFindBank(line) {
+  const n = norm(line), toks = n.split(/[^a-z0-9]+/).filter(Boolean), ctx = BANK_CTX.test(n);
+  for (let len = 3; len >= 1; len--) for (let i = 0; i + len <= toks.length; i++) {
+    const k = toks.slice(i, i + len).join(''); const hit = BANK_ALIAS.get(k) || BANK_ALIAS.get(k.replace(/bank$/, ''));
+    if (!hit) continue;
+    if (k.length <= 2 || BANK_COMMON.has(k)) { if (ctx || toks[i + len] === 'bank') return hit; continue; }
+    return hit;
+  }
+  return null;
+}
+function qfDate(s) { const m = String(s).match(/(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4})/); return m ? `${m[3]}-${pad(m[2])}-${pad(m[1])}` : ''; }
+function qfHospital(s) { return clean(s).replace(/^BV\.?\s+/i, 'Bệnh viện ').replace(/^benh vien/i, 'Bệnh viện'); }
+function qfKhoaHosp(text, out) {
+  const m = clean(text).match(/^(.*?)\s*[-–,|]\s*((?:Bệnh viện|BV)\b.*)$/i);
+  if (m && /khoa|phòng|đơn vị/i.test(m[1])) { out.khoa ||= clean(m[1]).replace(/^(trưởng|phó)\s+(khoa)/i, '$2'); if (/^(trưởng|phó)\b/i.test(m[1])) out.position ||= clean(m[1]); out.hospital ||= qfHospital(m[2]); return true; }
+  return false;
+}
+const QF_NOCOLON = ['so tai khoan','so tk','stk','tai khoan','chu tai khoan','chu tk','ten tai khoan','ten tk','ngan hang','ma ngan hang','so dien thoai','sdt','dien thoai','dtdd','email','mail','so cccd','cccd','cmnd','so cmnd','can cuoc','ma so thue','mst','ngay sinh','dia chi','que quan','noi sinh','chuc vu','chuyen khoa','ho va ten','ho ten','zalo'].sort((a, b) => b.length - a.length);
+function qfSegments(raw) {
+  const out = [];
+  for (let line of String(raw || '').replace(/\r/g, '').split(/\n|;|•/)) {
+    line = line.replace(/[|•▪►*]/g, ' ').replace(/\s+/g, ' ').trim(); if (!line) continue;
+    const colons = (line.match(/[:：]/g) || []).length;
+    if (colons >= 2) out.push(...line.split(/,\s+|\s{2,}|\s+-\s+(?=[^:：]{1,40}[:：])/).map(x => x.trim()).filter(Boolean));
+    else out.push(line);
+  }
+  return out;
+}
+function parseHcpText(raw) {
+  const out = {};
+  const put = (k, v) => { if (v !== undefined && v !== null && clean(v) !== '' && !out[k]) out[k] = typeof v === 'string' ? clean(v) : v; };
+  // sửa lỗi OCR hay gặp: 'abc(@gmail.com', 'abc @ gmail . com'
+  raw = String(raw || '').replace(/[(\[{]\s*@/g, '@').replace(/\s*@\s*/g, '@').replace(/@([\w-]+)\s*\.\s*(com|vn|net|edu)\b/gi, '@$1.$2');
+  const segs = qfSegments(raw);
+  const labeled = [], rest = [];
+  // 1) "Nhãn: giá trị" (giá trị có thể nằm ở dòng kế tiếp, như trên CCCD)
+  for (let i = 0; i < segs.length; i++) {
+    const m = segs[i].match(/^([^:：]{1,45})[:：]\s*(.*)$/);
+    const f = m ? QF_LABEL_MAP.get(qfLabelKey(m[1])) : null;
+    if (!f) { rest.push(segs[i]); continue; }
+    let v = clean(m[2]);
+    if (!v && segs[i + 1] && !/[:：]/.test(segs[i + 1])) v = clean(segs[++i]);
+    if (v) labeled.push([f, v]);
+  }
+  // 2) "nhãn giá trị" không có dấu hai chấm (sdt 0903…, stk 0071… Vietcombank, chủ tk TRAN THI LAN)
+  const free = [];
+  for (const line of rest) {
+    for (const seg of line.split(/,\s+|\.\s+(?=\p{Lu})/u).map(x => x.trim()).filter(Boolean)) {
+      const k = norm(seg); const lab = QF_NOCOLON.find(l => k.startsWith(l + ' ') && k.length > l.length + 1);
+      if (lab) { const words = lab.split(' ').length; labeled.push([QF_LABEL_MAP.get(lab), seg.split(' ').slice(words).join(' ')]); }
+      else free.push(seg);
+    }
+  }
+  for (const [f, v] of labeled) {
+    if (f === 'phone') { const p = digits(v).replace(/^84(?=[35789]\d{8}$)/, '0'); if (okPhone(p)) put('phone', p); }
+    else if (f === 'cccd') { const d = digits(v); if (d.length >= 9 && d.length <= 13) put('cccd', d); }
+    else if (f === 'bankAccount') { const r = v.match(/\d[\d .\-]{4,}\d/); const a = r ? digits(r[0]) : ''; if (a.length >= 6 && a.length <= 19) put('bankAccount', a); const b = qfFindBank(v.replace(/\d[\d .\-]{4,}\d/, ' ') + ' ngan hang'); if (b) put('bankName', b.name); }
+    else if (f === 'bankName') { const b = qfFindBank(v + ' ngan hang'); put('bankName', b ? b.name : v); }
+    else if (f === 'bankCode') { const d = digits(v); if (d.length === 8) put('bankCode', d); }
+    else if (f === 'email') { const e = v.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/); if (e) put('email', e[0].toLowerCase()); }
+    else if (f === 'dob') put('dob', qfDate(v));
+    else if (f === 'address') { const a = splitAddress(v); if (a.street) { put('street', a.street); put('city', a.city); } else put('street', v); }
+    else if (f === 'hospital') { if (!qfKhoaHosp(v, out)) put('hospital', qfHospital(v)); }
+    else if (f === 'khoa') { if (!qfKhoaHosp(v, out)) put('khoa', /^khoa\b/i.test(v) ? v : 'Khoa ' + v); }
+    else if (f === 'name' || f === 'bankHolder') {
+      let n = v.replace(/\(.*?\)/g, '').trim(); const t = n.match(TITLE_RE); if (t) { put('title', t[1]); n = n.slice(t[0].length); }
+      n = clean(n.split(/\s+[-–|]\s+|,\s+/)[0]);
+      if (!isNameLike(n)) continue;
+      if (f === 'bankHolder') put('bankHolder', n.toUpperCase()); else put('name', nameCase(n));
+    }
+    else put(f, v);
+  }
+  // 3) phần còn lại: tự nhận dạng
+  const caps = []; let acctCand = '';
+  for (const seg of free) {
+    const n = norm(seg);
+    const em = seg.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/); if (em) put('email', em[0].toLowerCase());
+    const bank = qfFindBank(seg); if (bank) put('bankName', bank.name);
+    for (const run of seg.match(/(?:\+84|\d)[\d .\-]{4,}\d/g) || []) {
+      if (/\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{4}/.test(run)) continue;
+      const d = digits(run).replace(/^84(?=[35789]\d{8}$)/, '0');
+      if (/cccd|cmnd|can cuoc|dinh danh|mst|ma so thue/.test(n) && d.length >= 9 && d.length <= 13) put('cccd', d);
+      else if ((/stk|tai khoan|so tk|\btk\b|account/.test(n) || (bank && !okPhone(d))) && d.length >= 6 && d.length <= 19) put('bankAccount', d);
+      else if (okPhone(d)) put('phone', d);
+      else if (/^0\d{11}$/.test(d)) put('cccd', d);
+      else if (d.length >= 6 && d.length <= 19) acctCand ||= d;
+    }
+    if (/sinh/.test(n)) put('dob', qfDate(seg));
+    if (/\b(benh vien|bv)\b/.test(n) && !qfKhoaHosp(seg, out)) { const hm = seg.match(/((?:Bệnh viện|BV)\b.*)$/i); if (hm) put('hospital', qfHospital(hm[1].split(/\s+[-–|]\s+/)[0])); }
+    if (/\bkhoa\b/.test(n) && !out.khoa) { const km = seg.match(/((?:Trưởng|Phó)\s+)?(Khoa\s+.+?)(?=\s+(?:-|–|,|\||BV\b|Bệnh viện)|$)/i); if (km) { put('khoa', km[2].replace(/^khoa/i, 'Khoa')); if (km[1]) put('position', km[1] + km[2]); } }
+    const t = seg.match(TITLE_RE);
+    if (t && !out.name) { const nm = clean(seg.slice(t[0].length).split(/\s+[-–|(]\s*|,\s+/)[0]); if (isNameLike(nm)) { put('title', t[1]); put('name', nameCase(nm)); continue; } }
+    if (isNameLike(seg) && seg === seg.toUpperCase() && !bank) caps.push(clean(seg));
+  }
+  if (!out.bankAccount && acctCand && (out.bankName || out.bankHolder)) out.bankAccount = acctCand;
+  if (!out.name && caps[0]) out.name = nameCase(caps[0]);
+  if (!out.bankHolder && caps[0] && (out.bankAccount || out.bankName)) out.bankHolder = caps[0];
+  if (out.bankName && !out.bankCode) { const b = bankLookup(out.bankName); if (b?.code) out.bankCode = b.code; }
+  if (!out.specialty && out.khoa) { const k = norm(out.khoa); const sp = /tim mach/.test(k) ? 'Tim Mạch' : /than kinh/.test(k) ? 'Thần kinh' : /noi tiet/.test(k) ? 'Nội tiết' : /\bthan\b/.test(k) ? 'Nội thận' : ''; if (sp) out.specialty = sp; }
+  if (out.hospital && !out.street) { const same = state.hcps.find(x => norm(x.hospital) === norm(out.hospital) && clean(x.street)); if (same) { out.street = same.street; out.city = same.city; out.country = same.country || 'Việt Nam'; out._addrFrom = same.hospital; } }
+  for (const k of Object.keys(out)) if (out[k] === '' || out[k] == null) delete out[k];
+  return out;
+}
+
+/* OCR ảnh chụp màn hình — chạy ngay trên máy (tesseract.js, tiếng Việt) */
+let ocrWorker = null, ocrProgress = null;
+async function prepImage(file) {
+  const img = await createImageBitmap(file);
+  const scale = img.width < 1100 ? 2 : 1; const c = document.createElement('canvas'); c.width = img.width * scale; c.height = img.height * scale;
+  const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, c.width, c.height);
+  const px = g.getImageData(0, 0, c.width, c.height); const d = px.data; let sum = 0;
+  for (let i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+  const dark = sum / (d.length / 4) < 110;
+  for (let i = 0; i < d.length; i += 4) { let y = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; if (dark) y = 255 - y; d[i] = d[i + 1] = d[i + 2] = y; }
+  g.putImageData(px, 0, 0);
+  return c;
+}
+async function ocrImage(file, onProgress) {
+  ocrProgress = onProgress;
+  await loadScript(LIBS.ocr);
+  if (!ocrWorker) {
+    onProgress?.('Lần đầu: đang tải bộ đọc chữ tiếng Việt (~5 MB)…');
+    ocrWorker = await window.Tesseract.createWorker('vie', 1, {logger:m => { if (m.status === 'recognizing text') ocrProgress?.(`Đang đọc ảnh… ${Math.round((m.progress || 0) * 100)}%`); }});
+  }
+  const canvas = await prepImage(file);
+  const {data} = await ocrWorker.recognize(canvas);
+  return data.text || '';
+}
 
 /* ================= lookups & domain ================= */
 const hcpById = id => state.hcps.find(h => h.id === id);
@@ -1351,8 +1516,9 @@ function readForm(root) {
 }
 
 /* --- HCP modal --- */
-function openHcpModal(id, {prefill = {}, onSaved} = {}) {
-  const h = id ? {...hcpById(id)} : {...emptyHcp(), ...prefill};
+function openHcpModal(id, {prefill = {}, onSaved, quick} = {}) {
+  const h = id ? {...hcpById(id), ...prefill} : {...emptyHcp(), ...prefill};
+  const preKeys = Object.keys(prefill).filter(k => k in QF_FIELDS && (!id || clean(prefill[k]) !== clean(hcpById(id)?.[k])));
   const isNew = !id;
   const fl = (k, label, attrs = '', cls = '') => `<label class="field ${cls}"><span>${label}</span><input class="input" name="${k}" value="${esc(k === 'defaultFee' ? (h[k] ? fmtVND(h[k]) : '') : h[k])}" ${attrs}></label>`;
   const hist = id ? state.engs.filter(e => e.hcpId === id).map(e => ({e, ev:evById(e.eventId)})).filter(x => x.ev).sort((a, b) => (b.ev.date || '').localeCompare(a.ev.date || '')) : [];
@@ -1361,8 +1527,14 @@ function openHcpModal(id, {prefill = {}, onSaved} = {}) {
   const w = openModal(`
     <div class="modal-h"><div><h2>${isNew ? 'Thêm bác sĩ' : esc(h.name)}</h2><p>${isNew ? 'Trường có dấu * cần cho hợp đồng.' : esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · '))}</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
     <form class="modal-b" id="hcp-form" autocomplete="off">
+      <details class="fsec qf" ${isNew || quick ? 'open' : ''}><summary class="qf-sum">${isNew ? 'Thêm nhanh: dán tin nhắn hoặc ảnh' : 'Cập nhật nhanh từ tin nhắn / ảnh'}</summary>
+        <div class="qf-box" id="qf-box">
+          <textarea class="input" id="qf-text" rows="3" placeholder="Dán tin nhắn Zalo / email có thông tin BS (họ tên, CCCD, STK, ngân hàng, SĐT, khoa – bệnh viện…). Hoặc dán / kéo thả ảnh chụp màn hình vào đây."></textarea>
+          <div class="actions"><button type="button" class="btn sm" id="qf-img">${I.up} Chọn ảnh</button><button type="button" class="btn sm primary" id="qf-go">Tách & điền</button><span class="hint" id="qf-msg">Ảnh được đọc ngay trên máy, không gửi đi đâu.</span></div>
+          <input type="file" id="qf-file" accept="image/*" hidden>
+        </div></details>
       <div class="fsec"><h3>Cá nhân</h3><div class="fgrid">
-        ${fl('name', 'Họ tên <em>*</em>', 'required autofocus', 'span2')}${fl('title', 'Danh xưng', 'placeholder="ThS.BS., TS.BS.…"')}${fl('tier', 'Tier', 'list="dl-tier"')}
+        ${fl('name', 'Họ tên <em>*</em>', 'required', 'span2')}${fl('title', 'Danh xưng', 'placeholder="ThS.BS., TS.BS.…"')}${fl('tier', 'Tier', 'list="dl-tier"')}
         ${fl('cccd', 'CCCD / MST <em>*</em>', 'inputmode="numeric"')}${fl('dob', 'Ngày sinh', 'type="date"')}${fl('birthplace', 'Nơi sinh')}
       </div></div>
       <div class="fsec"><h3>Công tác</h3><div class="fgrid">
@@ -1394,6 +1566,37 @@ function openHcpModal(id, {prefill = {}, onSaved} = {}) {
     <div class="modal-f">${!isNew ? `<button class="btn danger sm left" data-act="del-hcp" data-id="${id}" data-confirm="Bấm lần nữa để xoá BS">Xoá</button>` : ''}<button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="save-hcp">Lưu</button></div>`);
   w._hcp = {id, onSaved};
   const form = $('#hcp-form', w);
+  const mark = keys => keys.forEach(k => form.elements[k]?.classList.add('qf-filled'));
+  mark(preKeys);
+  if (preKeys.length && id) $('#qf-msg', w).textContent = `Đã điền ${preKeys.length} ô từ tin nhắn. Ô tô vàng là ô mới hoặc thay đổi, kiểm tra rồi bấm Lưu.`;
+  const qfText = $('#qf-text', w), qfMsg = $('#qf-msg', w);
+  const applyQuick = () => {
+    const r = parseHcpText(qfText.value); const keys = Object.keys(r).filter(k => k in QF_FIELDS || k === 'country');
+    if (!keys.length) { qfMsg.textContent = 'Chưa tách được thông tin nào. Kiểm tra lại nội dung, hoặc nhập tay.'; return; }
+    if (isNew) { const dup = findHcp(r); if (dup) { qfMsg.innerHTML = `BS này đã có hồ sơ: <b>${esc(dup.name)}</b>. <button type="button" class="btn sm" id="qf-open">Mở hồ sơ đó và cập nhật</button>`; $('#qf-open', w).onclick = () => { const pre = {...r}; delete pre._addrFrom; closeModal(); openHcpModal(dup.id, {prefill:pre, onSaved, quick:true}); }; return; } }
+    for (const k of keys) { const el = form.elements[k]; if (!el) continue; el.value = k === 'defaultFee' ? fmtVND(r[k]) : r[k]; el.classList.add('qf-filled'); }
+    if (r.bankName) { bc.value = r.bankCode || bc.value; bankUpdate(r.bankCode ? false : true); }
+    const labels = keys.filter(k => QF_FIELDS[k]).map(k => QF_FIELDS[k]);
+    qfMsg.textContent = `Đã điền ${labels.length} ô: ${labels.join(', ')}.${r._addrFrom ? ' Địa chỉ HĐ lấy theo BS khác cùng ' + r._addrFrom + '.' : ''} Ô tô vàng là ô vừa điền, kiểm tra rồi bấm Lưu.`;
+  };
+  const runOcr = async file => {
+    if (!file || !/^image\//.test(file.type)) { qfMsg.textContent = 'Chỉ đọc được file ảnh (PNG, JPG…).'; return; }
+    try { qfMsg.textContent = 'Đang chuẩn bị đọc ảnh…'; const text = await ocrImage(file, t => { qfMsg.textContent = t; });
+      qfText.value = (qfText.value ? qfText.value + '\n' : '') + text.replace(/\n{2,}/g, '\n').trim(); applyQuick(); }
+    catch (err) { qfMsg.textContent = 'Không đọc được ảnh: ' + (err.message || err) + '. Có thể dán chữ thay vì ảnh.'; }
+  };
+  $('#qf-go', w).onclick = applyQuick;
+  $('#qf-img', w).onclick = () => { const f = $('#qf-file', w); f.value = ''; f.click(); };
+  $('#qf-file', w).onchange = e => runOcr(e.target.files[0]);
+  qfText.addEventListener('paste', e => {
+    const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+    if (item) { e.preventDefault(); runOcr(item.getAsFile()); } else setTimeout(applyQuick, 30);
+  });
+  const box = $('#qf-box', w);
+  box.addEventListener('dragover', e => { e.preventDefault(); box.classList.add('drag'); });
+  box.addEventListener('dragleave', () => box.classList.remove('drag'));
+  box.addEventListener('drop', e => { e.preventDefault(); box.classList.remove('drag'); const f = [...(e.dataTransfer?.files || [])][0]; if (f) runOcr(f); });
+  if (isNew || quick) setTimeout(() => { if (!w.contains(document.activeElement) || document.activeElement === form.elements.name) qfText.focus(); }, 60);
   form.addEventListener('submit', e => { e.preventDefault(); ACT['save-hcp'](); });
   const bn = form.elements.bankName, bc = form.elements.bankCode;
   const hint = $('#bank-hint', w); let autoCode = '';

@@ -6,6 +6,7 @@ App web một trang để làm hợp đồng Speaker Agreement và file Yêu c�
 - Danh bạ bác sĩ: lưu thông tin để điền hợp đồng và file thanh toán; nhập từ Excel YCTT cũ hoặc từ hợp đồng .docx cũ.
 - Sự kiện & hợp đồng: chọn sản phẩm/hoạt động (Adalat U, Xarelto, Firialta), chọn BS, điền chủ đề/phí, xuất hợp đồng .docx từ phôi (nhiều BS → 1 file .zip). Người ký Marketing tự đổi theo sản phẩm.
 - Mã ngân hàng tự điền theo bảng mã Citi 31/03/2025.
+- Thêm nhanh BS: dán tin nhắn Zalo/email hoặc ảnh chụp màn hình (đọc chữ tiếng Việt ngay trên máy bằng tesseract.js), app tự tách họ tên, CCCD, SĐT, email, STK, ngân hàng, khoa, bệnh viện.
 - Theo dõi tiến độ: HĐ → Raise Veeva → Event → Gửi admin → Đã chi.
 - Thanh toán: chọn nhiều BS, xuất file "Yêu cầu thanh toán hợp đồng HCP" đúng mẫu 20 cột; BU/UDA/SIO lấy theo sản phẩm của từng sự kiện.
 - Tổng quan: việc cần làm, thù lao theo năm từng BS, nhắc sao lưu.
@@ -40,4 +41,4 @@ create policy "sua cua minh" on public.app_state for update to authenticated usi
 ## Chạy
 Mở `index.html` bằng trình duyệt, hoặc deploy thư mục này lên Vercel / Netlify / GitHub Pages (static site, không cần build).
 
-Thư viện tải từ jsDelivr: pizzip 3.2.0, docxtemplater 3.67.0, exceljs 4.4.0, @supabase/supabase-js 2.117.2.
+Thư viện tải từ jsDelivr: pizzip 3.2.0, docxtemplater 3.67.0, exceljs 4.4.0, @supabase/supabase-js 2.117.2, tesseract.js 6.0.1.
