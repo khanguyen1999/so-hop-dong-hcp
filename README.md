@@ -3,7 +3,8 @@
 App web một trang để làm hợp đồng Speaker Agreement và file Yêu cầu thanh toán HCP.
 
 ## Tính năng
-- Danh bạ bác sĩ: lưu thông tin để điền hợp đồng và file thanh toán; nhập từ Excel YCTT cũ hoặc từ hợp đồng .docx cũ.
+- Danh bạ bác sĩ: lưu thông tin để điền hợp đồng và file thanh toán; nhập từ Excel YCTT cũ hoặc từ hợp đồng cũ.
+- Nhập từ hợp đồng cũ: nhận Word (.docx, .doc), PDF, PDF scan và ảnh chụp (nhiều ảnh chọn cùng lúc = các trang của 1 hợp đồng). Mẫu nào cũng đọc: tự tìm tên BS, CCCD, địa chỉ, khoa – bệnh viện, ngày sự kiện, vai trò, thù lao, chủ đề, số tài khoản, ngân hàng; hiện lại để sửa trước khi nhập. Bản scan / ảnh được đọc chữ ngay trên máy, không gửi đi đâu.
 - Sự kiện & hợp đồng: chọn sản phẩm/hoạt động (Adalat U, Xarelto, Firialta), chọn BS, điền chủ đề/phí, xuất hợp đồng .docx từ phôi (nhiều BS → 1 file .zip). Người ký Marketing tự đổi theo sản phẩm.
 - Mã ngân hàng tự điền theo bảng mã Citi 31/03/2025.
 - Thêm nhanh BS: dán tin nhắn Zalo/email hoặc ảnh chụp màn hình (đọc chữ tiếng Việt ngay trên máy bằng tesseract.js), app tự tách họ tên, CCCD, SĐT, email, STK, ngân hàng, khoa, bệnh viện.
@@ -64,4 +65,4 @@ create policy "chi admin sua" on public.shared_config for update to authenticate
 ## Chạy
 Mở `index.html` bằng trình duyệt, hoặc deploy thư mục này lên Vercel / Netlify / GitHub Pages (static site, không cần build).
 
-Thư viện tải từ jsDelivr: pizzip 3.2.0, docxtemplater 3.67.0, exceljs 4.4.0, @supabase/supabase-js 2.117.2, tesseract.js 6.0.1.
+Thư viện tải từ jsDelivr: pizzip 3.2.0, docxtemplater 3.67.0, exceljs 4.4.0, @supabase/supabase-js 2.117.2, tesseract.js 6.0.1, pdfjs-dist 4.10.38 (bản legacy, chạy với isEvalSupported:false).

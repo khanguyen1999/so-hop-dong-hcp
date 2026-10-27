@@ -169,6 +169,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tag.ok{background:var(--ok-soft);color:var(--ok)}
 .tag.acc{background:var(--accent-soft);color:var(--accent)}
 .miss{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.ct-list{display:grid;gap:12px}
+.ct-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:12px;min-width:0}
+.ct-card.err{background:var(--crit-soft);border-color:transparent}
+.ct-h{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
+.ct-h .check b{overflow-wrap:anywhere}
+.ct-h .miss{margin:0}
+.ct-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px 12px}
+.input.ct-empty{border-style:dashed;background:var(--surface-2)}
+.ct-raw summary{cursor:pointer;font-size:13px;color:var(--muted)}
+.ct-raw textarea{margin-top:6px;font-size:12px}
 
 /* stepper */
 .steps{display:flex;align-items:center;gap:0}
@@ -303,7 +313,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-body);font-size:13px;background
 </div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <input type="file" id="f-excel" accept=".xlsx,.xlsm" hidden>
-<input type="file" id="f-contracts" accept=".docx" multiple hidden>
+<input type="file" id="f-contracts" accept=".docx,.doc,.pdf,image/*" multiple hidden>
 <input type="file" id="f-template" accept=".docx" hidden>
 <input type="file" id="f-restore" accept=".json,application/json" hidden>
 
@@ -316,6 +326,8 @@ const LIBS = {
   xlsx: 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
   supa: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js',
   ocr: 'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js',
+  pdf: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/legacy/build/pdf.min.mjs',
+  pdfWorker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/legacy/build/pdf.worker.min.mjs',
 };
 /* Đồng bộ tài khoản (Supabase). Để trống = chỉ lưu trên máy. Chỉ điền Project URL + publishable/anon key, KHÔNG điền secret key. */
 const SUPABASE_URL = 'https://kbxnrkxfmobwisbzkehl.supabase.co';
@@ -387,7 +399,7 @@ function relDays(iso) {
 }
 function splitAddress(full) {
   let s = clean(full); let country = 'Việt Nam';
-  const m = s.match(/,\s*(Việt Nam|Viet Nam|VN)\s*\.?$/i); if (m) s = s.slice(0, m.index).trim();
+  const m = s.match(/,\s*(Việt Nam|Viet Nam|Vietnam|VN)\s*\.?$/i); if (m) s = s.slice(0, m.index).trim();
   const parts = s.split(',').map(x => x.trim()).filter(Boolean);
   let city = '';
   if (parts.length >= 2) {
@@ -397,6 +409,7 @@ function splitAddress(full) {
     }
   }
   if (/^(tp\s*)?hcm$|^tphcm$/.test(norm(city).replace(/\./g, ''))) city = 'Hồ Chí Minh';
+  const canon = SIX_CITIES.find(c => norm(c) === norm(city)); if (canon) city = canon;   // sửa lỗi dấu (vd. OCR: Hô Chí Minh)
   return {street: parts.join(', '), city, country};
 }
 function b64FromBuf(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
@@ -542,14 +555,14 @@ const QF_LABEL = [
   ['bankName', ['ngan hang','ten ngan hang','bank','nh','ngan hang chi nhanh','chi nhanh']],
   ['phone', ['so dien thoai','sdt','dien thoai','dt','dtdd','phone','tel','mobile','zalo','so dt','di dong']],
   ['email', ['email','e-mail','mail','gmail','dia chi email']],
-  ['cccd', ['so cccd','cccd','cmnd','so cmnd','can cuoc','can cuoc cong dan','so can cuoc','so dinh danh','so dinh danh ca nhan','ma so thue','ma so thue ca nhan','mst','so / no','so/no','so','no','id']],
+  ['cccd', ['id no','id number','id card','id card no','passport no','so cccd','cccd','cmnd','so cmnd','can cuoc','can cuoc cong dan','so can cuoc','so dinh danh','so dinh danh ca nhan','ma so thue','ma so thue ca nhan','mst','so / no','so/no','so','no','id']],
   ['dob', ['ngay sinh','ngay thang nam sinh','sinh ngay','date of birth','dob','ngay sinh / date of birth']],
   ['homeAddress', ['noi thuong tru','thuong tru','dia chi thuong tru','dia chi nha','place of residence','noi o','cho o','noi o hien tai','noi thuong tru / place of residence']],
   ['address', ['dia chi','dc','address','dia chi lam viec','dia chi hop dong','dia chi tren hop dong','dia chi lien he']],
   ['birthplace', ['que quan','noi sinh','place of origin','place of birth','que quan / place of origin']],
   ['position', ['chuc vu','chuc danh','vi tri']],
   ['khoa', ['khoa','khoa phong','khoa/phong','phong','don vi cong tac','khoa cong tac']],
-  ['hospital', ['benh vien','noi cong tac','co quan','bv','don vi','noi lam viec','co quan cong tac']],
+  ['hospital', ['workplace','place of work','institution','benh vien','noi cong tac','co quan','bv','don vi','noi lam viec','co quan cong tac']],
   ['specialty', ['chuyen khoa','chuyen nganh','linh vuc','linh vuc chuyen mon','chuyen mon']],
   ['title', ['hoc ham','hoc vi','danh xung','hoc ham hoc vi']],
   ['name', ['ho va ten','ho ten','ten','ten bac si','ten bs','full name','name','ho va ten / full name','bac si','bs']],
@@ -618,7 +631,7 @@ function parseHcpText(raw) {
   }
   for (const [f, v] of labeled) {
     if (f === 'phone') { const p = digits(v).replace(/^84(?=[35789]\d{8}$)/, '0'); if (okPhone(p)) put('phone', p); }
-    else if (f === 'cccd') { const d = digits(v); if (d.length >= 9 && d.length <= 13) put('cccd', d); }
+    else if (f === 'cccd') { const r = v.match(/\d[\d .]{7,15}\d/); const d = digits(r ? r[0] : v); if (d.length >= 9 && d.length <= 13) put('cccd', d); }
     else if (f === 'bankAccount') { const r = v.match(/\d[\d .\-]{4,}\d/); const a = r ? digits(r[0]) : ''; if (a.length >= 6 && a.length <= 19) put('bankAccount', a); const b = qfFindBank(v.replace(/\d[\d .\-]{4,}\d/, ' ') + ' ngan hang'); if (b) put('bankName', b.name); }
     else if (f === 'bankName') { const b = qfFindBank(v + ' ngan hang'); put('bankName', b ? b.name : v); }
     else if (f === 'bankCode') { const d = digits(v); if (d.length === 8) put('bankCode', d); }
@@ -628,8 +641,8 @@ function parseHcpText(raw) {
     else if (f === 'hospital') { if (!qfKhoaHosp(v, out)) put('hospital', qfHospital(v)); }
     else if (f === 'khoa') { if (!qfKhoaHosp(v, out)) put('khoa', /^khoa\b/i.test(v) ? v : 'Khoa ' + v); }
     else if (f === 'name' || f === 'bankHolder') {
-      let n = v.replace(/\(.*?\)/g, '').trim(); const t = n.match(TITLE_RE); if (t) { put('title', t[1]); n = n.slice(t[0].length); }
-      n = clean(n.split(/\s+[-–|]\s+|,\s+/)[0]);
+      let n = v.replace(/\(.*?\)/g, '').trim().replace(/^(?:Ông\s*\/\s*Bà|Ông|Bà|ÔNG|BÀ|Mr|Mrs|Ms)\.?\s+/, ''); const t = n.match(TITLE_RE); if (t) { put('title', t[1]); n = n.slice(t[0].length); }
+      n = clean(n.split(/\s+[-–|]\s+|,\s+/)[0]).replace(/[.,;:]+$/, '');
       if (!isNameLike(n)) continue;
       if (f === 'bankHolder') put('bankHolder', n.toUpperCase()); else put('name', nameCase(n));
     }
@@ -670,7 +683,7 @@ function parseHcpText(raw) {
 /* OCR ảnh chụp màn hình — chạy ngay trên máy (tesseract.js, tiếng Việt) */
 let ocrWorker = null, ocrProgress = null;
 async function prepImage(file) {
-  const img = await createImageBitmap(file);
+  const img = file instanceof HTMLCanvasElement ? file : await createImageBitmap(file);
   const scale = img.width < 1100 ? 2 : 1; const c = document.createElement('canvas'); c.width = img.width * scale; c.height = img.height * scale;
   const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(img, 0, 0, c.width, c.height);
   const px = g.getImageData(0, 0, c.width, c.height); const d = px.data; let sum = 0;
@@ -685,7 +698,7 @@ async function ocrImage(file, onProgress) {
   await loadScript(LIBS.ocr);
   if (!ocrWorker) {
     onProgress?.('Lần đầu: đang tải bộ đọc chữ tiếng Việt (~5 MB)…');
-    ocrWorker = await window.Tesseract.createWorker('vie', 1, {logger:m => { if (m.status === 'recognizing text') ocrProgress?.(`Đang đọc ảnh… ${Math.round((m.progress || 0) * 100)}%`); }});
+    ocrWorker = await window.Tesseract.createWorker('vie', 1, {logger:m => { if (m.status === 'recognizing text') { const pct = Math.round((m.progress || 0) * 100); ocrProgress?.(`Đang đọc ảnh… ${pct}%`, pct); } }});
   }
   const canvas = await prepImage(file);
   const {data} = await ocrWorker.recognize(canvas);
@@ -1103,11 +1116,397 @@ function parseContract(lines) {
   if (!r.hcp.name) throw new Error('Không tìm thấy tên bác sĩ trong hợp đồng.');
   return r;
 }
+/* ================= import: hợp đồng mẫu bất kỳ (Word, PDF, ảnh chụp) ================= */
+// .doc (Word 97-2003): lấy các đoạn chữ trong file nhị phân
+function docBinaryLines(buf) {
+  const u = new Uint8Array(buf);
+  if (!(u[0] === 0xD0 && u[1] === 0xCF && u[2] === 0x11 && u[3] === 0xE0)) throw new Error('Không đọc được file .doc này. Mở bằng Word, Lưu thành .docx hoặc PDF rồi nhập lại.');
+  const okc = c => c === 9 || c === 13 || c === 7 || c === 11 || (c >= 32 && c < 127) || c === 0xA0 || (c >= 0xC0 && c <= 0x1B0) || (c >= 0x1EA0 && c <= 0x1EF9) || (c >= 0x2010 && c <= 0x2026);
+  let best = '';
+  for (const off of [0, 1]) {
+    const out = []; let run = '';
+    const flush = () => { const asc = (run.match(/[A-Za-z ]/g) || []).length; if (run.length >= 4 && asc / run.length >= 0.5 && /[A-Za-z]{2}/.test(run)) out.push(run); run = ''; };
+    for (let i = off; i + 1 < u.length; i += 2) { const c = u[i] | (u[i + 1] << 8); if (okc(c)) run += String.fromCharCode(c); else flush(); }
+    flush(); const t = out.join('\n'); if (t.length > best.length) best = t;
+  }
+  if (best.replace(/[^\p{L}]/gu, '').length < 300) { // văn bản lưu dạng 8-bit (thường là tiếng Anh)
+    const s = []; let run = '';
+    for (const b of u) { if (b === 13 || b === 9 || (b >= 32 && b < 127)) run += String.fromCharCode(b); else { if (run.length >= 12) s.push(run); run = ''; } }
+    if (s.join('').length > best.length) best = s.join('\n');
+  }
+  const lines = best.split(/[\r\n\u0007\u000b]+/).map(clean).filter(Boolean);
+  if (lines.join('').length < 200) throw new Error('File .doc này không đọc được chữ. Mở bằng Word, Lưu thành .docx hoặc PDF rồi nhập lại.');
+  return lines;
+}
+
+// PDF: lấy lớp chữ; trang nào là bản scan (không có chữ) thì đọc bằng OCR
+let pdfMod = null;
+async function needPdf() {
+  if (!pdfMod) {
+    try { pdfMod = await import(LIBS.pdf); } catch (e) { throw new Error('Không tải được bộ đọc PDF. Kiểm tra kết nối mạng rồi thử lại.'); }
+    pdfMod.GlobalWorkerOptions.workerSrc = LIBS.pdfWorker;
+  }
+  return pdfMod;
+}
+function pdfPageLines(items) {
+  const rows = [];
+  for (const it of items) {
+    if (typeof it.str !== 'string' || !it.transform) continue;
+    const x = it.transform[4], y = it.transform[5], h = Math.abs(it.transform[3]) || it.height || 10;
+    let r = rows.find(r => Math.abs(r.y - y) < Math.max(r.h, h) * 0.5);
+    if (!r) { r = {y, h, parts:[]}; rows.push(r); }
+    if (it.str.trim()) r.parts.push({x, w:it.width || 0, s:it.str});
+  }
+  rows.sort((a, b) => b.y - a.y);
+  const out = [];
+  for (const r of rows) {
+    r.parts.sort((a, b) => a.x - b.x);
+    let line = '', end = null;
+    for (const p of r.parts) {
+      if (end !== null) {
+        const gap = p.x - end;
+        if (gap > r.h * 2.5 && clean(line)) { out.push(line); line = ''; }           // cột / ô bảng khác
+        else if (gap > r.h * 0.12 && !/\s$/.test(line) && !/^\s/.test(p.s)) line += ' ';
+      }
+      line += p.s; end = p.x + p.w;
+    }
+    out.push(line);
+  }
+  return out.map(clean).filter(Boolean);
+}
+async function pdfLines(buf, onProgress) {
+  const pdfjs = await needPdf();
+  let doc;
+  try { doc = await pdfjs.getDocument({data:new Uint8Array(buf), isEvalSupported:false}).promise; }
+  catch (e) { throw new Error(/password/i.test(`${e?.name} ${e?.message}`) ? 'PDF đang có mật khẩu. Mở khoá rồi nhập lại.' : 'Không đọc được file PDF này.'); }
+  const lines = []; let ocrPages = 0; const N = doc.numPages;
+  try {
+    for (let p = 1; p <= N; p++) {
+      const page = await doc.getPage(p);
+      const pl = pdfPageLines((await page.getTextContent()).items);
+      if (pl.join('').replace(/\s/g, '').length >= 40) { lines.push(...pl); continue; }
+      if (ocrPages >= 15) continue;
+      ocrPages++;
+      const vp = page.getViewport({scale:2}); const c = document.createElement('canvas'); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      await page.render({canvasContext:g, viewport:vp}).promise;
+      const t = await ocrImage(c, (msg, pct) => onProgress?.(pct == null ? msg : `trang ${p}/${N} là bản scan, đang đọc chữ ${pct}%`));
+      lines.push(...t.split('\n'));
+    }
+  } finally { doc.destroy(); }
+  return {lines, ocr:ocrPages > 0};
+}
+
+const isImageFile = f => /^image\//.test(f.type) || /\.(png|jpe?g|webp|heic|heif|bmp|gif)$/i.test(f.name);
+async function readContractFile(job, onProgress) {
+  if (job.img) {
+    const lines = [];
+    for (const [i, f] of job.files.entries()) {
+      const t = await ocrImage(f, (msg, pct) => onProgress?.(pct == null ? msg : `${job.files.length > 1 ? `ảnh ${i + 1}/${job.files.length}, ` : ''}đang đọc chữ ${pct}%`));
+      lines.push(...t.split('\n'));
+    }
+    return {lines, ocr:true};
+  }
+  const f = job.files[0]; const buf = await f.arrayBuffer(); const u = new Uint8Array(buf.slice(0, 5));
+  const isZip = u[0] === 0x50 && u[1] === 0x4B, isPdf = String.fromCharCode(...u) === '%PDF-';
+  if (isPdf || /\.pdf$/i.test(f.name)) return pdfLines(buf, onProgress);
+  if (isZip) return {lines:await docxLines(buf), ocr:false};
+  if (/\.doc$/i.test(f.name) || u[0] === 0xD0) return {lines:docBinaryLines(buf), ocr:false};
+  throw new Error('Chỉ nhận file Word (.docx, .doc), PDF hoặc ảnh chụp.');
+}
+
+// Chuẩn hoá dòng: tách 2 cột chữ ký bị OCR dồn vào 1 dòng, gộp "nhãn ở 1 ô / giá trị ở ô bên cạnh"
+const CT_LABELS = [
+  ['eventName', /^(mo ta su kien|ten su kien|su kien|ten chuong trinh|chuong trinh|ten hoi thao|hoi thao|ten hoi nghi|hoi nghi|event( name| title)?|meeting( name)?|name of (the )?event)$/],
+  ['venue', /^(dia diem( to chuc| su kien)?|noi to chuc|venue|location|place of (the )?(event|meeting))$/],
+  ['city', /^(thanh pho to chuc|tinh\/thanh pho( to chuc)?|tinh\/thanh|thanh pho|city)$/],
+  ['country', /^(quoc gia( to chuc)?|country)$/],
+  ['date', /^(ngay (thuyet trinh|dao tao|to chuc|dien ra|bao cao|su kien|hoi thao|thuc hien)( ?\/.*)?|thoi gian( to chuc| dien ra| thuc hien)?|date of (the )?(event|meeting|presentation|service)|event date)$/],
+  ['role', /^(mo ta dich vu|vai tro|voi vai tro|tu cach|nhiem vu|role|service( description)?|capacity)$/],
+  ['topic', /^(chu de|ten bai( bao cao| trinh bay| giang)?|de tai|bai bao cao|noi dung( bao cao| trinh bay)?|topic|title of (the )?(presentation|talk|lecture)|presentation title)$/],
+  ['specialty', /^(linh vuc chuyen mon( cua dien gia)?|chuyen khoa|chuyen nganh|specialty|speciality|area of expertise)$/],
+  ['duration', /^(thoi luong( thuyet trinh| bao cao| trinh bay)?( ?\/.*)?|thoi gian (thuyet trinh|bao cao|trinh bay)( ?\/.*)?|duration)$/],
+  ['prep', /^(thoi gian chuan bi( uoc tinh)?|chuan bi|preparation( time)?)$/],
+  ['fee', /^(thu lao|tong thu lao|phi dich vu|phi thu lao|muc thu lao|so tien( thu lao)?|tong so tien|tong cong|gia tri hop dong|honorarium|fee|service fee|total fee)$/],
+];
+const ctKey = s => qfLabelKey(String(s).replace(/^\s*(?:[-–•*+]|\(?[a-zđ0-9]{1,3}[.)])\s+/i, ''));
+const ctLabelOf = key => (CT_LABELS.find(([, re]) => re.test(key)) || [])[0];
+function splitLines(raw) {
+  const L = [];
+  for (const r of raw) {
+    const l = clean(String(r).normalize('NFC').replace(/[\u200b\ufeff]/g, '').replace(/[“”]/g, '"'));
+    if (!l) continue;
+    L.push(...l.split(/\s+(?=(?:Họ và tên|Họ tên|Chức vụ|Chức danh)\s*[:：])/).map(clean).filter(Boolean));
+  }
+  return L;
+}
+// Nhãn hay gặp trong bảng; bản scan / ảnh thường mất dấu ":" giữa nhãn và giá trị
+const CT_TABLE_LABELS = ['ho va ten','ho ten','so cccd','so cmnd','cccd','cmnd','can cuoc cong dan','ma so thue','ngay sinh','dia chi','noi cong tac','don vi cong tac','co quan cong tac','chuc vu','dien thoai','so dien thoai','email','so tai khoan','chu tai khoan','ten tai khoan','ngan hang','ma ngan hang','ten chuong trinh','ten su kien','thoi gian','dia diem to chuc','dia diem','vai tro','thu lao','tong thu lao','thoi luong','ten bai bao cao','chu de','hoc ham, hoc vi','hoc ham hoc vi'].sort((a, b) => b.length - a.length);
+function addColon(l) {
+  if (/[:：]/.test(l)) return l;
+  const n = norm(l); if (n.length !== l.length) return l;
+  const lab = CT_TABLE_LABELS.find(k => n.startsWith(k + ' ') && n.length > k.length + 1);
+  return lab ? l.slice(0, lab.length) + ': ' + l.slice(lab.length + 1) : l;
+}
+function prepLines(L0) {
+  const L = L0.map(addColon), out = [];
+  for (let i = 0; i < L.length; i++) {
+    const l = L[i], nx = L[i + 1], key = ctKey(l.replace(/[:：]\s*$/, ''));
+    const isLab = l.length <= 45 && (QF_LABEL_MAP.has(key) || ctLabelOf(key)) && !/^(so|no|id|tk|nh|bs|ten|name|bank|mail|khoa|phong|don vi|ngay|chi nhanh|bac si)$/.test(key);
+    if (isLab && nx && !/[:：]/.test(nx) && nx.length <= 160 && !QF_LABEL_MAP.has(ctKey(nx)) && !ctLabelOf(ctKey(nx))) { out.push(l.replace(/[:：]\s*$/, '') + ': ' + nx); i++; }
+    else out.push(l);
+  }
+  return out;
+}
+// PDF / ảnh: giá trị dài bị xuống dòng → nối lại (chỉ với tên sự kiện, chủ đề, địa điểm, địa chỉ, bệnh viện)
+function unwrapLines(L) {
+  const out = [];
+  for (let i = 0; i < L.length; i++) {
+    let l = L[i];
+    const m = l.match(/^([^:：]{1,60})[:：]\s*\S/);
+    const f = m && (ctLabelOf(ctKey(m[1])) || QF_LABEL_MAP.get(ctKey(m[1])));
+    if (['eventName','topic','venue','address','homeAddress','hospital'].includes(f)) {
+      while (L[i + 1] && l.length < 260) {
+        const nx = L[i + 1];
+        if (/[:：]/.test(nx) || nx.length > 110 || isPartyHead(nx) || CT_BLOCK_END.test(nx) || /^(?:\d{1,2}|[a-zđ]|[IVX]{1,4})[.)]\s/i.test(nx) || /^[-–•*+(]/.test(nx) || /^(bên|party|đại diện|ký|signed)\b/i.test(nx)) break;
+        l += ' ' + nx; i++;
+      }
+    }
+    out.push(l);
+  }
+  return out;
+}
+// Tìm ngày, tiền, thời lượng
+const EN_MONTHS = {jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12};
+function datesIn(s) {
+  const out = [], add = (d, m, y) => { d = +d; m = +m; y = +y; if (y < 100) y += 2000; if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900 && y <= 2100) out.push(`${y}-${pad(m)}-${pad(d)}`); };
+  let m;
+  const vi = /ngày\s*(\d{1,2})\s*(?:tháng|\/|-|\.)\s*(\d{1,2})\s*(?:năm|\/|-|\.)\s*(\d{4})/gi; while ((m = vi.exec(s))) add(m[1], m[2], m[3]);
+  const num = /(?<![\d\/.\-])(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4})(?![\d\/])/g; while ((m = num.exec(s))) add(m[1], m[2], m[3]);
+  const en1 = /\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,?\s+(\d{4})/gi; while ((m = en1.exec(s))) add(m[1], EN_MONTHS[m[2].toLowerCase()], m[3]);
+  const en2 = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/gi; while ((m = en2.exec(s))) add(m[2], EN_MONTHS[m[1].toLowerCase()], m[3]);
+  const ymd = /\b(20\d{2})(\d{2})(\d{2})\b/g; while ((m = ymd.exec(s))) add(m[3], m[2], m[1]);
+  return [...new Set(out)];
+}
+function amountsIn(s) {
+  const out = []; let m;
+  const tr = /(\d{1,3}(?:[.,]\d{1,3})?)\s*(?:triệu|tr\b)/gi; while ((m = tr.exec(s))) out.push(Math.round(parseFloat(m[1].replace(',', '.')) * 1e6));
+  const num = /(?<![\d.,])(\d{1,3}(?:[.,\s]\d{3})+|\d{6,10})(?:[.,]0{1,2})?(?![\d])/g;
+  while ((m = num.exec(s))) out.push(Number(digits(m[1])));
+  return out.filter(n => n >= 200000 && n <= 900000000);
+}
+function minutesIn(s) {
+  const m = String(s).match(/(\d{1,3}(?:[.,]\d)?)\s*(phút|minutes?|mins?|giờ|tiếng|hours?|hrs?|h)\b/i);
+  if (!m) return 0; const n = parseFloat(m[1].replace(',', '.'));
+  return Math.round(/^(phút|min)/i.test(m[2]) ? n : n * 60);
+}
+const CT_ROLE_RULES = [['Chủ tọa', /chu toa|chair/], ['Điều phối viên', /dieu phoi|moderat|facilitat/], ['Báo cáo viên', /bao cao vien|speaker|presenter|thuyet trinh vien|dien gia|bao cao|thuyet trinh/]];
+const ctRole = s => { const n = norm(s); for (const [r, re] of CT_ROLE_RULES) if (re.test(n)) return r; return ''; };
+
+// Tên người: lọc các cụm không phải tên
+const NAME_BAD = /(^| )(ben [ab12]|ben|cong ty|hop dong|dich vu|thoa thuan|viet nam|benh vien|dai dien|chuc vu|dia chi|ngan hang|tai khoan|cong hoa|chu nghia|doc lap|hanh phuc|dien gia|doi tac|chuyen vien|thanh toan|phu luc|bayer|trach nhiem|huu han|ho chi minh|ha noi|da nang|can tho|thanh pho|agreement|company|limited|hospital|ky ten|xac nhan|giam doc|truong khoa|pho khoa|quan ly|san pham|kinh doanh|bac si|thac si|tien si|chu tich|the speaker)( |$)/;
+const NAME_BREAK = new Set(['benh','cccd','cmnd','mst','stk','sdt','email','tel','dt','dob','id','bs','ths','ts','pgs','gs','bac','giam','chuc vu','dia','ngay','so','ma','la','va','voi','theo','thuoc','sinh ngay','address','phone','mobile','born','pho']);
+const VN_SURNAMES = new Set('nguyen tran le pham hoang huynh phan vu vo dang bui do ho ngo duong ly dinh mai truong ta lam chau cao doan luong mach to ha la thai quach dao trinh kieu tang luu van tu hua diep than trieu au khuc kha chu dam ton vuong phung nghiem lai luc ma quan giang hau doan bach tieu la ong pho nhan vien ninh khong vuu thach danh trang thieu lo han tong lu'.split(' '));
+function ctCleanName(raw) {
+  let s = clean(String(raw).replace(/\(.*?\)/g, ' ').replace(/[“"”]/g, ''));
+  s = s.replace(/^(?:Ông\s*\/\s*Bà|ÔNG\s*\/\s*BÀ|Ông|ÔNG|Bà|BÀ|Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|DR\.?)\s*[:.]?\s+/, '');
+  const t = s.match(TITLE_RE); if (t) s = s.slice(t[0].length);
+  s = s.replace(/^(?:Ông\s*\/\s*Bà|Ông|Bà)\s+/, '');
+  s = s.split(/\s*[,;:|–(]\s*|\s+-\s+/)[0];             // tên kết thúc ở dấu phẩy / gạch ngang / ngoặc
+  const words = [];
+  for (const w of s.split(/\s+/)) { if (!w) continue; if (words.length >= 2 && NAME_BREAK.has(norm(w))) break; if (!/^[\p{L}]+$/u.test(w) || !/^\p{Lu}/u.test(w)) break; words.push(w); if (words.length === 5) break; }
+  const n = words.join(' ');
+  if (!isNameLike(n) || NAME_BAD.test(norm(n))) return '';
+  if (!words.every(w => /^\p{Lu}/u.test(w))) return '';
+  return n;
+}
+const ctHonorific = /(?:^|[\s,(;:])(?:Ông\s*\/\s*Bà|ÔNG\s*\/\s*BÀ|Ông|ÔNG|Bà|BÀ|Bác sĩ|BÁC SĨ|Bác sỹ|PGS\.?\s*TS\.?\s*(?:BS\.?)?|GS\.?\s*TS\.?\s*(?:BS\.?)?|ThS\.?\s*BS\.?|THS\.?\s*BS\.?|TS\.?\s*BS\.?|BSCK\s*I{1,2}\.?|BS\.?\s*CK\s*I{1,2}\.?|BS\.|BS|Bs\.|Dr\.?|DR\.?|Mr\.?|Ms\.?|Mrs\.?)\s*[:.]?\s+(\p{Lu}[\p{L}]*(?:\s+\p{Lu}[\p{L}]*){1,5})/gu;
+// So khớp trên chữ không dấu (OCR hay đọc sai dấu), lấy giá trị từ chuỗi gốc
+function nmatch(l, re) {
+  const n = norm(l), m = re.exec(n); if (!m) return null;
+  if (!m.indices || n.length !== l.length) return m;
+  return m.map((v, k) => m.indices[k] ? l.slice(m.indices[k][0], m.indices[k][1]) : v);
+}
+const CT_NAME_LABEL = /^(?:ho va ten|ho ten|ten(?: bac si| dien gia| chuyen gia| bao cao vien)?|full name|name|dien gia|bao cao vien|chuyen gia|(?:the )?speaker|consultant|(chu tai khoan|ten tai khoan|account (?:holder|name)|nguoi thu huong))\s*(?:\/[^:：]{0,20})?\s*[:：]\s*(.+)$/d;
+const BAYER_RE = /bayer|3600359484/i;
+const CT_PARTY = /^(?:ben\s*(?:a|b|1|2|thu\s*(?:nhat|hai))\b|ben\s+(?:thue|cung cap|su dung|nhan|duoc thue|chi tra|yeu cau)|party\s*(?:a|b|1|2)\b|doi tac hop dong\b|(?:the\s+)?speaker\s*[:：(]|dien gia\s*[:：(]|bao cao vien\s*[:：(]|chuyen gia\s*[:：(]|consultant\s*[:：(]|thong tin (?:dien gia|bao cao vien|bac si|chuyen gia|ca nhan|ben b|nguoi thu huong|nguoi nhan|speaker))/;
+const CT_BLOCK_END_N = /^(?:dieu\s*\d|article\s*\d|chuong\s|xet rang|can cu|hai ben|cac ben|nay,? hai ben|whereas|now,? therefore|dinh nghia|definitions)/;
+const CT_BLOCK_END = {test:l => CT_BLOCK_END_N.test(norm(l))};
+const isHereafter = l => /sau day goi|hereinafter/.test(norm(l));
+const isPartyHead = l => /^(giua|va|between|and)$/.test(norm(l)) || (CT_PARTY.test(norm(l)) && (/^[^:：]{0,70}[:：]/.test(l) || l.length <= 60));
+
+function bayerPeople() {
+  const s = state.settings;
+  return new Set([s.signer1Name, s.signer2Name, s.staffName, s.manager, ...state.products.map(p => p.signer2Name), ...PRODUCT_PRESETS.map(p => p.signer2Name), ...state.events.flatMap(e => [e.signer1Name, e.signer2Name])].filter(x => clean(x)).map(norm));
+}
+function ctBlocks(L) {
+  const heads = []; L.forEach((l, i) => { if (isPartyHead(l)) heads.push(i); });
+  return heads.map((h, k) => {
+    const lines = [L[h]]; const lim = Math.min(heads[k + 1] ?? L.length, h + 16);
+    for (let i = h + 1; i < lim; i++) { const l = L[i]; if (CT_BLOCK_END.test(l) || l.length > 220 || (/^(?:\d{1,2}|[IVX]{1,4})[.)]\s+\p{Lu}/u.test(l) && l.length <= 60 && !/[:：]/.test(l))) break; lines.push(l); if (isHereafter(l)) break; }
+    return {start:h, end:h + lines.length, lines, bayer:lines.slice(0, 3).some(l => BAYER_RE.test(l))};
+  });
+}
+// Khối thông tin của BS (bên không phải Bayer)
+function ctParseBlock(b) {
+  const lines = b.lines.slice();
+  let first = lines[0];
+  if (/^(giua|va|between|and)$/.test(norm(first))) first = '';
+  else { const ci = first.search(/[:：]/); first = ci >= 0 && ci < 80 ? first.slice(ci + 1) : ''; }
+  lines[0] = clean(first);
+  const body = lines.filter(l => l && !isHereafter(l));
+  const fixed = body.map(l => l.replace(/^(?:Ông\s*\/\s*Bà|ÔNG\s*\/\s*BÀ|Ông|ÔNG|Bà|BÀ|Mr\.?|Ms\.?|Mrs\.?)\s*[:.]?\s+/, 'Họ tên: '));
+  const out = parseHcpText(fixed.join('\n'));
+  // kiểu Thỏa Thuận Diễn Giả: tên / địa chỉ (nhiều dòng) / CCCD, không có nhãn
+  const free = body.filter(l => !/[:：]/.test(l));
+  const nm = free[0] ? ctCleanName(free[0]) : '';
+  if (nm) {
+    out.name ||= nameCase(nm);
+    const t = free[0].match(TITLE_RE); if (t && !out.title) out.title = t[1];
+    const idI = free.findIndex((l, i) => i > 0 && /^\d[\d .]{7,15}\d$/.test(l));
+    if (idI > 0) { out.cccd ||= digits(free[idI]); const addr = free.slice(1, idI); if (addr.length && !out.street) { const a = splitAddress(addr.join(', ')); out.street = a.street; out.city = a.city; } }
+  }
+  return out;
+}
+// Chức vụ / khoa / bệnh viện ở khối chữ ký: ghép "Họ tên" thứ k với "Chức vụ" thứ k
+function ctSignature(L, name) {
+  const nn = norm(name); if (!nn) return {};
+  const names = [], titles = [];
+  L.forEach((l, i) => { let m; if ((m = nmatch(l, /^(?:ho va ten|ho ten|name)\s*[:：]\s*(.+)$/d))) names.push({v:m[1], i}); else if ((m = nmatch(l, /^(?:chuc vu|chuc danh|title|position)\s*[:：]\s*(.+)$/d))) titles.push({v:m[1], i}); });
+  let t = null;
+  const k = names.findIndex(x => norm(x.v).includes(nn));
+  if (k >= 0 && names.length === titles.length) t = titles[k];
+  else if (k >= 0) t = titles.find(x => x.i > names[k].i && x.i <= names[k].i + 3);
+  if (!t) return {};
+  const o = {}; let pos = clean(t.v);
+  const sm = pos.match(/^(.*?)\s*[–\-,]\s*((?:Bệnh viện|BV|Phòng khám|Trung tâm|Viện)\b.*)$/i); if (sm) { pos = clean(sm[1]); o.hospital = qfHospital(sm[2]); }
+  const nx = L[t.i + 1] || '';
+  if (!o.hospital && /^(bệnh viện|bv\b|phòng khám|trung tâm|viện)/i.test(nx)) o.hospital = qfHospital(nx);
+  if (pos && !BAYER_RE.test(pos)) { o.position = pos; const km = pos.match(/(Khoa\s.+)$/i); if (km) o.khoa = km[1].replace(/^khoa/i, 'Khoa'); }
+  return o;
+}
+
+function parseContractGeneric(L) {
+  const r = {hcp:{}, event:{}, eng:{}, signers:{}};
+  const blocks = ctBlocks(L);
+  const inBayer = i => blocks.some(b => b.bayer && i >= b.start && i < b.end);
+  const people = bayerPeople();
+  // 1) tên BS: chấm điểm các ứng viên
+  const cand = new Map();
+  const add = (raw, w) => { const n = ctCleanName(raw); if (!n || people.has(norm(n))) return; const k = norm(n); const c = cand.get(k) || {n, s:0}; c.s += w; cand.set(k, c); };
+  const bad = new Set();
+  L.forEach((l, i) => {
+    const bayerSig = L.slice(Math.max(0, i - 3), i).some(x => x.length <= 80 && (BAYER_RE.test(x) || /^(?:dai dien )?ben a\b|^party a\b/.test(norm(x))) && !/ben b|party b/.test(norm(x)));
+    if (inBayer(i) || /^dai dien|representative/.test(norm(l)) || (bayerSig && CT_NAME_LABEL.test(norm(l)))) { let m; const re = new RegExp(ctHonorific.source, 'gu'); while ((m = re.exec(l))) { const n = ctCleanName(m[1]); if (n) bad.add(norm(n)); } const lm = l.match(/[:：]\s*(.+)$/); if (lm) { const n = ctCleanName(lm[1]); if (n) bad.add(norm(n)); } return; }
+    let m; const lm = nmatch(l, CT_NAME_LABEL);
+    if (lm) add(lm[2], lm[1] ? 2 : 3);
+    const re = new RegExp(ctHonorific.source, 'gu'); while ((m = re.exec(l))) add(m[1], 2);
+    const dm = nmatch(l, /se do\s+(.+?)\s+thuc hien/d); if (dm) add(dm[1], 4);
+  });
+  const hb = blocks.filter(b => !b.bayer).map(b => ({b, p:ctParseBlock(b)})).find(x => x.p.name && !people.has(norm(x.p.name)));
+  if (hb) { bad.delete(norm(hb.p.name)); add(hb.p.name, 6); }
+  for (const k of bad) cand.delete(k);
+  for (const c of cand.values()) { if (findHcp({name:c.n})) c.s += 3; if (VN_SURNAMES.has(norm(c.n).split(' ')[0])) c.s += 1; }
+  const best = [...cand.values()].sort((a, b) => b.s - a.s)[0];
+  if (best) r.hcp.name = nameCase(best.n);
+  // 2) thông tin BS: khối bên BS → khối chữ ký → các dòng có nhãn ngoài phần Bayer
+  const fill = o => { for (const [k, v] of Object.entries(o || {})) if (!k.startsWith('_') && v !== '' && v != null && !r.hcp[k]) r.hcp[k] = v; };
+  if (hb && (!r.hcp.name || norm(hb.p.name) === norm(r.hcp.name))) fill(hb.p);
+  fill(ctSignature(L, r.hcp.name));
+  const HCP_LINE = /^(?:[-–•*+]\s*)?(chu tai khoan|ten tai khoan|so tai khoan|stk|tai khoan so|tai khoan|ngan hang|tai ngan hang|ma ngan hang|account|bank|email|e-mail|dien thoai|so dien thoai|sdt|di dong|mobile|phone|tel|cccd|cmnd|so cccd|so cmnd|can cuoc|ma so thue|mst|tax code|id no|ngay sinh|date of birth|noi cong tac|don vi cong tac|co quan cong tac|linh vuc chuyen mon|chuyen khoa|chuyen nganh)\b/;
+  const glob = L.filter((l, i) => !inBayer(i) && l.length <= 160 && !BAYER_RE.test(l) && HCP_LINE.test(norm(l)));
+  const g = parseHcpText(glob.join('\n'));
+  if (g.name && r.hcp.name && norm(g.name) !== norm(r.hcp.name)) delete g.name;
+  fill(g);
+  // CCCD dạng "CCCD số 0791… cấp ngày …" mà parseHcpText bỏ sót
+  if (!r.hcp.cccd) for (const [i, l] of L.entries()) { if (inBayer(i)) continue; const m = l.match(/(?:cccd|cmnd|căn cước|định danh|mã số thuế|mst|tax code|id(?: card)?(?: no\.?)?)\b[^0-9\n]{0,30}(\d[\d .]{7,15}\d)/i); if (m) { const d = digits(m[1]); if (/^\d{9,12}$/.test(d) && d !== '3600359484') { r.hcp.cccd = d; break; } } }
+  if (!r.hcp.email) { const em = L.filter((l, i) => !inBayer(i)).join(' ').match(/[\w.+-]+@(?!bayer)[\w-]+(?:\.[\w-]+)+/i); if (em) r.hcp.email = em[0].toLowerCase(); }
+  if (r.hcp.bankName && !r.hcp.bankCode) { const b = bankLookup(r.hcp.bankName); if (b?.code) r.hcp.bankCode = b.code; }
+  // 3) sự kiện: ưu tiên dòng có nhãn
+  const lab = {};
+  L.forEach((l, i) => {
+    if (inBayer(i)) return;
+    const m = l.match(/^([^:：]{1,60})[:：]\s*(.*)$/); if (!m) return;
+    const f = ctLabelOf(ctKey(m[1])); if (!f || lab[f]) return;
+    const v = clean(m[2]) || (L[i + 1] && !/[:：]/.test(L[i + 1]) ? clean(L[i + 1]) : '');
+    if (v) lab[f] = v;
+  });
+  if (lab.eventName) {
+    const em = lab.eventName.match(/^(.{2,40}?)\s+(?:cho|tại|for)\s+(.+)$/i);
+    if (em && ctRole(em[1])) { r.eng.role = ctRole(em[1]); r.event.name = em[2]; } else r.event.name = lab.eventName;
+  }
+  if (!r.event.name) for (const [i, l0] of L.entries()) { if (inBayer(i)) continue; const l = l0 + ' ' + (L[i + 1] || ''); const m = l.match(/(?:chương trình|hội thảo|hội nghị|sự kiện|sinh hoạt khoa học|event|meeting)\s*:?\s*["“]([^"”]{5,140})["”]/i); if (m) { r.event.name = clean(m[1]); break; } }
+  if (lab.role) r.eng.role = ctRole(lab.role) || r.eng.role || clean(lab.role);
+  if (lab.venue && !/^\d/.test(lab.venue)) r.event.venue = lab.venue;
+  if (lab.city) r.event.city = lab.city.replace(/^(tp\.?\s*|thành phố\s+)/i, '');
+  if (lab.country) r.event.country = lab.country;
+  if (lab.topic) r.eng.topic = lab.topic;
+  if (lab.specialty) { r.eng.specialty = lab.specialty; r.hcp.specialty ||= lab.specialty; }
+  if (lab.duration) r.eng.duration = minutesIn(lab.duration) || '';
+  if (lab.prep) r.eng.prep = minutesIn(lab.prep) || '';
+  if (lab.fee) { const a = amountsIn(lab.fee); if (a.length) r.eng.fee = a[0]; }
+  // ngày sự kiện: chấm điểm theo ngữ cảnh, loại ngày sinh / ngày cấp CCCD
+  const ds = [];
+  L.forEach((l, i) => {
+    const here = norm(l), ctx = here + (l.length < 45 ? ' ' + norm(L[i - 1] || '') : '');
+    for (const d of datesIn(l)) {
+      let s = 0;
+      if (lab.date && l.includes(lab.date)) s += 6;
+      if (/thuyet trinh|dao tao|to chuc|dien ra|su kien|hoi thao|hoi nghi|sinh hoat khoa hoc|chuong trinh|bao cao|event|meeting|presentation|thuc hien dich vu/.test(ctx)) s += 3;
+      if (/sinh ngay|ngay sinh|ngay thang nam sinh|nam sinh|\bsn\b|birth|\bdob\b|born|cap ngay|ngay cap|noi cap|cap tai|issued|date of issue|het han|expiry|valid/.test(here)) s -= 10;
+      if (/\bky\b|hieu luc|effective|signed|lap ngay|sign/.test(here)) s -= 1;
+      if (/hom nay|chung toi gom|today|is made on|made and entered|dated/.test(here)) s -= 4;
+      if (+d.slice(0, 4) < 2010) s -= 10;
+      ds.push({d, s, i});
+    }
+  });
+  const bd = ds.sort((a, b) => b.s - a.s || a.i - b.i)[0];
+  if (bd && bd.s > -5) { r.event.date = bd.d; r.event.dateGuess = bd.s <= 0; if (!r.event.venue && bd.s > 0) { const vm = (L[bd.i] + ' ' + (L[bd.i + 1] || '')).match(/\btại\s+(.{4,140}?)(?:[.;](?=\s|$)|$)/i); if (vm && !/^(ngân hàng|tài khoản)/i.test(vm[1])) r.event.venue = clean(vm[1]); } }
+  // vai trò: theo nhãn, nếu không có thì đếm số lần nhắc tới
+  if (!r.eng.role) {
+    const txt = norm(L.join(' ')); const cnt = [['Chủ tọa', /chu toa|chairm|chairp/g], ['Điều phối viên', /dieu phoi vien|moderator/g], ['Báo cáo viên', /bao cao vien|speaker|presenter|thuyet trinh vien/g]].map(([role, re]) => [role, (txt.match(re) || []).length]).sort((a, b) => b[1] - a[1]);
+    r.eng.role = cnt[0][1] > 0 ? cnt[0][0] : /bao cao|dien gia|speaker|thuyet trinh|presentation/.test(txt) ? 'Báo cáo viên' : '';
+  }
+  // thù lao: dòng có chữ thù lao / phí / tổng cộng, bỏ dòng số tài khoản
+  if (!r.eng.fee) {
+    for (const re of [/thù lao|honorarium|phí dịch vụ|phí cố định|tổng cộng|tổng số tiền|giá trị hợp đồng|service fee/i, /phí|số tiền|thanh toán|fee|vnd|vnđ|đồng/i]) {
+      for (const [i, l] of L.entries()) { if (inBayer(i) || !re.test(l) || /tài khoản|stk|account|cccd|điện thoại|mã số thuế/i.test(l)) continue; const a = amountsIn(l); if (a.length) { r.eng.fee = a[0]; break; } }
+      if (r.eng.fee) break;
+    }
+  }
+  if (!r.eng.duration) { const l = L.find(x => /thời lượng|thời gian (thuyết trình|báo cáo|trình bày)|duration/i.test(x)); if (l) r.eng.duration = minutesIn(l) || ''; }
+  if (!r.eng.prep) { const l = L.find(x => /chuẩn bị|preparation/i.test(x) && minutesIn(x)); if (l) r.eng.prep = minutesIn(l) || ''; }
+  if (!r.event.city && r.event.venue) { const c = SIX_CITIES.find(c => norm(r.event.venue).includes(norm(c))); if (c) r.event.city = c; }
+  r.event.online = isOnlineVenue(r.event.venue || '');
+  for (const p of ['hcp','event','eng']) for (const k of Object.keys(r[p])) if (r[p][k] === '' || r[p][k] == null) delete r[p][k];
+  return r;
+}
+function parseContractAny(raw, wrapped) {
+  let S = splitLines(raw); if (wrapped) S = unwrapLines(S);
+  const L = wrapped ? unwrapLines(prepLines(S)) : prepLines(S);
+  const g = parseContractGeneric(L);
+  let t = null; try { t = parseContract(S); } catch (e) {}
+  if (t && isNameLike(t.hcp.name) && (t.hcp.cccd || t.event.date)) {
+    for (const p of ['hcp','event','eng']) for (const [k, v] of Object.entries(g[p])) if (v !== '' && v != null && (t[p][k] === undefined || t[p][k] === '')) t[p][k] = v;
+    t.event.dateGuess = false; t.hcp.name = nameCase(t.hcp.name);
+    return {...t, mode:'template', text:L.join('\n')};
+  }
+  return {...g, mode:'generic', text:L.join('\n')};
+}
 async function parseContracts(files) {
+  const imgs = files.filter(isImageFile), docs = files.filter(f => !isImageFile(f));
+  const jobs = docs.map(f => ({name:f.name, files:[f]}));
+  if (imgs.length) jobs.push({name:imgs.length > 1 ? `${imgs.length} ảnh chụp (${imgs[0].name}…)` : imgs[0].name, files:imgs, img:true});
   const items = [];
-  for (const f of files) {
-    try { items.push({file:f.name, ...parseContract(await docxLines(await f.arrayBuffer()))}); }
-    catch (err) { items.push({file:f.name, error:err.message}); }
+  for (const [k, job] of jobs.entries()) {
+    const head = `Đang đọc ${jobs.length > 1 ? `hợp đồng ${k + 1}/${jobs.length}` : 'hợp đồng'}`;
+    const prog = m => busy(m ? `${head}: ${m}` : `${head}…`);
+    try {
+      prog('');
+      const src = await readContractFile(job, prog);
+      const it = parseContractAny(src.lines, src.ocr || /\.pdf$/i.test(job.name));
+      items.push({file:job.name, ...it, ocr:src.ocr});
+    } catch (err) { items.push({file:job.name, error:err.message || String(err)}); }
   }
   return {kind:'contracts', items};
 }
@@ -1115,7 +1514,7 @@ function applyContracts(plan, opts) {
   checkpoint();
   let created = 0, updated = 0, engN = 0, merged = 0;
   for (const it of plan.items) {
-    if (it.error) continue;
+    if (it.error || it.skip) continue;
     const {hcp, created:c, changed} = upsertHcp(it.hcp); if (c) created++; else if (changed) updated++;
     for (const [k, v] of Object.entries(it.signers)) if (v && !clean(state.settings[k])) state.settings[k] = v;
     if (!opts.events || !it.event.date) continue;
@@ -1266,7 +1665,7 @@ function onboardHtml() {
     <div class="flow">${['prep','ready','held','sent','paid'].map((s, i) => (i ? '→ ' : '') + chip(s, ['Tạo HĐ','Raise Veeva','Event','Gửi admin','Đã chi'][i])).join(' ')}</div></div>
     <div class="panel-b"><div class="onboard">
       <div class="ob ${s1 ? 'done' : ''}"><span class="ob-n">${s1 ? 'XONG' : 'BƯỚC 1'}</span><b>Nạp phôi hợp đồng</b><p>Tải file “Phoi_Speaker_Agreement.docx” lên. ${sync.user ? 'Phôi lưu cùng tài khoản, máy khác không cần tải lại.' : 'Phôi chỉ lưu trong trình duyệt này.'}</p><div><button class="btn sm ${s1 ? '' : 'primary'}" data-act="pick" data-f="f-template">${I.up} Chọn file phôi</button></div></div>
-      <div class="ob ${s2 ? 'done' : ''}"><span class="ob-n">${s2 ? 'XONG' : 'BƯỚC 2'}</span><b>Nhập danh sách bác sĩ</b><p>Từ file Excel YCTT cũ (sheet Data HCPs và các sheet YCTT), và từ hợp đồng cũ để lấy số tài khoản.</p><div class="actions"><button class="btn sm ${s2 ? '' : 'primary'}" data-act="pick" data-f="f-excel">Từ Excel</button><button class="btn sm" data-act="pick" data-f="f-contracts">Từ hợp đồng .docx</button></div></div>
+      <div class="ob ${s2 ? 'done' : ''}"><span class="ob-n">${s2 ? 'XONG' : 'BƯỚC 2'}</span><b>Nhập danh sách bác sĩ</b><p>Từ file Excel YCTT cũ (sheet Data HCPs và các sheet YCTT), và từ hợp đồng cũ (Word, PDF hoặc ảnh chụp, mẫu nào cũng được) để lấy CCCD, số tài khoản.</p><div class="actions"><button class="btn sm ${s2 ? '' : 'primary'}" data-act="pick" data-f="f-excel">Từ Excel</button><button class="btn sm" data-act="pick" data-f="f-contracts">Từ hợp đồng .docx</button></div></div>
       <div class="ob ${s3 ? 'done' : ''}"><span class="ob-n">${s3 ? 'XONG' : 'BƯỚC 3'}</span><b>Tạo sự kiện đầu tiên</b><p>Chọn BS, nhập chủ đề và phí, bấm xuất: mỗi BS ra một file hợp đồng đúng phôi.</p><div><button class="btn sm" data-act="new-event">${I.plus} Sự kiện mới</button></div></div>
     </div></div></section>`;
 }
@@ -1300,7 +1699,7 @@ function buildTodos() {
 function viewHcps() {
   const hosp = [...new Set(state.hcps.map(h => clean(h.hospital)).filter(Boolean))].sort();
   return pageHead('Bác sĩ', 'Hồ sơ dùng để điền hợp đồng và file thanh toán. Nhập một lần, dùng lại cho mọi sự kiện.',
-    `<button class="btn" data-act="pick" data-f="f-excel">${I.up} Nhập Excel</button><button class="btn" data-act="pick" data-f="f-contracts">${I.up} Nhập từ HĐ cũ</button><button class="btn" data-act="export-hcps">${I.down} Xuất Excel</button><button class="btn primary" data-act="new-hcp">${I.plus} Thêm bác sĩ</button>`) + `
+    `<button class="btn" data-act="pick" data-f="f-excel">${I.up} Nhập Excel</button><button class="btn" data-act="pick" data-f="f-contracts" title="Word, PDF hoặc ảnh chụp hợp đồng. Chọn nhiều ảnh cùng lúc = các trang của 1 hợp đồng.">${I.up} Nhập từ HĐ cũ</button><button class="btn" data-act="export-hcps">${I.down} Xuất Excel</button><button class="btn primary" data-act="new-hcp">${I.plus} Thêm bác sĩ</button>`) + `
   <section class="panel">
     <div class="toolbar"><input class="input search" id="hcp-q" placeholder="Tìm tên, khoa, CCCD, SĐT…" value="${esc(ui.hcpQ)}" autocomplete="off">
       <select class="input" id="hcp-hosp" style="max-width:280px"><option value="">Tất cả bệnh viện</option>${hosp.map(h => `<option ${ui.hcpHosp === h ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select></div>
@@ -1493,7 +1892,7 @@ function viewSettings() {
   <section class="panel"><div class="panel-h"><h2>Dữ liệu</h2></div><div class="panel-b stack">
     <p class="muted" style="margin:0">${sync.user ? 'Dữ liệu lưu trên tài khoản của bạn (chỉ tài khoản này đọc được), kèm một bản trên máy này để dùng khi mất mạng. Sao lưu .json vẫn nên làm định kỳ.' : 'Mọi thông tin (kể cả CCCD, số tài khoản) chỉ lưu trong trình duyệt trên máy này, không gửi lên máy chủ. Mở app ở trình duyệt hay máy khác sẽ không thấy dữ liệu: ' + (SYNC_ON ? 'đăng nhập để đồng bộ, hoặc ' : '') + 'dùng Sao lưu rồi Khôi phục để chuyển.'}</p>
     <div class="actions"><button class="btn primary" data-act="backup">${I.down} Sao lưu (.json)</button><button class="btn" data-act="pick" data-f="f-restore">${I.up} Khôi phục từ file</button>
-      <button class="btn" data-act="pick" data-f="f-excel">${I.up} Nhập Excel</button><button class="btn" data-act="pick" data-f="f-contracts">${I.up} Nhập từ HĐ cũ</button><button class="btn" data-act="export-hcps">${I.down} Xuất danh sách BS</button></div>
+      <button class="btn" data-act="pick" data-f="f-excel">${I.up} Nhập Excel</button><button class="btn" data-act="pick" data-f="f-contracts" title="Word, PDF hoặc ảnh chụp hợp đồng. Chọn nhiều ảnh cùng lúc = các trang của 1 hợp đồng.">${I.up} Nhập từ HĐ cũ</button><button class="btn" data-act="export-hcps">${I.down} Xuất danh sách BS</button></div>
     <div><button class="btn danger sm" data-act="wipe" data-confirm="Bấm lần nữa: xoá TOÀN BỘ dữ liệu${sync.user ? ' (cả trên tài khoản)' : ''}">Xoá toàn bộ dữ liệu</button></div>
   </div></section>
   </div>`;
@@ -1853,21 +2252,66 @@ function showExcelPlan(plan) {
     <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="apply-excel" ${plan.hcps.length ? '' : 'disabled'}>Nhập</button></div>`, {size:'narrow'});
   pendingPlan = plan;
 }
+const CT_EDIT = [['name','Họ tên BS','hcp'],['cccd','CCCD / MST','hcp'],['khoa','Khoa','hcp'],['hospital','Bệnh viện','hcp'],['date','Ngày sự kiện','event'],['role','Vai trò','eng'],['fee','Thù lao (VND)','eng'],['bankAccount','Số tài khoản','hcp'],['bankName','Ngân hàng','hcp']];
+const CT_EXTRA = [['hcp','street','Địa chỉ'],['hcp','email','Email'],['hcp','phone','SĐT'],['hcp','dob','Ngày sinh'],['hcp','bankCode','Mã NH'],['hcp','bankHolder','Chủ TK'],['hcp','position','Chức vụ'],['event','name','Tên sự kiện'],['event','venue','Địa điểm'],['eng','topic','Chủ đề'],['eng','duration','Thời lượng']];
+function contractCard(it, idx) {
+  if (it.error) return `<div class="ct-card err"><div class="ct-h"><b>${esc(it.file)}</b><span class="tag crit">Không đọc được</span></div><div class="hint">${esc(it.error)}</div></div>`;
+  const ex = it.hcp.name && findHcp(it.hcp);
+  const tags = [it.mode === 'template' ? '<span class="tag ok">Mẫu của bạn</span>' : '<span class="tag warn">Mẫu khác · kiểm tra lại</span>',
+    it.ocr ? '<span class="tag warn">Đọc từ ảnh / bản scan</span>' : '',
+    ex ? '<span class="tag">Đã có hồ sơ · chỉ bổ sung ô trống</span>' : it.hcp.name ? '<span class="tag acc">BS mới</span>' : ''].join('');
+  const inp = ([k, label, part]) => {
+    let v = it[part][k] ?? ''; if (k === 'fee') v = v ? fmtVND(v) : '';
+    const at = k === 'date' ? 'type="date"' : k === 'role' ? 'list="dl-role"' : k === 'bankName' ? 'list="dl-bank-ct"' : k === 'fee' ? 'inputmode="numeric" data-money' : k === 'cccd' || k === 'bankAccount' ? 'inputmode="numeric"' : '';
+    const guess = k === 'date' && v && it.event.dateGuess ? ' <span class="tag warn">đoán</span>' : '';
+    return `<label class="field${k === 'name' ? ' span2' : ''}"><span>${label}${k === 'name' ? ' <em>*</em>' : ''}${guess}</span><input class="input${v === '' ? ' ct-empty' : ''}" data-ct="${idx}" data-k="${k}" data-part="${part}" value="${esc(v)}" ${at}></label>`;
+  };
+  const got = CT_EXTRA.filter(([p, k]) => it[p][k]).map(([p, k, l]) => `<span class="tag ok" title="${esc(k === 'duration' ? it[p][k] + ' phút' : it[p][k])}">${l}</span>`).join('');
+  return `<div class="ct-card" data-card="${idx}">
+    <div class="ct-h"><label class="check"><input type="checkbox" data-ct-on="${idx}" ${it.hcp.name ? 'checked' : ''}><b>${esc(it.file)}</b></label><div class="miss">${tags}</div></div>
+    <div class="fgrid ct-grid">${CT_EDIT.map(inp).join('')}</div>
+    ${got ? `<div class="miss"><span class="hint" style="margin-right:2px">Lấy thêm:</span>${got}</div>` : ''}
+    <details class="ct-raw"><summary>Xem chữ app đọc được</summary><textarea class="input" rows="8" readonly>${esc(it.text || '')}</textarea></details>
+  </div>`;
+}
 function showContractPlan(plan) {
   const ok = plan.items.filter(i => !i.error);
-  openModal(`
-    <div class="modal-h"><div><h2>Nhập từ hợp đồng cũ</h2><p>${plan.items.length} file · đọc được ${ok.length}</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
+  const other = ok.filter(i => i.mode !== 'template' || i.ocr).length;
+  const banks = [...new Set([...BANK_DIR.map(b => b[0]), ...state.hcps.map(x => x.bankName).filter(Boolean)])];
+  const w = openModal(`
+    <div class="modal-h"><div><h2>Nhập từ hợp đồng cũ</h2><p>${plan.items.length} hợp đồng · đọc được ${ok.length}</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
     <div class="modal-b stack">
-      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Bác sĩ</th><th>Sự kiện</th><th>Lấy được</th></tr></thead><tbody>
-      ${plan.items.map(it => it.error ? `<tr><td colspan="3"><b>${esc(it.file)}</b><div class="t-sub" style="color:var(--crit)">${esc(it.error)}</div></td></tr>` :
-        `<tr><td><div class="t-main">${esc(it.hcp.name)}</div><div class="t-sub">${findHcp(it.hcp) ? 'Đã có · bổ sung ô trống' : 'BS mới'}</div></td><td><div class="mono small">${fmtDate(it.event.date)}</div><div class="t-sub">${esc(it.eng.role || '')} · ${esc(it.event.name || '')}</div></td>
-         <td><div class="miss">${[['cccd','CCCD'],['bankAccount','Số TK'],['bankCode','Mã NH'],['street','Địa chỉ'],['hospital','Bệnh viện']].map(([k, l]) => `<span class="tag ${it.hcp[k] ? 'ok' : 'warn'}">${l}</span>`).join('')}</div></td></tr>`).join('')}
-      </tbody></table></div>
+      ${other ? `<div class="callout warn">Có ${other} hợp đồng khác mẫu của bạn hoặc đọc từ ảnh. App đã tự tìm thông tin, bạn xem lại các ô bên dưới, sửa chỗ sai rồi bấm Nhập. Ô viền đứt là chưa tìm thấy.</div>` : ''}
+      <div class="ct-list">${plan.items.map(contractCard).join('')}</div>
       <label class="check"><input type="checkbox" id="opt-ev" checked><span>Tạo luôn sự kiện và hợp đồng tương ứng (gộp theo tên + ngày sự kiện; nếu đã nhập lịch sử từ Excel thì ghép vào đúng dòng đó).</span></label>
-      <p class="hint" style="margin:0">Người ký phía Bayer trong hợp đồng sẽ được lưu làm mặc định nếu Cài đặt đang trống.</p>
+      <p class="hint" style="margin:0">BS đã có hồ sơ chỉ được điền thêm ô đang trống, không ghi đè. Người ký phía Bayer trong hợp đồng mẫu của bạn sẽ được lưu làm mặc định nếu Cài đặt đang trống.</p>
+      <datalist id="dl-bank-ct">${banks.map(b => `<option>${esc(b)}</option>`).join('')}</datalist>
+      <datalist id="dl-role">${ROLES.map(r => `<option>${r}</option>`).join('')}</datalist>
     </div>
-    <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="apply-contracts" ${ok.length ? '' : 'disabled'}>Nhập ${ok.length} hồ sơ</button></div>`);
+    <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" data-act="apply-contracts" id="ct-go"></button></div>`, {size:'wide'});
+  const count = () => { const n = [...w.querySelectorAll('[data-ct-on]')].filter(c => c.checked && clean(w.querySelector(`[data-ct="${c.dataset.ctOn}"][data-k="name"]`)?.value)).length; const b = w.querySelector('#ct-go'); b.textContent = `Nhập ${n} hợp đồng`; b.disabled = !n; };
+  w.addEventListener('input', e => { if (e.target.matches('[data-ct]')) e.target.classList.toggle('ct-empty', !clean(e.target.value)); count(); });
+  w.addEventListener('change', count);
+  count();
   pendingPlan = plan;
+}
+function collectContractEdits(plan, root) {
+  plan.items.forEach((it, i) => {
+    if (it.error) return;
+    it.skip = !root.querySelector(`[data-ct-on="${i}"]`)?.checked;
+    root.querySelectorAll(`[data-ct="${i}"]`).forEach(el => {
+      const {k, part} = el.dataset; let v = clean(el.value);
+      if (k === 'fee') v = money(v);
+      else if (k === 'cccd' || k === 'bankAccount') v = v.replace(/[\s.]/g, '');
+      else if (k === 'name' && v) v = nameCase(v);
+      if (k === 'bankName' && norm(v) !== norm(it.hcp.bankName || '')) delete it.hcp.bankCode;
+      if (k === 'hospital' && norm(v) !== norm(it.hcp.hospital || '') && it.hcp._addrFrom) { delete it.hcp.street; delete it.hcp.city; }
+      if (v === '' || v === 0) delete it[part][k]; else it[part][k] = v;
+    });
+    if (!clean(it.hcp.name)) it.skip = true;
+    for (const k of Object.keys(it.hcp)) if (k.startsWith('_')) delete it.hcp[k];
+    delete it.event.dateGuess;
+  });
 }
 let pendingPlan = null;
 
@@ -2191,7 +2635,7 @@ const ACT = {
   },
   'batch-undo': t => { checkpoint(); const b = state.batches.find(x => x.id === t.dataset.id); b.engIds.map(engById).filter(Boolean).forEach(e => { e.sentAt = null; e.batchId = null; }); state.batches = state.batches.filter(x => x !== b); ui.openBatch = null; save(); render(); toast('Đã huỷ đợt, các BS về “chờ gửi”.', {action:'Hoàn tác', onAction:undo}); },
   'apply-excel': () => { const p = pendingPlan; const w = topModal(); const opts = {history:!!$('#opt-hist', w)?.checked, settings:!!$('#opt-set', w)?.checked}; closeModal(); applyExcel(p, opts); },
-  'apply-contracts': () => { const p = pendingPlan; const opts = {events:!!$('#opt-ev', topModal())?.checked}; closeModal(); applyContracts(p, opts); },
+  'apply-contracts': () => { const p = pendingPlan, m = topModal(); collectContractEdits(p, m); const opts = {events:!!$('#opt-ev', m)?.checked}; closeModal(); applyContracts(p, opts); },
   'do-restore': () => { checkpoint(); const o = pendingRestore; const f = fresh(); const keep = {ownerId:state.ownerId, syncedAt:state.syncedAt}; state = {...f, ...o.state, settings:{...f.settings, ...(o.state.settings || {})}, lastBackupAt:Date.parse(o.exportedAt) || Date.now(), changes:0, ...keep}; ensurePresets(state); if (o.template) saveTemplate(o.template); save(); closeModal(); render(); toast('Đã khôi phục.', {action:'Hoàn tác', onAction:undo}); },
   'dl-template': () => saveFile(template.name || 'Phoi_Speaker_Agreement.docx', new Blob([bufFromB64(template.b64)])),
   'del-template': () => { saveTemplate(null); sharedPushSoon(); render(); toast('Đã gỡ phôi.'); },
@@ -2272,7 +2716,7 @@ $('#f-excel').addEventListener('change', async e => {
 });
 $('#f-contracts').addEventListener('change', async e => {
   const fs = [...e.target.files]; if (!fs.length) return;
-  try { busy('Đang đọc hợp đồng…'); const plan = await parseContracts(fs); busy(false); showContractPlan(plan); }
+  try { const plan = await parseContracts(fs); busy(false); showContractPlan(plan); }
   catch (err) { busy(false); toast(err.message, {kind:'err'}); }
 });
 $('#f-template').addEventListener('change', e => { const f = e.target.files[0]; if (f) onTemplateFile(f); });
