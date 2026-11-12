@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f3f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1215" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lịch Tâm Anh">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Lịch khám Thận – Nội tiết Tâm Anh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: bộ lọc trên cùng; desktop 2 cột (lịch tháng | timeline ngày), điện thoại xếp chồng */
+  --bg:#f3f5f7;
+  --surface:#ffffff;
+  --ink:#131820;
+  --ink-2:#4a5260;
+  --muted:#7a8290;
+  --line:#e1e5ea;
+  --line-2:#eef1f4;
+  --band:#f5f7f9;
+  --than:#2a78d6;
+  --tiet:#eb6834;
+  --live:#0b8f0b;
+  --now:#d03b3b;
+  --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1215; --surface:#171b20; --ink:#eef1f4; --ink-2:#b4bcc8; --muted:#848d9b;
+    --line:#2a3038; --line-2:#222831; --band:#1b2026;
+    --than:#3987e5; --tiet:#d95926; --live:#3cc43c; --now:#e66767;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1215; --surface:#171b20; --ink:#eef1f4; --ink-2:#b4bcc8; --muted:#848d9b;
+  --line:#2a3038; --line-2:#222831; --band:#1b2026;
+  --than:#3987e5; --tiet:#d95926; --live:#3cc43c; --now:#e66767;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.num,.tl-axis,.meta,.state,.dl-head,.next{font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 16px 40px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:14px}
+h1{font-size:20px;line-height:1.25;font-weight:700;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:4px 0 0;color:var(--ink-2);font-size:13px}
+.tabs{display:inline-flex;background:var(--line-2);border-radius:10px;padding:3px;gap:2px}
+.tabs button{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-2);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.banner{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--now);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.seg button{border:0;background:transparent;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:var(--ink-2)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.sw{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none}
+.sw.than{background:var(--than)} .sw.tiet{background:var(--tiet)}
+.search{flex:1 1 220px;min-width:0;position:relative}
+.search input{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 32px 8px 34px;font:inherit;font-size:13px}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search .clear{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);cursor:pointer;padding:6px 8px;font-size:15px;line-height:1}
+.pinbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;gap:6px;align-items:center;color:var(--ink-2)}
+.pinbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.pinbtn:disabled{opacity:.5;cursor:default}
+.pinbtn svg{width:14px;height:14px;flex:none}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card h2{font-size:15px;margin:0 0 10px;font-weight:600}
+.hint{color:var(--muted);font-size:12px;margin:8px 0 0}
+
+/* day view layout */
+.v-ngay{display:grid;gap:14px;grid-template-columns:minmax(0,1fr);grid-template-areas:"cal" "day" "sugg"}
+#calCard{grid-area:cal} #suggCard{grid-area:sugg} #dayPanel{grid-area:day}
+@media (min-width:920px){.v-ngay{grid-template-columns:330px minmax(0,1fr);grid-template-areas:"cal day" "sugg day";grid-template-rows:auto 1fr;align-items:start}}
+
+/* calendar */
+.cal-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.cal-head h2{margin:0}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .wd{font-size:11px;color:var(--muted);text-align:center;padding-bottom:2px;font-weight:500}
+.day{position:relative;min-height:54px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:5px 5px 6px;display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;text-align:left;cursor:pointer}
+.day:hover{border-color:var(--muted)}
+.day .dnum{font-weight:600;font-size:14px;line-height:1.1}
+.day .dcnt{font-size:10.5px;color:var(--muted);line-height:1.1}
+.day .mix{display:flex;gap:2px;height:4px;margin-top:3px}
+.day .mix i{border-radius:2px;min-width:2px}
+.mix .than{background:var(--than)} .mix .tiet{background:var(--tiet)}
+.day.is-sel{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.day.is-sel .dcnt{color:var(--surface);opacity:.75}
+.day.is-today:not(.is-sel){box-shadow:inset 0 0 0 2px var(--ink)}
+.day.is-out{opacity:.32;cursor:default;background:transparent}
+.day.is-none{cursor:pointer;background:repeating-linear-gradient(135deg,transparent 0 5px,var(--line-2) 5px 7px)}
+.day.is-none.is-sel{background:var(--ink)}
+.day.is-zero .dnum{color:var(--muted)}
+.day.is-sel.is-zero .dnum{color:var(--surface)}
+.pinct{position:absolute;top:4px;right:4px;font-size:10px;font-weight:700;line-height:1;display:inline-flex;align-items:center;gap:1px}
+.pinct svg{width:9px;height:9px}
+
+/* suggestion */
+.sugg{display:grid;gap:6px}
+.sugg button{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;text-align:left;cursor:pointer}
+.sugg button:hover{border-color:var(--muted)}
+.sugg .sd{font-weight:600;white-space:nowrap}
+.sugg .sn{color:var(--ink-2);font-size:12px;text-align:right}
+
+/* day panel */
+.dayhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:6px}
+.dayhead h2{font-size:18px;margin:0;font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--ink-2);background:var(--surface);white-space:nowrap}
+.pill.solid{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+button.pill{cursor:pointer}
+.daystats{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--ink-2);font-size:13px;margin-bottom:12px}
+.daystats b{color:var(--ink);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2);margin:0 0 10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg-vip{width:16px;height:9px;border-radius:3px;background:var(--ink-2);background:repeating-linear-gradient(135deg,var(--ink-2) 0 3px,color-mix(in srgb,var(--ink-2) 35%,var(--surface)) 3px 5px)}
+.lg-now{width:2px;height:12px;background:var(--now);border-radius:1px}
+
+.tl-axis-row,.trow{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"who" "track" "meta";column-gap:16px}
+.tl-axis-row{grid-template-areas:"axis";position:sticky;top:0;background:var(--surface);z-index:2;padding:6px 0 4px;border-bottom:1px solid var(--line)}
+@media (min-width:640px){
+  .trow{grid-template-columns:230px minmax(0,1fr);grid-template-areas:"who track" "who meta";align-items:center}
+  .tl-axis-row{grid-template-columns:230px minmax(0,1fr);grid-template-areas:". axis"}
+}
+.tl-axis{grid-area:axis;position:relative;height:16px;font-size:11px;color:var(--muted)}
+.tl-axis span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.tl-axis span.first{transform:none}
+.tl-axis span.last{transform:translateX(-100%)}
+@media (max-width:519px){.tl-axis span.odd{display:none}}
+.tgroup{margin-top:12px}
+.tgroup h3{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:0 0 2px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+.tgroup h3 .ct{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+.trow{padding:9px 0;border-bottom:1px solid var(--line-2)}
+.trow:last-child{border-bottom:0}
+.who{grid-area:who;display:flex;align-items:flex-start;gap:6px;min-width:0}
+.wb{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
+.dname{border:0;background:transparent;padding:2px 0;text-align:left;cursor:pointer;min-width:0;display:inline-flex;flex-wrap:wrap;column-gap:5px;align-items:baseline}
+.dname:hover .dn{text-decoration:underline;text-underline-offset:3px}
+.dt{font-size:11px;color:var(--muted);font-weight:500}
+.dn{font-weight:600}
+.pin{border:0;background:transparent;padding:4px;margin:-2px 0 -4px -4px;flex:none;cursor:pointer;color:var(--muted);display:inline-flex;border-radius:6px}
+.pin:hover{color:var(--ink)}
+.pin[aria-pressed="true"]{color:var(--ink)}
+.pin svg{width:16px;height:16px}
+.state{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;border:1px solid var(--line);color:var(--ink-2)}
+.state.live{color:var(--live);border-color:currentColor}
+.state.live::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.state.done{color:var(--muted)}
+.trow.is-done .track,.trow.is-done .dn{opacity:.5}
+.track{grid-area:track;position:relative;height:16px;margin:6px 0 4px;border-radius:4px;
+  background:repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px 10%)}
+@media (min-width:640px){.track{margin:2px 0}}
+.track::before{content:"";position:absolute;left:60%;width:10%;top:-4px;bottom:-4px;background:var(--band);z-index:0}
+.bar{position:absolute;top:1px;height:14px;border-radius:4px;z-index:1;background:var(--c)}
+.bar.than{--c:var(--than)} .bar.tiet{--c:var(--tiet)}
+.bar.vip{background:repeating-linear-gradient(135deg,var(--c) 0 4px,color-mix(in srgb,var(--c) 45%,var(--surface)) 4px 7px)}
+.nowline{position:absolute;top:-5px;bottom:-5px;width:2px;margin-left:-1px;background:var(--now);border-radius:1px;z-index:3}
+.meta{grid-area:meta;font-size:12px;color:var(--ink-2)}
+.empty{padding:28px 8px;text-align:center;color:var(--ink-2)}
+
+/* doctor view */
+.dl-tools{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;margin-bottom:10px}
+.dl-tools label{font-size:13px;color:var(--ink-2);display:inline-flex;align-items:center;gap:8px}
+.dl-tools select{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 8px}
+.dl-head,.drow{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"who" "strip" "next";column-gap:18px}
+@media (min-width:860px){
+  .dl-head,.drow{grid-template-columns:250px minmax(0,1fr) 230px;grid-template-areas:"who strip next";align-items:center}
+}
+.dl-head{grid-template-areas:"strip";position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 0 6px}
+@media (min-width:860px){.dl-head{grid-template-areas:"lbl strip nlbl"}}
+.dl-head .lbl,.dl-head .nlbl{display:none;font-size:11px;color:var(--muted);font-weight:500}
+@media (min-width:860px){.dl-head .lbl{display:block;grid-area:lbl}.dl-head .nlbl{display:block;grid-area:nlbl}}
+.strip{grid-area:strip;display:grid;gap:3px;align-items:end}
+.strip .sp{width:4px}
+.hd{text-align:center;font-size:10.5px;line-height:1.15;color:var(--ink-2)}
+.hd b{display:block;font-weight:600;color:var(--ink)}
+.hd i{font-style:normal;color:var(--muted);font-size:9.5px}
+@media (max-width:519px){.hd i{display:none}}
+.hd.today b{color:var(--surface);background:var(--ink);border-radius:4px}
+.sc{display:flex;flex-direction:column;gap:2px;padding:2px 0;border:0;background:transparent;cursor:pointer;border-radius:4px}
+.sc:hover{background:var(--line-2)}
+.sc i{height:5px;border-radius:2px;background:var(--line-2)}
+.sc i.on{background:var(--c)}
+.sc i.on.vip{background:repeating-linear-gradient(135deg,var(--c) 0 3px,color-mix(in srgb,var(--c) 45%,var(--surface)) 3px 5px)}
+.sc.than{--c:var(--than)} .sc.tiet{--c:var(--tiet)}
+.sc.na{cursor:default;background:repeating-linear-gradient(135deg,transparent 0 4px,var(--line-2) 4px 6px)}
+.sc.na i{background:transparent}
+.sc.today{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.drow{padding:10px 0;border-bottom:1px solid var(--line-2);row-gap:6px}
+.drow .who{grid-area:who}
+.drow .stats{font-size:12px;color:var(--muted);width:100%}
+.next{grid-area:next;font-size:12px;color:var(--ink-2)}
+.next b{color:var(--ink);font-weight:600}
+.dsec h3{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:16px 0 0;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+.dsec:first-of-type h3{margin-top:4px}
+.detail{grid-column:1/-1;background:var(--band);border-radius:10px;padding:8px 10px;margin-top:4px;display:grid;gap:2px}
+.detail button{border:0;background:transparent;text-align:left;padding:5px 6px;border-radius:6px;cursor:pointer;display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;font-size:12.5px}
+.detail button:hover{background:var(--surface)}
+.detail .dd{font-weight:600}
+.legend-strip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2)}
+.legend-strip .mini{display:inline-flex;flex-direction:column;gap:2px;width:14px}
+.legend-strip .mini i{height:4px;border-radius:2px;background:var(--ink-2)}
+.legend-strip .mini i:nth-child(2){opacity:.35}
+
+footer{margin-top:22px;font-size:12px;color:var(--muted);display:grid;gap:4px;max-width:75ch}
+footer a{color:var(--ink-2)}
+
+#tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:6px 9px;border-radius:7px;max-width:260px;opacity:0;transition:opacity .08s;white-space:pre-line}
+@media (prefers-reduced-motion:reduce){#tip{transition:none}}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Lịch khám Nội Thận · Nội tiết</h1>
+      <p class="sub" id="sub">BVĐK Tâm Anh TP.HCM · 12–30/11/2026</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Chế độ xem">
+      <button role="tab" id="tab-ngay" data-view="ngay" aria-selected="true">Theo ngày</button>
+      <button role="tab" id="tab-bac-si" data-view="bac-si" aria-selected="false">Theo bác sĩ</button>
+    </div>
+  </header>
+
+  <div class="banner" id="stale" hidden></div>
+
+  <div class="filters">
+    <div class="seg" id="khoaSeg" role="group" aria-label="Lọc chuyên khoa">
+      <button data-k="all" aria-pressed="true">Tất cả</button>
+      <button data-k="0" aria-pressed="false"><i class="sw than"></i>Nội Thận</button>
+      <button data-k="1" aria-pressed="false"><i class="sw tiet"></i>Nội tiết</button>
+    </div>
+    <div class="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" autocomplete="off" placeholder="Tìm bác sĩ, gõ không dấu cũng được" aria-label="Tìm bác sĩ">
+      <button class="clear" id="qclear" aria-label="Xoá tìm kiếm" hidden>×</button>
+    </div>
+    <button class="pinbtn" id="pinOnly" aria-pressed="false"></button>
+  </div>
+
+  <main>
+    <section id="view-ngay" class="v-ngay">
+        <div class="card" id="calCard">
+          <div class="cal-head"><h2>Tháng 11/2026</h2><span class="hint" style="margin:0">số = bác sĩ khám</span></div>
+          <div class="cal" id="cal"></div>
+          <p class="hint">Ô gạch chéo: trong khoảng lịch nhưng bệnh viện chưa công bố.</p>
+        </div>
+        <div class="card" id="suggCard"></div>
+      <div class="card" id="dayPanel"></div>
+    </section>
+
+    <section id="view-bac-si" hidden>
+      <div class="card">
+        <div class="dl-tools">
+          <div class="legend-strip"><span class="mini"><i></i><i></i><i></i></span>Mỗi cột một ngày, 3 vạch từ trên xuống: Sáng · Trưa · Chiều. Bấm vào cột để mở ngày đó.</div>
+          <label for="sort">Sắp xếp
+            <select id="sort">
+              <option value="gan">Lịch gần nhất</option>
+              <option value="ten">Tên A–Z</option>
+              <option value="nhieu">Khám nhiều ngày nhất</option>
+            </select>
+          </label>
+        </div>
+        <div id="docList"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div id="srcline"></div>
+    <div>Nguồn: lịch đặt khám do Tâm Anh công bố tại <a href="https://tamanhhospital.vn/danh-cho-khach-hang/dat-lich-kham/">tamanhhospital.vn</a>, lấy ngày 12/11/2026. Lịch có thể thay đổi, nên gọi xác nhận trước khi đến: <span class="num">0287 102 6789</span> hoặc <span class="num">093 180 6858</span>.</div>
+  </footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const RAW = {"docs": [{"id": "2633", "k": 0, "t": "BS.CKII", "n": "Đinh Cẩm Tú", "raw": "BS.CKII Đinh Cẩm Tú"}, {"id": "1893", "k": 0, "t": "BS.CKII", "n": "Tạ Phương Dung", "raw": "BS.CKII. Tạ Phương Dung"}, {"id": "3773", "k": 0, "t": "BS.CKII", "n": "Võ Thị Kim Thanh", "raw": "Bs CKII Võ Thị Kim Thanh"}, {"id": "11467", "k": 0, "t": "ThS.BS", "n": "Trần Nguyễn Ngọc Trâm", "raw": "ThS.BS Trần Nguyễn Ngọc Trâm"}, {"id": "7215", "k": 0, "t": "ThS.BS", "n": "Nguyễn Thị Thu Thảo", "raw": "ThS.BS Nguyễn Thị Thu Thảo"}, {"id": "4680", "k": 0, "t": "BS.CKI", "n": "Mạch Thị Chúc Linh", "raw": "BS.CKI Mạch Thị Chúc Linh"}, {"id": "3371", "k": 0, "t": "BS.CKII", "n": "Ngô Đồng Dũng", "raw": "BS.CKII.Ngô Đồng Dũng"}, {"id": "3915", "k": 0, "t": "BS.CKII", "n": "Nguyễn Hữu Nhật", "raw": "BSCKII.Nguyễn Hữu Nhật"}, {"id": "4670", "k": 0, "t": "BS.CKII", "n": "Nguyễn Thị Thanh Thùy", "raw": "BS CKII. Nguyễn Thị Thanh Thùy"}, {"id": "7089", "k": 0, "t": "BS.CKII", "n": "Nguyễn Thị Huê", "raw": "BS.CKII. Nguyễn Thị Huê"}, {"id": "7722", "k": 0, "t": "BS.CKI", "n": "Nguyễn Thị Hằng", "raw": "BSCKI. Nguyễn Thị Hằng"}, {"id": "7721", "k": 0, "t": "ThS.BS", "n": "Trần Âu Quế Nhung", "raw": "ThS.BS Trần Âu Quế Nhung"}, {"id": "6117", "k": 1, "t": "ThS.BS", "n": "Trần Đình Mạnh Long", "raw": "ThS.BS. Trần Đình Mạnh Long"}, {"id": "4463", "k": 1, "t": "TS.BS", "n": "Lâm Văn Hoàng", "raw": "TS.BS Lâm Văn Hoàng"}, {"id": "2643", "k": 1, "t": "BS.CKI", "n": "Võ Trần Nguyên Duy", "raw": "BS CKI Võ Trần Nguyên Duy"}, {"id": "8963", "k": 1, "t": "BS.CKI", "n": "Trần Tấn Phát", "raw": "BS.CKI Trần Tấn Phát"}, {"id": "3907", "k": 1, "t": "BS.CKI", "n": "Đỗ Tiến Vũ", "raw": "BS.CKI Đỗ Tiến Vũ"}, {"id": "5899", "k": 1, "t": "ThS.BS", "n": "Nguyễn Thị Kim Tuyền", "raw": "ThS.BS. Nguyễn Thị Kim Tuyền"}, {"id": "6533", "k": 1, "t": "BS.CKII", "n": "Trương Thị Vành Khuyên", "raw": "BS.CKII. Trương Thị Vành Khuyên"}, {"id": "6007", "k": 1, "t": "TS.BS", "n": "Trần Hữu Thanh Tùng", "raw": "TS.BS Trần Hữu Thanh Tùng"}, {"id": "8312", "k": 1, "t": "ThS.BS", "n": "Châu Thị Trang", "raw": "ThS.BS Châu Thị Trang"}, {"id": "7911", "k": 1, "t": "ThS.BS", "n": "Võ Hoàng Gia Nghi", "raw": "ThS.BS Võ Hoàng Gia Nghi"}, {"id": "6116", "k": 1, "t": "ThS.BS", "n": "Hà Thị Ngọc Bích", "raw": "ThS.BS Hà Thị Ngọc Bích"}, {"id": "6003", "k": 1, "t": "ThS.BS", "n": "Đỗ Trúc Anh", "raw": "ThS.BS Đỗ Trúc Anh"}, {"id": "0390", "k": 1, "t": "ThS.BS", "n": "Trần Nguyễn Quỳnh Trâm", "raw": "ThS.BS Trần Nguyễn Quỳnh Trâm"}, {"id": "3186", "k": 1, "t": "BS.CKI", "n": "Phan Thị Thùy Dung", "raw": "BS.CKI.Phan Thị Thùy Dung"}, {"id": "5901", "k": 1, "t": "ThS.BS", "n": "Hoàng Thị Hồng Linh", "raw": "ThS.BS Hoàng Thị Hồng Linh"}, {"id": "7630", "k": 1, "t": "ThS.BS.CKI", "n": "Võ Đình Bảo Văn", "raw": "Ths BS.CKI Võ Đình Bảo Văn"}, {"id": "4202", "k": 1, "t": "BS.CKII", "n": "Trần Thùy Ngân", "raw": "BS.CKII.Trần Thùy Ngân"}], "sess": [["2633", "2026-11-12", "07:00", "12:00", "PK 3", 0, 0], ["1893", "2026-11-12", "07:00", "12:00", "PK 9001", 1, 0], ["3773", "2026-11-12", "07:00", "12:00", "PK 1", 0, 0], ["11467", "2026-11-12", "07:00", "11:00", "PK 2", 0, 0], ["7215", "2026-11-12", "12:00", "13:00", "PK 9001", 1, 1], ["11467", "2026-11-12", "12:00", "13:00", "PK 2", 0, 1], ["1893", "2026-11-12", "13:00", "15:00", "PK 9001", 1, 2], ["3773", "2026-11-12", "13:00", "16:00", "PK 1", 0, 2], ["11467", "2026-11-12", "13:00", "16:00", "PK 2", 0, 2], ["7215", "2026-11-12", "15:00", "16:00", "PK 9001", 1, 2], ["4680", "2026-11-13", "07:00", "11:00", "PK 2", 0, 0], ["2633", "2026-11-13", "07:00", "12:00", "PK 1", 0, 0], ["3371", "2026-11-13", "07:00", "12:00", "PK 9001", 1, 0], ["3915", "2026-11-13", "07:00", "12:00", "PK 3", 0, 0], ["4680", "2026-11-13", "12:00", "13:00", "PK 2", 0, 1], ["3371", "2026-11-13", "12:00", "13:00", "PK 9001", 1, 1], ["4680", "2026-11-13", "13:00", "16:00", "PK 2", 0, 2], ["2633", "2026-11-13", "13:00", "16:00", "PK 1", 0, 2], ["3371", "2026-11-13", "13:00", "16:00", "PK 9001", 1, 2], ["4670", "2026-11-14", "07:00", "12:00", "PK 9001", 1, 0], ["7089", "2026-11-14", "07:00", "12:00", "PK 3", 0, 0], ["3915", "2026-11-14", "07:00", "11:00", "PK 2", 0, 0], ["7215", "2026-11-14", "07:00", "12:00", "PK 1", 0, 0], ["4670", "2026-11-14", "12:00", "13:00", "PK 9001", 1, 1], ["3915", "2026-11-14", "12:00", "13:00", "PK 2", 0, 1], ["4670", "2026-11-14", "13:00", "16:00", "PK 9001", 1, 2], ["3915", "2026-11-14", "13:00", "16:00", "PK 2", 0, 2], ["7215", "2026-11-14", "13:00", "16:00", "PK 1", 0, 2], ["7089", "2026-11-16", "07:00", "12:00", "PK 9001", 1, 0], ["3371", "2026-11-16", "07:00", "12:00", "PK 3", 0, 0], ["7722", "2026-11-16", "07:00", "12:00", "PK 1", 0, 0], ["3773", "2026-11-16", "07:00", "11:00", "PK 2", 0, 0], ["7089", "2026-11-16", "12:00", "13:00", "PK 9001", 1, 1], ["3773", "2026-11-16", "12:00", "13:00", "PK 2", 0, 1], ["7089", "2026-11-16", "13:00", "16:00", "PK 9001", 1, 2], ["7722", "2026-11-16", "13:00", "16:00", "PK 1", 0, 2], ["3773", "2026-11-16", "13:00", "16:00", "PK 2", 0, 2], ["4670", "2026-11-17", "07:00", "11:00", "PK 2", 0, 0], ["1893", "2026-11-17", "07:00", "12:00", "PK 1", 0, 0], ["3371", "2026-11-17", "07:00", "12:00", "PK 3", 0, 0], ["7721", "2026-11-17", "07:00", "12:00", "PK 9001", 1, 0], ["4670", "2026-11-17", "12:00", "13:00", "PK 2", 0, 1], ["7721", "2026-11-17", "12:00", "13:00", "PK 9001", 1, 1], ["4670", "2026-11-17", "13:00", "16:00", "PK 2", 0, 2], ["1893", "2026-11-17", "13:00", "16:00", "PK 1", 0, 2], ["3371", "2026-11-17", "13:00", "16:00", "PK 3", 0, 2], ["7721", "2026-11-17", "13:00", "16:00", "PK 9001", 1, 2], ["4670", "2026-11-18", "07:00", "12:00", "PK 3", 0, 0], ["7089", "2026-11-18", "07:00", "11:00", "PK 2", 0, 0], ["3773", "2026-11-18", "07:00", "12:00", "PK 9001", 1, 0], ["7721", "2026-11-18", "07:00", "12:00", "PK 1", 0, 0], ["7089", "2026-11-18", "12:00", "13:00", "PK 2", 0, 1], ["3773", "2026-11-18", "12:00", "13:00", "PK 9001", 1, 1], ["7089", "2026-11-18", "13:00", "16:00", "PK 2", 0, 2], ["3773", "2026-11-18", "13:00", "16:00", "PK 9001", 1, 2], ["7721", "2026-11-18", "13:00", "16:00", "PK 1", 0, 2], ["4680", "2026-11-19", "07:00", "12:00", "PK 3", 0, 0], ["2633", "2026-11-19", "07:00", "12:00", "PK 9001", 1, 0], ["1893", "2026-11-19", "07:00", "11:00", "PK 2", 0, 0], ["3915", "2026-11-19", "07:00", "12:00", "PK 1", 0, 0], ["1893", "2026-11-19", "12:00", "13:00", "PK 2", 0, 1], ["11467", "2026-11-19", "12:00", "13:00", "PK 9001", 1, 1], ["2633", "2026-11-19", "13:00", "16:00", "PK 9001", 1, 2], ["1893", "2026-11-19", "13:00", "16:00", "PK 2", 0, 2], ["3915", "2026-11-19", "13:00", "16:00", "PK 1", 0, 2], ["4680", "2026-11-20", "07:00", "11:00", "PK 2", 0, 0], ["2633", "2026-11-20", "07:00", "12:00", "PK 1", 0, 0], ["3915", "2026-11-20", "07:00", "12:00", "PK 3", 0, 0], ["7215", "2026-11-20", "07:00", "12:00", "PK 9001", 1, 0], ["4680", "2026-11-20", "12:00", "13:00", "PK 2", 0, 1], ["7215", "2026-11-20", "12:00", "13:00", "PK 9001", 1, 1], ["4680", "2026-11-20", "13:00", "16:00", "PK 2", 0, 2], ["2633", "2026-11-20", "13:00", "16:00", "PK 1", 0, 2], ["7215", "2026-11-20", "13:00", "16:00", "PK 9001", 1, 2], ["4680", "2026-11-21", "07:00", "12:00", "PK 9001", 1, 0], ["7089", "2026-11-21", "07:00", "12:00", "PK 3", 0, 0], ["3915", "2026-11-21", "07:00", "11:00", "PK 2", 0, 0], ["7215", "2026-11-21", "07:00", "12:00", "PK 1", 0, 0], ["4680", "2026-11-21", "12:00", "13:00", "PK 9001", 1, 1], ["3915", "2026-11-21", "12:00", "13:00", "PK 2", 0, 1], ["4680", "2026-11-21", "13:00", "16:00", "PK 9001", 1, 2], ["3915", "2026-11-21", "13:00", "16:00", "PK 2", 0, 2], ["7215", "2026-11-21", "13:00", "16:00", "PK 1", 0, 2], ["3371", "2026-11-23", "07:00", "12:00", "PK 3", 0, 0], ["7722", "2026-11-23", "07:00", "12:00", "PK 1", 0, 0], ["3915", "2026-11-23", "07:00", "12:00", "PK 9001", 1, 0], ["3773", "2026-11-23", "07:00", "11:00", "PK 2", 0, 0], ["3915", "2026-11-23", "12:00", "13:00", "PK 9001", 1, 1], ["3773", "2026-11-23", "12:00", "13:00", "PK 2", 0, 1], ["7722", "2026-11-23", "13:00", "16:00", "PK 1", 0, 2], ["3915", "2026-11-23", "13:00", "16:00", "PK 9001", 1, 2], ["3773", "2026-11-23", "13:00", "16:00", "PK 2", 0, 2], ["4670", "2026-11-25", "07:00", "12:00", "PK 3", 0, 0], ["7089", "2026-11-25", "07:00", "11:00", "PK 2", 0, 0], ["3773", "2026-11-25", "07:00", "12:00", "PK 9001", 1, 0], ["7721", "2026-11-25", "07:00", "12:00", "PK 1", 0, 0], ["7089", "2026-11-25", "12:00", "13:00", "PK 2", 0, 1], ["3773", "2026-11-25", "12:00", "13:00", "PK 9001", 1, 1], ["7089", "2026-11-25", "13:00", "16:00", "PK 2", 0, 2], ["3773", "2026-11-25", "13:00", "16:00", "PK 9001", 1, 2], ["7721", "2026-11-25", "13:00", "16:00", "PK 1", 0, 2], ["2633", "2026-11-26", "07:00", "12:00", "PK 3", 0, 0], ["1893", "2026-11-26", "07:00", "12:00", "PK 9001", 1, 0], ["3773", "2026-11-26", "07:00", "12:00", "PK 1", 0, 0], ["11467", "2026-11-26", "07:00", "11:00", "PK 2", 0, 0], ["4670", "2026-11-26", "12:00", "13:00", "PK 9001", 1, 1], ["11467", "2026-11-26", "12:00", "13:00", "PK 2", 0, 1], ["1893", "2026-11-26", "13:00", "16:00", "PK 9001", 1, 2], ["3773", "2026-11-26", "13:00", "16:00", "PK 1", 0, 2], ["11467", "2026-11-26", "13:00", "16:00", "PK 2", 0, 2], ["4680", "2026-11-27", "07:00", "11:00", "PK 2", 0, 0], ["2633", "2026-11-27", "07:00", "12:00", "PK 1", 0, 0], ["7089", "2026-11-27", "07:00", "12:00", "PK 9001", 1, 0], ["3915", "2026-11-27", "07:00", "12:00", "PK 3", 0, 0], ["4680", "2026-11-27", "12:00", "13:00", "PK 2", 0, 1], ["7089", "2026-11-27", "12:00", "13:00", "PK 9001", 1, 1], ["4680", "2026-11-27", "13:00", "16:00", "PK 2", 0, 2], ["2633", "2026-11-27", "13:00", "16:00", "PK 1", 0, 2], ["7089", "2026-11-27", "13:00", "16:00", "PK 9001", 1, 2], ["4670", "2026-11-28", "07:00", "12:00", "PK 9001", 1, 0], ["7089", "2026-11-28", "07:00", "12:00", "PK 3", 0, 0], ["3915", "2026-11-28", "07:00", "11:00", "PK 2", 0, 0], ["7215", "2026-11-28", "07:00", "12:00", "PK 1", 0, 0], ["4670", "2026-11-28", "12:00", "13:00", "PK 9001", 1, 1], ["3915", "2026-11-28", "12:00", "13:00", "PK 2", 0, 1], ["4670", "2026-11-28", "13:00", "16:00", "PK 9001", 1, 2], ["3915", "2026-11-28", "13:00", "16:00", "PK 2", 0, 2], ["7215", "2026-11-28", "13:00", "16:00", "PK 1", 0, 2], ["7089", "2026-11-30", "07:00", "12:00", "PK 9001", 1, 0], ["3371", "2026-11-30", "07:00", "12:00", "PK 3", 0, 0], ["7722", "2026-11-30", "07:00", "12:00", "PK 1", 0, 0], ["3773", "2026-11-30", "07:00", "11:00", "PK 2", 0, 0], ["7089", "2026-11-30", "12:00", "13:00", "PK 9001", 1, 1], ["3773", "2026-11-30", "12:00", "13:00", "PK 2", 0, 1], ["7089", "2026-11-30", "13:00", "16:00", "PK 9001", 1, 2], ["7722", "2026-11-30", "13:00", "16:00", "PK 1", 0, 2], ["3773", "2026-11-30", "13:00", "16:00", "PK 2", 0, 2], ["6117", "2026-11-12", "06:00", "12:00", "PK 3", 0, 0], ["4463", "2026-11-12", "06:30", "12:00", "PK 9001", 1, 0], ["2643", "2026-11-12", "07:00", "12:00", "PK 1", 0, 0], ["8963", "2026-11-12", "07:00", "12:00", "PK 4", 0, 0], ["3907", "2026-11-12", "07:00", "12:00", "PK 2", 0, 0], ["5899", "2026-11-12", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["3907", "2026-11-12", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-12", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-12", "13:00", "16:00", "PK 1", 0, 2], ["8963", "2026-11-12", "13:00", "16:00", "PK 4", 0, 2], ["4463", "2026-11-12", "13:00", "16:00", "PK 9001", 1, 2], ["5899", "2026-11-12", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-12", "13:00", "15:00", "PK 3", 0, 2], ["3907", "2026-11-12", "14:00", "16:00", "PK 2", 0, 2], ["6533", "2026-11-13", "06:00", "12:00", "PK 3", 0, 0], ["3907", "2026-11-13", "06:30", "12:00", "PK 9001", 1, 0], ["6007", "2026-11-13", "07:00", "12:00", "PK 1", 0, 0], ["8312", "2026-11-13", "07:00", "12:00", "PK 4", 0, 0], ["7911", "2026-11-13", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-13", "07:00", "12:00", "PK 2", 0, 0], ["6007", "2026-11-13", "12:00", "13:00", "PK 1", 0, 1], ["6116", "2026-11-13", "12:00", "13:00", "PK 9001", 1, 1], ["3907", "2026-11-13", "13:00", "16:00", "PK 9001", 1, 2], ["6533", "2026-11-13", "13:00", "15:00", "PK 3", 0, 2], ["8312", "2026-11-13", "13:00", "16:00", "PK 4", 0, 2], ["7911", "2026-11-13", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-13", "13:00", "16:00", "PK 2", 0, 2], ["6007", "2026-11-13", "14:00", "16:00", "PK 1", 0, 2], ["6003", "2026-11-14", "06:00", "12:00", "PK 3", 0, 0], ["0390", "2026-11-14", "06:30", "11:00", "PK 9001", 1, 0], ["3186", "2026-11-14", "07:00", "12:00", "PK 2", 0, 0], ["6533", "2026-11-14", "07:00", "12:00", "PK 1", 0, 0], ["5901", "2026-11-14", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["7630", "2026-11-14", "07:00", "12:00", "PK 4", 0, 0], ["7911", "2026-11-14", "11:00", "13:00", "PK 9001", 1, 0], ["3186", "2026-11-14", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-14", "13:00", "16:00", "PK 1", 0, 2], ["5901", "2026-11-14", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["0390", "2026-11-14", "13:00", "16:00", "PK 9001", 1, 2], ["6003", "2026-11-14", "13:00", "15:00", "PK 3", 0, 2], ["7630", "2026-11-14", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-14", "14:00", "16:00", "PK 2", 0, 2], ["6116", "2026-11-16", "06:00", "12:00", "PK 3", 0, 0], ["2643", "2026-11-16", "06:30", "12:00", "PK 9001", 1, 0], ["3186", "2026-11-16", "07:00", "12:00", "PK 1", 0, 0], ["4463", "2026-11-16", "07:00", "12:00", "PK 2", 0, 0], ["8312", "2026-11-16", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["5899", "2026-11-16", "07:00", "12:00", "PK 4", 0, 0], ["3186", "2026-11-16", "12:00", "13:00", "PK 1", 0, 1], ["6117", "2026-11-16", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-16", "13:00", "16:00", "PK 9001", 1, 2], ["4463", "2026-11-16", "13:00", "16:00", "PK 2", 0, 2], ["8312", "2026-11-16", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6116", "2026-11-16", "13:00", "15:00", "PK 3", 0, 2], ["5899", "2026-11-16", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-16", "14:00", "16:00", "PK 1", 0, 2], ["7911", "2026-11-17", "06:00", "12:00", "PK 3", 0, 0], ["6533", "2026-11-17", "06:30", "12:00", "PK 9001", 1, 0], ["4202", "2026-11-17", "07:00", "12:00", "PK 1", 0, 0], ["6116", "2026-11-17", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-17", "07:00", "12:00", "PK 2", 0, 0], ["7630", "2026-11-17", "07:00", "12:00", "PK 4", 0, 0], ["3186", "2026-11-17", "12:00", "13:00", "PK 9001", 1, 1], ["6117", "2026-11-17", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-17", "13:00", "16:00", "PK 9001", 1, 2], ["4202", "2026-11-17", "13:00", "16:00", "PK 1", 0, 2], ["6116", "2026-11-17", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["7911", "2026-11-17", "13:00", "15:00", "PK 3", 0, 2], ["7630", "2026-11-17", "13:00", "16:00", "PK 4", 0, 2], ["6117", "2026-11-17", "14:00", "16:00", "PK 2", 0, 2], ["7630", "2026-11-18", "06:00", "12:00", "PK 3", 0, 0], ["3186", "2026-11-18", "06:30", "12:00", "PK 9001", 1, 0], ["8963", "2026-11-18", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6116", "2026-11-18", "07:00", "12:00", "PK 4", 0, 0], ["0390", "2026-11-18", "07:00", "12:00", "PK 1", 0, 0], ["6003", "2026-11-18", "07:00", "12:00", "PK 2", 0, 0], ["2643", "2026-11-18", "12:00", "13:00", "PK 9001", 1, 1], ["0390", "2026-11-18", "12:00", "13:00", "PK 1", 0, 1], ["8963", "2026-11-18", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["3186", "2026-11-18", "13:00", "16:00", "PK 9001", 1, 2], ["6116", "2026-11-18", "13:00", "16:00", "PK 4", 0, 2], ["6003", "2026-11-18", "13:00", "16:00", "PK 2", 0, 2], ["7630", "2026-11-18", "13:00", "15:00", "PK 3", 0, 2], ["0390", "2026-11-18", "14:00", "16:00", "PK 1", 0, 2], ["6117", "2026-11-19", "06:00", "12:00", "PK 3", 0, 0], ["4463", "2026-11-19", "06:30", "12:00", "PK 9001", 1, 0], ["2643", "2026-11-19", "07:00", "12:00", "PK 1", 0, 0], ["8963", "2026-11-19", "07:00", "12:00", "PK 4", 0, 0], ["3907", "2026-11-19", "07:00", "12:00", "PK 2", 0, 0], ["5899", "2026-11-19", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["3907", "2026-11-19", "12:00", "13:00", "PK 2", 0, 1], ["6003", "2026-11-19", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-19", "13:00", "16:00", "PK 1", 0, 2], ["8963", "2026-11-19", "13:00", "16:00", "PK 4", 0, 2], ["4463", "2026-11-19", "13:00", "16:00", "PK 9001", 1, 2], ["5899", "2026-11-19", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-19", "13:00", "15:00", "PK 3", 0, 2], ["3907", "2026-11-19", "14:00", "16:00", "PK 2", 0, 2], ["6533", "2026-11-20", "06:00", "12:00", "PK 3", 0, 0], ["3907", "2026-11-20", "06:30", "12:00", "PK 9001", 1, 0], ["6007", "2026-11-20", "07:00", "12:00", "PK 1", 0, 0], ["8312", "2026-11-20", "07:00", "12:00", "PK 4", 0, 0], ["7911", "2026-11-20", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-20", "07:00", "12:00", "PK 2", 0, 0], ["6007", "2026-11-20", "12:00", "13:00", "PK 1", 0, 1], ["0390", "2026-11-20", "12:00", "13:00", "PK 9001", 1, 1], ["3907", "2026-11-20", "13:00", "16:00", "PK 9001", 1, 2], ["6533", "2026-11-20", "13:00", "15:00", "PK 3", 0, 2], ["8312", "2026-11-20", "13:00", "16:00", "PK 4", 0, 2], ["7911", "2026-11-20", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-20", "13:00", "16:00", "PK 2", 0, 2], ["6007", "2026-11-20", "14:00", "16:00", "PK 1", 0, 2], ["6003", "2026-11-21", "06:00", "12:00", "PK 3", 0, 0], ["0390", "2026-11-21", "06:30", "12:00", "PK 9001", 1, 0], ["6533", "2026-11-21", "07:00", "12:00", "PK 1", 0, 0], ["8312", "2026-11-21", "07:00", "12:00", "PK 2", 0, 0], ["5901", "2026-11-21", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["7630", "2026-11-21", "07:00", "12:00", "PK 4", 0, 0], ["2643", "2026-11-21", "12:00", "13:00", "PK 9001", 1, 1], ["8312", "2026-11-21", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-21", "13:00", "16:00", "PK 1", 0, 2], ["5901", "2026-11-21", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["0390", "2026-11-21", "13:00", "16:00", "PK 9001", 1, 2], ["6003", "2026-11-21", "13:00", "15:00", "PK 3", 0, 2], ["7630", "2026-11-21", "13:00", "16:00", "PK 4", 0, 2], ["8312", "2026-11-21", "14:00", "16:00", "PK 2", 0, 2], ["3907", "2026-11-23", "06:00", "12:00", "PK 3", 0, 0], ["2643", "2026-11-23", "06:30", "12:00", "PK 9001", 1, 0], ["3186", "2026-11-23", "07:00", "12:00", "PK 1", 0, 0], ["4463", "2026-11-23", "07:00", "12:00", "PK 2", 0, 0], ["8312", "2026-11-23", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-23", "07:00", "12:00", "PK 4", 0, 0], ["3186", "2026-11-23", "12:00", "13:00", "PK 1", 0, 1], ["6003", "2026-11-23", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-23", "13:00", "16:00", "PK 9001", 1, 2], ["3907", "2026-11-23", "13:00", "15:00", "PK 3", 0, 2], ["4463", "2026-11-23", "13:00", "16:00", "PK 2", 0, 2], ["8312", "2026-11-23", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-23", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-23", "14:00", "16:00", "PK 1", 0, 2], ["7630", "2026-11-25", "06:00", "12:00", "PK 3", 0, 0], ["3186", "2026-11-25", "06:30", "12:00", "PK 9001", 1, 0], ["8963", "2026-11-25", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["3907", "2026-11-25", "07:00", "12:00", "PK 4", 0, 0], ["0390", "2026-11-25", "07:00", "12:00", "PK 1", 0, 0], ["6003", "2026-11-25", "07:00", "12:00", "PK 2", 0, 0], ["5901", "2026-11-25", "12:00", "13:00", "PK 9001", 1, 1], ["0390", "2026-11-25", "12:00", "13:00", "PK 1", 0, 1], ["8963", "2026-11-25", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["3907", "2026-11-25", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-25", "13:00", "16:00", "PK 9001", 1, 2], ["6003", "2026-11-25", "13:00", "16:00", "PK 2", 0, 2], ["7630", "2026-11-25", "13:00", "15:00", "PK 3", 0, 2], ["0390", "2026-11-25", "14:00", "16:00", "PK 1", 0, 2], ["6117", "2026-11-26", "06:00", "12:00", "PK 3", 0, 0], ["4463", "2026-11-26", "06:30", "12:00", "PK 9001", 1, 0], ["2643", "2026-11-26", "07:00", "12:00", "PK 1", 0, 0], ["8963", "2026-11-26", "07:00", "12:00", "PK 4", 0, 0], ["3907", "2026-11-26", "07:00", "12:00", "PK 2", 0, 0], ["5899", "2026-11-26", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["3907", "2026-11-26", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-26", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-26", "13:00", "16:00", "PK 1", 0, 2], ["8963", "2026-11-26", "13:00", "16:00", "PK 4", 0, 2], ["4463", "2026-11-26", "13:00", "16:00", "PK 9001", 1, 2], ["5899", "2026-11-26", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-26", "13:00", "15:00", "PK 3", 0, 2], ["3907", "2026-11-26", "14:00", "16:00", "PK 2", 0, 2], ["6533", "2026-11-27", "06:00", "12:00", "PK 3", 0, 0], ["3907", "2026-11-27", "06:30", "12:00", "PK 9001", 1, 0], ["6007", "2026-11-27", "07:00", "12:00", "PK 1", 0, 0], ["8312", "2026-11-27", "07:00", "12:00", "PK 4", 0, 0], ["7911", "2026-11-27", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-27", "07:00", "12:00", "PK 2", 0, 0], ["6007", "2026-11-27", "12:00", "13:00", "PK 1", 0, 1], ["0390", "2026-11-27", "12:00", "13:00", "PK 9001", 1, 1], ["3907", "2026-11-27", "13:00", "16:00", "PK 9001", 1, 2], ["6533", "2026-11-27", "13:00", "15:00", "PK 3", 0, 2], ["8312", "2026-11-27", "13:00", "16:00", "PK 4", 0, 2], ["7911", "2026-11-27", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-27", "13:00", "16:00", "PK 2", 0, 2], ["6007", "2026-11-27", "14:00", "16:00", "PK 1", 0, 2], ["6003", "2026-11-28", "06:00", "12:00", "PK 3", 0, 0], ["0390", "2026-11-28", "06:30", "12:00", "PK 9001", 1, 0], ["3186", "2026-11-28", "07:00", "12:00", "PK 2", 0, 0], ["6533", "2026-11-28", "07:00", "12:00", "PK 1", 0, 0], ["5901", "2026-11-28", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["7630", "2026-11-28", "07:00", "12:00", "PK 4", 0, 0], ["3186", "2026-11-28", "12:00", "13:00", "PK 2", 0, 1], ["7911", "2026-11-28", "12:00", "13:00", "PK 9001", 1, 1], ["6533", "2026-11-28", "13:00", "16:00", "PK 1", 0, 2], ["5901", "2026-11-28", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["0390", "2026-11-28", "13:00", "16:00", "PK 9001", 1, 2], ["6003", "2026-11-28", "13:00", "15:00", "PK 3", 0, 2], ["7630", "2026-11-28", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-28", "14:00", "16:00", "PK 2", 0, 2], ["6116", "2026-11-30", "06:00", "12:00", "PK 3", 0, 0], ["2643", "2026-11-30", "06:30", "12:00", "PK 9001", 1, 0], ["3186", "2026-11-30", "07:00", "12:00", "PK 1", 0, 0], ["4463", "2026-11-30", "07:00", "12:00", "PK 2", 0, 0], ["8312", "2026-11-30", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["5899", "2026-11-30", "07:00", "12:00", "PK 4", 0, 0], ["3907", "2026-11-30", "12:00", "13:00", "PK 9001", 1, 1], ["3186", "2026-11-30", "12:00", "13:00", "PK 1", 0, 1], ["2643", "2026-11-30", "13:00", "16:00", "PK 9001", 1, 2], ["4463", "2026-11-30", "13:00", "16:00", "PK 2", 0, 2], ["8312", "2026-11-30", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6116", "2026-11-30", "13:00", "15:00", "PK 3", 0, 2], ["5899", "2026-11-30", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-30", "14:00", "16:00", "PK 1", 0, 2]]};
+
+const RANGE = {start:"2026-11-12", end:"2026-11-30", collected:"2026-11-12"};
+const KHOA = [{name:"Nội Thận", cls:"than"}, {name:"Nội tiết", cls:"tiet"}];
+const CA = ["Sáng","Trưa","Chiều"];
+const WD = ["CN","T2","T3","T4","T5","T6","T7"];
+const WD_LONG = ["Chủ nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"];
+const D0 = 6*60, D1 = 16*60;
+const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.6l-5.3 2.9 1.1-5.9-4.4-4.1 6-.8z" fill="FILL" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+const star = on => STAR.replace("FILL", on ? "currentColor" : "none");
+
+function norm(s){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const toMin = s => {const [h,m] = s.split(":").map(Number); return h*60+m;};
+const fmt = m => String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+const pct = m => ((m-D0)/(D1-D0))*100;
+function dObj(s){const [y,m,d]=s.split("-").map(Number);return new Date(Date.UTC(y,m-1,d));}
+const isoOf = d => d.toISOString().slice(0,10);
+function addDays(s,n){const d=dObj(s);d.setUTCDate(d.getUTCDate()+n);return isoOf(d);}
+const wd = s => dObj(s).getUTCDay();
+const dm = s => {const [,m,d]=s.split("-");return (+d)+"/"+(+m);};
+
+const DOCS = new Map(RAW.docs.map(d => [d.id, {...d, given:d.n.split(" ").pop(), key:norm(d.t+" "+d.n), sessions:[]}]));
+const SESS = RAW.sess.map(([id,date,s,e,room,vip,ca]) => ({id,date,s:toMin(s),e:toMin(e),room,vip:!!vip,ca}));
+SESS.forEach(x => DOCS.get(x.id).sessions.push(x));
+const BY_DATE = new Map();
+SESS.forEach(x => { if(!BY_DATE.has(x.date)) BY_DATE.set(x.date, []); BY_DATE.get(x.date).push(x); });
+const COLS = [];
+for(let d=RANGE.start; d<=RANGE.end; d=addDays(d,1)) if(wd(d)!==0) COLS.push(d);
+
+function vnNow(){
+  try{
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Ho_Chi_Minh",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+    return {date:`${p.year}-${p.month}-${p.day}`, min:(+p.hour)*60+(+p.minute)};
+  }catch(e){const d=new Date();return {date:isoOf(d), min:d.getHours()*60+d.getMinutes()};}
+}
+const NOW = vnNow();
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+function defaultDate(){
+  const t = NOW.date;
+  if(t>=RANGE.start && t<=RANGE.end){ return wd(t)===0 ? addDays(t,1) : t; }
+  return COLS[0];
+}
+const state = {
+  view:"ngay", khoa:"all", q:"", pinOnly:false,
+  pins:new Set(store.get("ta-lich-pins",[]).filter(id => DOCS.has(id))),
+  date:defaultDate(), open:new Set(), sort:store.get("ta-lich-sort","gan")
+};
+
+function visible(d){
+  if(state.khoa!=="all" && d.k!==state.khoa) return false;
+  if(state.pinOnly && !state.pins.has(d.id)) return false;
+  const q = norm(state.q.trim());
+  if(q && !q.split(/\s+/).every(w => d.key.includes(w))) return false;
+  return true;
+}
+function spans(segs){
+  const out=[];
+  [...segs].sort((a,b)=>a.s-b.s).forEach(s=>{
+    const l=out[out.length-1];
+    if(l && l.room===s.room && l.e>=s.s){ l.e=Math.max(l.e,s.e); }
+    else out.push({s:s.s,e:s.e,room:s.room,vip:s.vip});
+  });
+  return out;
+}
+const roomLabel = (r,vip) => vip ? r+" (VIP)" : r;
+function spanText(sp){
+  const rooms=[...new Set(sp.map(x=>x.room))];
+  if(rooms.length===1) return sp.map(x=>fmt(x.s)+"–"+fmt(x.e)).join(", ")+" · "+roomLabel(rooms[0],sp[0].vip);
+  return sp.map(x=>fmt(x.s)+"–"+fmt(x.e)+" "+roomLabel(x.room,x.vip)).join(" · ");
+}
+function dayDocs(date, all){
+  const m=new Map();
+  (BY_DATE.get(date)||[]).forEach(s=>{
+    const d=DOCS.get(s.id);
+    if(!all && !visible(d)) return;
+    if(!m.has(d.id)) m.set(d.id,{doc:d,segs:[]});
+    m.get(d.id).segs.push(s);
+  });
+  return [...m.values()];
+}
+function dayLabel(date, short){
+  if(date===NOW.date) return "Hôm nay";
+  if(date===addDays(NOW.date,1)) return "Ngày mai";
+  return short ? WD[wd(date)]+" "+dm(date) : WD_LONG[wd(date)]+", "+dm(date);
+}
+function liveState(sp, date){
+  if(date!==NOW.date) return null;
+  const n=NOW.min;
+  const cur=sp.find(x=>n>=x.s && n<x.e);
+  if(cur) return {cls:"live", txt:"Đang khám đến "+fmt(cur.e)};
+  const nxt=sp.find(x=>x.s>n);
+  if(nxt && sp.some(x=>x.e<=n)) return {cls:"gap", txt:"Trống đến "+fmt(nxt.s)};
+  if(nxt) return {cls:"soon", txt:"Bắt đầu "+fmt(nxt.s)};
+  return {cls:"done", txt:"Hết ca"};
+}
+const vcmp = (a,b) => a.given.localeCompare(b.given,"vi") || a.n.localeCompare(b.n,"vi");
+
+/* ---------- render: calendar ---------- */
+function renderCal(){
+  const first = "2026-11-09", el = document.getElementById("cal");
+  let h = ["T2","T3","T4","T5","T6","T7","CN"].map(w=>`<div class="wd">${w}</div>`).join("");
+  for(let i=0;i<28;i++){
+    const d = addDays(first,i), inR = d>=RANGE.start && d<=RANGE.end, has = BY_DATE.has(d);
+    const num = +d.slice(8);
+    if(!inR || wd(d)===0){
+      h += `<div class="day is-out" aria-hidden="true"><span class="dnum">${num}</span></div>`; continue;
+    }
+    const dd = dayDocs(d,false), n0 = dd.filter(x=>x.doc.k===0).length, n1 = dd.length-n0;
+    const pinN = state.pins.size ? dayDocs(d,true).filter(x=>state.pins.has(x.doc.id)).length : 0;
+    const cls = ["day", d===state.date?"is-sel":"", d===NOW.date?"is-today":"", !has?"is-none":"", has&&!dd.length?"is-zero":""].join(" ");
+    const label = `${WD_LONG[wd(d)]} ${dm(d)}: ${has ? dd.length+" bác sĩ" : "chưa có lịch"}${pinN?", "+pinN+" bác sĩ đã ghim":""}`;
+    h += `<button class="${cls}" data-date="${d}" aria-label="${label}" aria-pressed="${d===state.date}">
+      <span class="dnum">${num}</span>
+      ${pinN?`<span class="pinct">${star(true)}${pinN}</span>`:""}
+      <span><span class="dcnt">${has ? dd.length : "–"}</span>
+      <span class="mix">${n0?`<i class="than" style="flex:${n0}"></i>`:""}${n1?`<i class="tiet" style="flex:${n1}"></i>`:""}</span></span>
+    </button>`;
+  }
+  el.innerHTML = h;
+}
+
+/* ---------- render: pinned suggestion ---------- */
+function renderSugg(){
+  const el = document.getElementById("suggCard");
+  if(!state.pins.size){
+    el.innerHTML = `<h2>Ngày nên đi gặp</h2><p class="hint" style="margin:0">Bấm ${star(false).replace('<svg','<svg style="width:12px;height:12px;vertical-align:-1px"')} cạnh tên bác sĩ để ghim. Lịch sẽ đánh dấu ngày có các BS này và gợi ý ngày gặp được nhiều người nhất.</p>`;
+    return;
+  }
+  const from = NOW.date>RANGE.start ? NOW.date : RANGE.start;
+  const rows = COLS.filter(d=>d>=from && BY_DATE.has(d)).map(d=>{
+    const ds = dayDocs(d,true).filter(x=>state.pins.has(x.doc.id)).map(x=>x.doc);
+    return {d, ds};
+  }).filter(r=>r.ds.length).sort((a,b)=>b.ds.length-a.ds.length || (a.d<b.d?-1:1)).slice(0,4);
+  const total = state.pins.size;
+  el.innerHTML = `<h2>Ngày nên đi gặp <span class="hint" style="font-weight:400">· ${total} BS đã ghim</span></h2>` +
+    (rows.length ? `<div class="sugg">${rows.map(r=>`<button data-date="${r.d}"><span class="sd">${dayLabel(r.d,true)}</span><span class="sn"><b>${r.ds.length}/${total}</b> · ${esc(r.ds.sort(vcmp).map(x=>x.given).join(", "))}</span></button>`).join("")}</div>`
+     : `<p class="hint" style="margin:0">Các BS đã ghim không còn lịch nào từ hôm nay đến 30/11.</p>`);
+}
+
+/* ---------- render: day timeline ---------- */
+function renderDay(){
+  const el = document.getElementById("dayPanel"), d = state.date;
+  const has = BY_DATE.has(d), dd = dayDocs(d,false);
+  const isToday = d===NOW.date;
+  const todayBtn = (!isToday && NOW.date>=RANGE.start && NOW.date<=RANGE.end && wd(NOW.date)!==0) ? `<button class="pill" data-date="${NOW.date}">Về hôm nay</button>` : "";
+  let h = `<div class="dayhead"><h2>${WD_LONG[wd(d)]}, ${dm(d)}/2026</h2>${isToday?'<span class="pill solid">Hôm nay</span>':""}${todayBtn}</div>`;
+  if(!has){
+    el.innerHTML = h + `<div class="empty">Bệnh viện chưa công bố lịch ngày ${dm(d)} tại thời điểm lấy dữ liệu (12/11).</div>`;
+    return;
+  }
+  const caN = [0,1,2].map(c => new Set(dd.flatMap(x=>x.segs.filter(s=>s.ca===c).map(s=>s.id))).size);
+  const caSes = dd.reduce((a,x)=>a+x.segs.length,0);
+  h += `<div class="daystats"><span><b class="num">${dd.length}</b> bác sĩ · <b class="num">${caSes}</b> ca</span>${CA.map((c,i)=>`<span>${c} <b class="num">${caN[i]}</b></span>`).join("")}</div>`;
+  h += `<div class="legend"><span><i class="sw than"></i>Nội Thận</span><span><i class="sw tiet"></i>Nội tiết</span><span><i class="lg-vip"></i>Phòng VIP 9001</span>${isToday && NOW.min>=D0 && NOW.min<=D1?`<span><i class="lg-now"></i>Bây giờ ${fmt(NOW.min)}</span>`:""}</div>`;
+  if(!dd.length){
+    el.innerHTML = h + `<div class="empty">Không có bác sĩ nào khớp bộ lọc trong ngày này.</div>`;
+    return;
+  }
+  let axis = "";
+  for(let t=6;t<=16;t++){
+    const c = [t===6?"first":"", t===16?"last":"", t%2?"odd":""].join(" ");
+    axis += `<span class="${c}" style="left:${pct(t*60)}%">${t}h</span>`;
+  }
+  h += `<div class="tl-axis-row"><div class="tl-axis">${axis}</div></div>`;
+  const nowOn = isToday && NOW.min>=D0 && NOW.min<=D1;
+  [0,1].forEach(k=>{
+    const rows = dd.filter(x=>x.doc.k===k).map(x=>({...x, sp:spans(x.segs)}))
+      .sort((a,b)=>a.sp[0].s-b.sp[0].s || vcmp(a.doc,b.doc));
+    if(!rows.length) return;
+    h += `<div class="tgroup"><h3><i class="sw ${KHOA[k].cls}"></i>${KHOA[k].name} <span class="ct">· ${rows.length} BS</span></h3>`;
+    rows.forEach(r=>{
+      const st = liveState(r.sp, d), pinned = state.pins.has(r.doc.id);
+      const segs = r.sp.map(x=>`<span class="bar ${KHOA[k].cls}${x.vip?" vip":""}" style="left:${pct(x.s)}%;width:calc(${pct(x.e)-pct(x.s)}% - 2px)" data-tip="${esc(r.doc.n)}\n${fmt(x.s)}–${fmt(x.e)} · ${esc(roomLabel(x.room,x.vip))}"></span>`).join("");
+      h += `<div class="trow${st&&st.cls==="done"?" is-done":""}">
+        <div class="who">
+          <button class="pin" data-pin="${r.doc.id}" aria-pressed="${pinned}" aria-label="${pinned?"Bỏ ghim":"Ghim"} ${esc(r.doc.n)}">${star(pinned)}</button>
+          <div class="wb"><button class="dname" data-open="${r.doc.id}" title="Xem cả tháng của BS này"><span class="dt">${esc(r.doc.t)}</span><span class="dn">${esc(r.doc.n)}</span></button>
+          ${st?`<span class="state ${st.cls}">${st.txt}</span>`:""}</div>
+        </div>
+        <div class="track">${segs}${nowOn?`<span class="nowline" style="left:${pct(NOW.min)}%"></span>`:""}</div>
+        <div class="meta">${esc(spanText(r.sp))}</div>
+      </div>`;
+    });
+    h += `</div>`;
+  });
+  el.innerHTML = h;
+}
+
+/* ---------- render: doctor list ---------- */
+function nextOf(doc){
+  const days = [...new Set(doc.sessions.map(s=>s.date))].sort();
+  for(const d of days){
+    if(d<NOW.date) continue;
+    const sp = spans(doc.sessions.filter(s=>s.date===d));
+    const rest = d===NOW.date ? sp.filter(x=>x.e>NOW.min) : sp;
+    if(rest.length) return {d, sp:rest, live: d===NOW.date && rest[0].s<=NOW.min};
+  }
+  return null;
+}
+function stripTemplate(){
+  const parts=[]; COLS.forEach((d,i)=>{ if(i && wd(d)===1) parts.push("4px"); parts.push("minmax(0,1fr)"); });
+  return parts.join(" ");
+}
+const STRIP_T = stripTemplate();
+function stripCells(fn){
+  let h=""; COLS.forEach((d,i)=>{ if(i && wd(d)===1) h+=`<span class="sp"></span>`; h+=fn(d); }); return h;
+}
+function renderDocs(){
+  const el = document.getElementById("docList");
+  const docs = [...DOCS.values()].filter(visible).map(d=>{
+    const days = new Set(d.sessions.map(s=>s.date));
+    const wds = [...new Set(d.sessions.map(s=>wd(s.date)))].sort().map(w=>WD[w]);
+    return {d, nDays:days.size, nCa:d.sessions.length, wds, next:nextOf(d)};
+  });
+  const sorters = {
+    ten:(a,b)=>vcmp(a.d,b.d),
+    nhieu:(a,b)=>b.nDays-a.nDays || b.nCa-a.nCa || vcmp(a.d,b.d),
+    gan:(a,b)=>{
+      if(!a.next||!b.next) return (a.next?-1:0)-(b.next?-1:0) || vcmp(a.d,b.d);
+      return a.next.d.localeCompare(b.next.d) || a.next.sp[0].s-b.next.sp[0].s || vcmp(a.d,b.d);
+    }
+  };
+  docs.sort(sorters[state.sort]||sorters.ten);
+  let h = `<div class="dl-head"><span class="lbl">Bác sĩ</span><div class="strip" style="grid-template-columns:${STRIP_T}">${stripCells(d=>`<span class="hd${d===NOW.date?" today":""}"><b>${+d.slice(8)}</b><i>${WD[wd(d)]}</i></span>`)}</div><span class="nlbl">Lịch kế tiếp</span></div>`;
+  if(!docs.length){ el.innerHTML = h + `<div class="empty">Không có bác sĩ nào khớp bộ lọc.</div>`; return; }
+  [0,1].forEach(k=>{
+    const list = docs.filter(x=>x.d.k===k);
+    if(!list.length) return;
+    h += `<div class="dsec"><h3><i class="sw ${KHOA[k].cls}"></i>${KHOA[k].name} <span class="ct" style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">· ${list.length} BS</span></h3>`;
+    list.forEach(x=>{
+      const d=x.d, pinned=state.pins.has(d.id), open=state.open.has(d.id);
+      const strip = stripCells(day=>{
+        if(!BY_DATE.has(day)) return `<span class="sc na" data-tip="${dm(day)}: chưa có lịch"><i></i><i></i><i></i></span>`;
+        const ss = d.sessions.filter(s=>s.date===day);
+        const bars = [0,1,2].map(c=>{const s=ss.find(v=>v.ca===c);return `<i class="${s?"on"+(s.vip?" vip":""):""}"></i>`;}).join("");
+        const tip = ss.length ? `${WD[wd(day)]} ${dm(day)}\n${spanText(spans(ss))}` : `${WD[wd(day)]} ${dm(day)}: không khám`;
+        return `<button class="sc ${KHOA[k].cls}${day===NOW.date?" today":""}" data-date="${day}" data-tip="${esc(tip)}" aria-label="${esc(tip.replace("\n",": "))}">${bars}</button>`;
+      });
+      let nx;
+      if(!x.next) nx = `<span>Hết lịch trong tháng</span>`;
+      else if(x.next.live) nx = `<span class="state live" style="margin-right:4px">Đang khám</span>đến <b>${fmt(x.next.sp[0].e)}</b> · ${esc(roomLabel(x.next.sp[0].room,x.next.sp[0].vip))}`;
+      else nx = `Kế tiếp: <b>${dayLabel(x.next.d,true)}</b> · ${esc(spanText(x.next.sp))}`;
+      h += `<div class="drow">
+        <div class="who">
+          <button class="pin" data-pin="${d.id}" aria-pressed="${pinned}" aria-label="${pinned?"Bỏ ghim":"Ghim"} ${esc(d.n)}">${star(pinned)}</button>
+          <div class="wb"><button class="dname" data-toggle="${d.id}" aria-expanded="${open}"><span class="dt">${esc(d.t)}</span><span class="dn">${esc(d.n)}</span></button>
+          <span class="stats num">${x.nDays} ngày · ${x.nCa} ca · ${x.wds.join(", ")}</span></div>
+        </div>
+        <div class="strip" style="grid-template-columns:${STRIP_T}">${strip}</div>
+        <div class="next">${nx}</div>
+        ${open?`<div class="detail">${[...new Set(d.sessions.map(s=>s.date))].sort().map(day=>`<button data-date="${day}"><span class="dd">${WD[wd(day)]} ${dm(day)}</span><span>${esc(spanText(spans(d.sessions.filter(s=>s.date===day))))}</span></button>`).join("")}</div>`:""}
+      </div>`;
+    });
+    h += `</div>`;
+  });
+  el.innerHTML = h;
+}
+
+/* ---------- shell ---------- */
+function renderChrome(){
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.view===state.view)));
+  document.getElementById("view-ngay").hidden = state.view!=="ngay";
+  document.getElementById("view-bac-si").hidden = state.view!=="bac-si";
+  document.querySelectorAll("#khoaSeg button").forEach(b=>b.setAttribute("aria-pressed", String(String(state.khoa)===b.dataset.k)));
+  const pb = document.getElementById("pinOnly");
+  pb.innerHTML = `${star(state.pinOnly)} Chỉ BS đã ghim (${state.pins.size})`;
+  pb.setAttribute("aria-pressed", String(state.pinOnly));
+  pb.disabled = !state.pins.size && !state.pinOnly;
+  document.getElementById("qclear").hidden = !state.q;
+  document.getElementById("sort").value = state.sort;
+}
+function render(){
+  renderChrome();
+  if(state.view==="ngay"){ renderCal(); renderSugg(); renderDay(); }
+  else renderDocs();
+}
+function setView(v){
+  state.view = v;
+  try{ if(location.hash !== "#"+v) history.replaceState(null,"","#"+v); }catch(e){}
+  render();
+  window.scrollTo({top:0});
+}
+function goDate(d){ state.date = d; if(state.view!=="ngay") setView("ngay"); else render(); }
+
+document.addEventListener("click", e=>{
+  const t = e.target.closest("button");
+  if(!t) return;
+  if(t.dataset.view){ setView(t.dataset.view); return; }
+  if(t.dataset.k){ state.khoa = t.dataset.k==="all" ? "all" : +t.dataset.k; render(); return; }
+  if(t.dataset.pin){
+    const id=t.dataset.pin;
+    state.pins.has(id) ? state.pins.delete(id) : state.pins.add(id);
+    if(!state.pins.size) state.pinOnly=false;
+    store.set("ta-lich-pins",[...state.pins]); render(); return;
+  }
+  if(t.id==="pinOnly"){ state.pinOnly=!state.pinOnly; render(); return; }
+  if(t.id==="qclear"){ state.q=""; document.getElementById("q").value=""; render(); return; }
+  if(t.dataset.open){
+    state.open = new Set([t.dataset.open]); setView("bac-si");
+    const row = document.querySelector(`[data-toggle="${t.dataset.open}"]`);
+    if(row) row.closest(".drow").scrollIntoView({block:"center"});
+    return;
+  }
+  if(t.dataset.toggle){ const id=t.dataset.toggle; state.open.has(id)?state.open.delete(id):state.open.add(id); render(); return; }
+  if(t.dataset.date){ hideTip(); goDate(t.dataset.date); return; }
+});
+document.getElementById("q").addEventListener("input", e=>{ state.q = e.target.value; render(); });
+document.getElementById("sort").addEventListener("change", e=>{ state.sort = e.target.value; store.set("ta-lich-sort", state.sort); render(); });
+window.addEventListener("hashchange", ()=>{ const v=location.hash.slice(1); if((v==="ngay"||v==="bac-si") && v!==state.view){ state.view=v; render(); } });
+
+/* tooltip (chuột) */
+const tip = document.getElementById("tip");
+function hideTip(){ tip.style.opacity = 0; }
+document.addEventListener("pointermove", e=>{
+  if(e.pointerType!=="mouse") return;
+  const t = e.target.closest("[data-tip]");
+  if(!t){ hideTip(); return; }
+  tip.textContent = t.dataset.tip;
+  const w = tip.offsetWidth, hgt = tip.offsetHeight;
+  let x = e.clientX+12, y = e.clientY+14;
+  if(x+w > innerWidth-8) x = e.clientX-w-12;
+  if(y+hgt > innerHeight-8) y = e.clientY-hgt-12;
+  tip.style.left = x+"px"; tip.style.top = y+"px"; tip.style.opacity = 1;
+});
+document.addEventListener("scroll", hideTip, {passive:true});
+
+/* init */
+(function init(){
+  const nDocs = DOCS.size, nCa = SESS.length;
+  const n0 = SESS.filter(s=>DOCS.get(s.id).k===0).length;
+  document.getElementById("sub").textContent = `BVĐK Tâm Anh TP.HCM · 12–30/11/2026 · ${nDocs} bác sĩ · ${nCa} ca`;
+  document.getElementById("srcline").textContent = `Dữ liệu: ${n0} ca Nội Thận, ${nCa-n0} ca Nội tiết, ${[...DOCS.values()].filter(d=>d.k===0).length} + ${[...DOCS.values()].filter(d=>d.k===1).length} bác sĩ. Quy ước ca: Sáng bắt đầu trước 12:00, Trưa 12:00–13:00, Chiều từ 13:00.`;
+  if(NOW.date>RANGE.end){
+    const b=document.getElementById("stale"); b.hidden=false;
+    b.textContent = "Lịch này chỉ đến 30/11/2026. Cần lấy lịch mới từ bệnh viện để xem các ngày sau.";
+  }
+  const v = location.hash.slice(1);
+  if(v==="bac-si") state.view = "bac-si";
+  render();
+})();
+</script>
+</body>
+</html>

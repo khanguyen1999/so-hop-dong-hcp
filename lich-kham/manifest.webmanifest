@@ -1,0 +1,16 @@
+{
+  "name": "Lịch khám Thận – Nội tiết Tâm Anh",
+  "short_name": "Lịch Tâm Anh",
+  "description": "Lịch khám BS Nội Thận và Nội tiết, BVĐK Tâm Anh TP.HCM",
+  "lang": "vi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f5f7",
+  "theme_color": "#131820",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

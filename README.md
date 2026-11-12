@@ -66,3 +66,6 @@ create policy "chi admin sua" on public.shared_config for update to authenticate
 Mở `index.html` bằng trình duyệt, hoặc deploy thư mục này lên Vercel / Netlify / GitHub Pages (static site, không cần build).
 
 Thư viện tải từ jsDelivr: pizzip 3.2.0, docxtemplater 3.67.0, exceljs 4.4.0, @supabase/supabase-js 2.117.2, tesseract.js 6.0.1, pdfjs-dist 4.10.38 (bản legacy, chạy với isEvalSupported:false).
+
+## Trang phụ: Lịch khám Tâm Anh
+Thư mục `lich-kham/` là trang tĩnh xem lịch khám BS Nội Thận và Nội tiết của BVĐK Tâm Anh TP.HCM (12–30/11/2026), độc lập với app hợp đồng: không dùng Supabase, không đụng dữ liệu HCP. Mở tại `<link GitHub Pages>/lich-kham/`. Cập nhật tháng mới: thay dữ liệu trong `lich-kham/index.html`.
