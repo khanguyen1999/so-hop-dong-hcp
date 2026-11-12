@@ -1,7 +1,7 @@
 {
-  "name": "Lịch khám Thận – Nội tiết Tâm Anh",
+  "name": "Lịch khám Tâm Anh",
   "short_name": "Lịch Tâm Anh",
-  "description": "Lịch khám BS Nội Thận và Nội tiết, BVĐK Tâm Anh TP.HCM",
+  "description": "Lịch khám BS Nội Thận, Nội tiết, Tim mạch, Nội tổng quát tại Tâm Anh TP.HCM và Quận 7",
   "lang": "vi",
   "start_url": "./",
   "scope": "./",

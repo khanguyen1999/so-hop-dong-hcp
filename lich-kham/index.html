@@ -13,13 +13,13 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>Lịch khám Thận – Nội tiết Tâm Anh</title>
+<title>Lịch khám Tâm Anh</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* Layout: bộ lọc trên cùng; desktop 2 cột (lịch tháng | timeline ngày), điện thoại xếp chồng */
+  /* Layout: chọn phạm vi trước (cơ sở → khoa), rồi mới tới nội dung: dải ngày + timeline, hoặc danh bạ bác sĩ */
   --bg:#f3f5f7;
   --surface:#ffffff;
   --ink:#131820;
@@ -28,8 +28,7 @@
   --line:#e1e5ea;
   --line-2:#eef1f4;
   --band:#f5f7f9;
-  --than:#2a78d6;
-  --tiet:#eb6834;
+  --d0:#2a78d6; --d1:#eb6834; --d2:#1baf7a; --d3:#eda100; /* Nội Thận · Nội tiết · Tim mạch · Nội TQ */
   --live:#0b8f0b;
   --now:#d03b3b;
   --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -39,249 +38,240 @@
   :root:not([data-theme="light"]){
     --bg:#0f1215; --surface:#171b20; --ink:#eef1f4; --ink-2:#b4bcc8; --muted:#848d9b;
     --line:#2a3038; --line-2:#222831; --band:#1b2026;
-    --than:#3987e5; --tiet:#d95926; --live:#3cc43c; --now:#e66767;
+    --d0:#3987e5; --d1:#d95926; --d2:#199e70; --d3:#c98500; --live:#3cc43c; --now:#e66767;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0f1215; --surface:#171b20; --ink:#eef1f4; --ink-2:#b4bcc8; --muted:#848d9b;
   --line:#2a3038; --line-2:#222831; --band:#1b2026;
-  --than:#3987e5; --tiet:#d95926; --live:#3cc43c; --now:#e66767;
+  --d0:#3987e5; --d1:#d95926; --d2:#199e70; --d3:#c98500; --live:#3cc43c; --now:#e66767;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-text-size-adjust:100%}
-button{font:inherit;color:inherit}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.num,.tl-axis,.meta,.state,.dl-head,.next{font-variant-numeric:tabular-nums}
-.wrap{max-width:1180px;margin:0 auto;padding:16px 16px 40px}
+.num,.axis,.meta,.state,.next,.dchip,.hd{font-variant-numeric:tabular-nums}
+.wrap{max-width:1080px;margin:0 auto;padding:14px 16px 40px}
+[hidden]{display:none !important}
+.d0{--c:var(--d0)} .d1{--c:var(--d1)} .d2{--c:var(--d2)} .d3{--c:var(--d3)}
+.dot{width:9px;height:9px;border-radius:3px;background:var(--c);flex:none;display:inline-block}
 
 /* header */
-.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:14px}
-h1{font-size:20px;line-height:1.25;font-weight:700;margin:0;letter-spacing:-.01em;text-wrap:balance}
-.sub{margin:4px 0 0;color:var(--ink-2);font-size:13px}
-.tabs{display:inline-flex;background:var(--line-2);border-radius:10px;padding:3px;gap:2px}
-.tabs button{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-2);cursor:pointer}
-.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand site" "tabs tabs";gap:10px 12px;align-items:center;margin-bottom:12px}
+@media (min-width:760px){.top{grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"brand tabs site";gap:16px}}
+.brand{grid-area:brand;min-width:0}
+h1{font-size:19px;line-height:1.2;font-weight:700;margin:0;letter-spacing:-.01em}
+.sub{margin:2px 0 0;color:var(--ink-2);font-size:12.5px}
+.sub .wide{display:none}
+@media (min-width:760px){.sub .wide{display:inline}}
+.segc{display:inline-flex;background:var(--line-2);border-radius:10px;padding:3px;gap:2px}
+.segc button{border:0;background:transparent;padding:7px 12px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.segc button[aria-pressed="true"],.segc button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+#siteSeg{grid-area:site}
+.tabs{grid-area:tabs;display:flex}
+.tabs button{flex:1}
+@media (min-width:760px){.tabs{display:inline-flex}.tabs button{flex:none;padding-inline:16px}}
 
 .banner{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--now);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px}
 
-/* filters */
-.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
-.seg button{border:0;background:transparent;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:var(--ink-2)}
-.seg button+button{border-left:1px solid var(--line)}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
-.sw{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none}
-.sw.than{background:var(--than)} .sw.tiet{background:var(--tiet)}
-.search{flex:1 1 220px;min-width:0;position:relative}
-.search input{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 32px 8px 34px;font:inherit;font-size:13px}
-.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
-.search .clear{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);cursor:pointer;padding:6px 8px;font-size:15px;line-height:1}
-.pinbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;gap:6px;align-items:center;color:var(--ink-2)}
-.pinbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.pinbtn:disabled{opacity:.5;cursor:default}
-.pinbtn svg{width:14px;height:14px;flex:none}
+/* khoa */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 11px;font-size:13px;font-weight:500;color:var(--ink-2);display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.chip:disabled{opacity:.45;cursor:default}
+.chip svg{width:13px;height:13px;flex:none}
 
-/* cards */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
-.card h2{font-size:15px;margin:0 0 10px;font-weight:600}
-.hint{color:var(--muted);font-size:12px;margin:8px 0 0}
-
-/* day view layout */
-.v-ngay{display:grid;gap:14px;grid-template-columns:minmax(0,1fr);grid-template-areas:"cal" "day" "sugg"}
-#calCard{grid-area:cal} #suggCard{grid-area:sugg} #dayPanel{grid-area:day}
-@media (min-width:920px){.v-ngay{grid-template-columns:330px minmax(0,1fr);grid-template-areas:"cal day" "sugg day";grid-template-rows:auto 1fr;align-items:start}}
-
-/* calendar */
-.cal-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
-.cal-head h2{margin:0}
-.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.cal .wd{font-size:11px;color:var(--muted);text-align:center;padding-bottom:2px;font-weight:500}
-.day{position:relative;min-height:54px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:5px 5px 6px;display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;text-align:left;cursor:pointer}
-.day:hover{border-color:var(--muted)}
-.day .dnum{font-weight:600;font-size:14px;line-height:1.1}
-.day .dcnt{font-size:10.5px;color:var(--muted);line-height:1.1}
-.day .mix{display:flex;gap:2px;height:4px;margin-top:3px}
-.day .mix i{border-radius:2px;min-width:2px}
-.mix .than{background:var(--than)} .mix .tiet{background:var(--tiet)}
-.day.is-sel{background:var(--ink);border-color:var(--ink);color:var(--surface)}
-.day.is-sel .dcnt{color:var(--surface);opacity:.75}
-.day.is-today:not(.is-sel){box-shadow:inset 0 0 0 2px var(--ink)}
-.day.is-out{opacity:.32;cursor:default;background:transparent}
-.day.is-none{cursor:pointer;background:repeating-linear-gradient(135deg,transparent 0 5px,var(--line-2) 5px 7px)}
-.day.is-none.is-sel{background:var(--ink)}
-.day.is-zero .dnum{color:var(--muted)}
-.day.is-sel.is-zero .dnum{color:var(--surface)}
-.pinct{position:absolute;top:4px;right:4px;font-size:10px;font-weight:700;line-height:1;display:inline-flex;align-items:center;gap:1px}
-.pinct svg{width:9px;height:9px}
-
-/* suggestion */
-.sugg{display:grid;gap:6px}
-.sugg button{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;text-align:left;cursor:pointer}
-.sugg button:hover{border-color:var(--muted)}
-.sugg .sd{font-weight:600;white-space:nowrap}
-.sugg .sn{color:var(--ink-2);font-size:12px;text-align:right}
-
-/* day panel */
-.dayhead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:6px}
-.dayhead h2{font-size:18px;margin:0;font-weight:700}
-.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;border-radius:999px;padding:3px 9px;border:1px solid var(--line);color:var(--ink-2);background:var(--surface);white-space:nowrap}
+/* dải ngày */
+.dstrip{display:flex;gap:5px;overflow-x:auto;padding:8px 16px 8px;margin:0 -16px;scrollbar-width:none}
+.dstrip::-webkit-scrollbar{display:none}
+.dchip{position:relative;flex:none;width:46px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:6px 0 6px;display:grid;justify-items:center;gap:0}
+.dchip.wk{margin-left:9px}
+.dchip .dw{font-size:10.5px;color:var(--muted);font-weight:500;line-height:1.3}
+.dchip .dn{font-size:16px;font-weight:600;line-height:1.25}
+.dchip .dc{font-size:10.5px;color:var(--muted);line-height:1.3}
+.dchip.is-past{opacity:.55}
+.dchip.is-partial{background:repeating-linear-gradient(135deg,var(--surface) 0 5px,var(--line-2) 5px 7px)}
+.dchip.is-today{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.dchip.is-sel{background:var(--ink);border-color:var(--ink);color:var(--surface);opacity:1}
+.dchip.is-sel .dw,.dchip.is-sel .dc{color:var(--surface);opacity:.75}
+.dp{position:absolute;top:-6px;right:-4px;background:var(--ink);color:var(--surface);border:1.5px solid var(--bg);border-radius:999px;font-size:9.5px;font-weight:700;line-height:1;padding:2px 4px;display:inline-flex;align-items:center;gap:1px}
+.dp svg{width:8px;height:8px}
+.dchip.is-sel .dp{background:var(--surface);color:var(--ink)}
+.best{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:12.5px;color:var(--ink-2);margin:2px 0 12px}
+.best svg{width:12px;height:12px;vertical-align:-1px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;border:1px solid var(--line);color:var(--ink-2);background:var(--surface);white-space:nowrap}
 .pill.solid{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-button.pill{cursor:pointer}
-.daystats{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--ink-2);font-size:13px;margin-bottom:12px}
+.pill b{color:var(--ink)}
+
+/* card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.empty{padding:28px 8px;text-align:center;color:var(--ink-2)}
+.note{background:var(--band);border-radius:8px;padding:8px 10px;font-size:12.5px;color:var(--ink-2);margin-bottom:10px}
+
+/* ngày */
+.dayhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:4px}
+.dayhead h2{font-size:18px;margin:0;font-weight:700}
+.daystats{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--ink-2);font-size:13px;margin-bottom:8px}
 .daystats b{color:var(--ink);font-weight:600}
-.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2);margin:0 0 10px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin:0 0 6px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
-.lg-vip{width:16px;height:9px;border-radius:3px;background:var(--ink-2);background:repeating-linear-gradient(135deg,var(--ink-2) 0 3px,color-mix(in srgb,var(--ink-2) 35%,var(--surface)) 3px 5px)}
+.lg-vip{width:16px;height:9px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--ink-2) 0 3px,color-mix(in srgb,var(--ink-2) 35%,var(--surface)) 3px 5px)}
+.lg-hol{width:16px;height:9px;border-radius:3px;box-shadow:inset 0 0 0 1.5px var(--muted)}
 .lg-now{width:2px;height:12px;background:var(--now);border-radius:1px}
 
-.tl-axis-row,.trow{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"who" "track" "meta";column-gap:16px}
-.tl-axis-row{grid-template-areas:"axis";position:sticky;top:0;background:var(--surface);z-index:2;padding:6px 0 4px;border-bottom:1px solid var(--line)}
-@media (min-width:640px){
-  .trow{grid-template-columns:230px minmax(0,1fr);grid-template-areas:"who track" "who meta";align-items:center}
-  .tl-axis-row{grid-template-columns:230px minmax(0,1fr);grid-template-areas:". axis"}
+.axis-row,.trow{display:grid;grid-template-columns:minmax(0,1fr);column-gap:16px}
+.axis-row{position:sticky;top:0;background:var(--surface);z-index:2;padding:6px 0 4px;border-bottom:1px solid var(--line)}
+.trow{grid-template-areas:"who" "track" "meta"}
+@media (min-width:700px){
+  .trow{grid-template-columns:250px minmax(0,1fr);grid-template-areas:"who track" "who meta";align-items:center}
+  .axis-row{grid-template-columns:250px minmax(0,1fr)}
+  .axis-row .axis{grid-column:2}
 }
-.tl-axis{grid-area:axis;position:relative;height:16px;font-size:11px;color:var(--muted)}
-.tl-axis span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
-.tl-axis span.first{transform:none}
-.tl-axis span.last{transform:translateX(-100%)}
-@media (max-width:519px){.tl-axis span.odd{display:none}}
-.tgroup{margin-top:12px}
-.tgroup h3{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:0 0 2px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
-.tgroup h3 .ct{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
-.trow{padding:9px 0;border-bottom:1px solid var(--line-2)}
+.axis{position:relative;height:16px;font-size:11px;color:var(--muted)}
+.axis span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.axis span.first{transform:none}
+.axis span.last{transform:translateX(-100%)}
+@media (max-width:519px){.axis span.odd{display:none}}
+.sec{margin-top:10px}
+.sec-h{display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;padding:6px 0 2px;text-align:left;font-size:12.5px;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+.sec-h .ct{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+.sec-h .chev{margin-left:auto;color:var(--muted);font-size:11px}
+div.sec-h{cursor:default}
+.subh{font-size:11.5px;color:var(--muted);font-weight:500;padding:8px 0 0}
+.trow{padding:8px 0;border-bottom:1px solid var(--line-2)}
 .trow:last-child{border-bottom:0}
 .who{grid-area:who;display:flex;align-items:flex-start;gap:6px;min-width:0}
-.wb{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
-.dname{border:0;background:transparent;padding:2px 0;text-align:left;cursor:pointer;min-width:0;display:inline-flex;flex-wrap:wrap;column-gap:5px;align-items:baseline}
+.wb{display:flex;flex-wrap:wrap;align-items:center;gap:3px 8px;min-width:0}
+.dname{border:0;background:transparent;padding:2px 0;text-align:left;min-width:0;display:inline-flex;flex-wrap:wrap;column-gap:5px;align-items:baseline}
 .dname:hover .dn{text-decoration:underline;text-underline-offset:3px}
 .dt{font-size:11px;color:var(--muted);font-weight:500}
 .dn{font-weight:600}
-.pin{border:0;background:transparent;padding:4px;margin:-2px 0 -4px -4px;flex:none;cursor:pointer;color:var(--muted);display:inline-flex;border-radius:6px}
-.pin:hover{color:var(--ink)}
-.pin[aria-pressed="true"]{color:var(--ink)}
+.anon .dn{font-weight:500;font-style:italic}
+.pin{border:0;background:transparent;padding:4px;margin:-2px 0 -4px -4px;color:var(--muted);display:inline-flex;border-radius:6px;flex:none}
+.pin:hover,.pin[aria-pressed="true"]{color:var(--ink)}
 .pin svg{width:16px;height:16px}
+.pin.ghost{visibility:hidden}
 .state{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;border:1px solid var(--line);color:var(--ink-2)}
 .state.live{color:var(--live);border-color:currentColor}
 .state.live::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .state.done{color:var(--muted)}
 .trow.is-done .track,.trow.is-done .dn{opacity:.5}
-.track{grid-area:track;position:relative;height:16px;margin:6px 0 4px;border-radius:4px;
-  background:repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px 10%)}
-@media (min-width:640px){.track{margin:2px 0}}
-.track::before{content:"";position:absolute;left:60%;width:10%;top:-4px;bottom:-4px;background:var(--band);z-index:0}
+.track{grid-area:track;position:relative;height:16px;margin:5px 0 4px;border-radius:4px;background:repeating-linear-gradient(to right,var(--line) 0 1px,transparent 1px var(--step))}
+@media (min-width:700px){.track{margin:2px 0}}
+.lunch{position:absolute;top:-4px;bottom:-4px;background:var(--band)}
 .bar{position:absolute;top:1px;height:14px;border-radius:4px;z-index:1;background:var(--c)}
-.bar.than{--c:var(--than)} .bar.tiet{--c:var(--tiet)}
 .bar.vip{background:repeating-linear-gradient(135deg,var(--c) 0 4px,color-mix(in srgb,var(--c) 45%,var(--surface)) 4px 7px)}
+.bar.hol{background:transparent;box-shadow:inset 0 0 0 1.5px var(--muted)}
 .nowline{position:absolute;top:-5px;bottom:-5px;width:2px;margin-left:-1px;background:var(--now);border-radius:1px;z-index:3}
 .meta{grid-area:meta;font-size:12px;color:var(--ink-2)}
-.empty{padding:28px 8px;text-align:center;color:var(--ink-2)}
+.meta i{font-style:normal;color:var(--muted)}
 
-/* doctor view */
-.dl-tools{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;margin-bottom:10px}
-.dl-tools label{font-size:13px;color:var(--ink-2);display:inline-flex;align-items:center;gap:8px}
-.dl-tools select{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 8px}
-.dl-head,.drow{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"who" "strip" "next";column-gap:18px}
-@media (min-width:860px){
-  .dl-head,.drow{grid-template-columns:250px minmax(0,1fr) 230px;grid-template-areas:"who strip next";align-items:center}
+/* bác sĩ */
+.tools{display:flex;gap:8px;margin-bottom:12px}
+.search{flex:1 1 auto;min-width:0;position:relative}
+.search input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 32px 9px 34px;font-size:14px}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search .clear{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);padding:6px 8px;font-size:15px;line-height:1}
+.tools select{flex:none;font-size:13px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:0 8px;max-width:42%}
+.dl-head,.drow{display:grid;grid-template-columns:minmax(0,1fr);column-gap:18px}
+.drow{grid-template-areas:"who" "strip" "next";row-gap:5px;padding:9px 0;border-bottom:1px solid var(--line-2)}
+.dl-head{position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:1px solid var(--line);padding:6px 0}
+.dl-head .lbl{display:none;font-size:11px;color:var(--muted);font-weight:500}
+@media (min-width:900px){
+  .dl-head,.drow{grid-template-columns:270px minmax(0,1fr) 250px;align-items:center}
+  .drow{grid-template-areas:"who strip next"}
+  .dl-head .lbl{display:block}
 }
-.dl-head{grid-template-areas:"strip";position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 0 6px}
-@media (min-width:860px){.dl-head{grid-template-areas:"lbl strip nlbl"}}
-.dl-head .lbl,.dl-head .nlbl{display:none;font-size:11px;color:var(--muted);font-weight:500}
-@media (min-width:860px){.dl-head .lbl{display:block;grid-area:lbl}.dl-head .nlbl{display:block;grid-area:nlbl}}
-.strip{grid-area:strip;display:grid;gap:3px;align-items:end}
-.strip .sp{width:4px}
-.hd{text-align:center;font-size:10.5px;line-height:1.15;color:var(--ink-2)}
+@media (max-width:899px){.dl-head .strip{grid-column:1}}
+.strip{grid-area:strip;display:grid;gap:2px;align-items:end}
+.dl-head .strip{grid-area:auto}
+.strip .sp{width:3px}
+.hd{text-align:center;font-size:10px;line-height:1.15;color:var(--ink-2)}
 .hd b{display:block;font-weight:600;color:var(--ink)}
+.hd.sun b{color:var(--muted);font-weight:500}
 .hd i{font-style:normal;color:var(--muted);font-size:9.5px}
-@media (max-width:519px){.hd i{display:none}}
+@media (max-width:599px){.hd i{display:none}}
 .hd.today b{color:var(--surface);background:var(--ink);border-radius:4px}
-.sc{display:flex;flex-direction:column;gap:2px;padding:2px 0;border:0;background:transparent;cursor:pointer;border-radius:4px}
-.sc:hover{background:var(--line-2)}
+.sc{display:flex;flex-direction:column;gap:2px;padding:2px 0;border:0;background:transparent;border-radius:4px;min-width:0}
+button.sc:hover{background:var(--line-2)}
 .sc i{height:5px;border-radius:2px;background:var(--line-2)}
 .sc i.on{background:var(--c)}
 .sc i.on.vip{background:repeating-linear-gradient(135deg,var(--c) 0 3px,color-mix(in srgb,var(--c) 45%,var(--surface)) 3px 5px)}
-.sc.than{--c:var(--than)} .sc.tiet{--c:var(--tiet)}
-.sc.na{cursor:default;background:repeating-linear-gradient(135deg,transparent 0 4px,var(--line-2) 4px 6px)}
-.sc.na i{background:transparent}
-.sc.today{box-shadow:inset 0 0 0 1.5px var(--ink)}
-.drow{padding:10px 0;border-bottom:1px solid var(--line-2);row-gap:6px}
+.sc i.hol{background:transparent;box-shadow:inset 0 0 0 1.2px var(--muted)}
+.sc.part{background:repeating-linear-gradient(135deg,transparent 0 4px,var(--line-2) 4px 6px)}
+.sc.part i:not(.on):not(.hol){background:transparent}
 .drow .who{grid-area:who}
-.drow .stats{font-size:12px;color:var(--muted);width:100%}
+.tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px;white-space:nowrap}
 .next{grid-area:next;font-size:12px;color:var(--ink-2)}
 .next b{color:var(--ink);font-weight:600}
-.dsec h3{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin:16px 0 0;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
-.dsec:first-of-type h3{margin-top:4px}
-.detail{grid-column:1/-1;background:var(--band);border-radius:10px;padding:8px 10px;margin-top:4px;display:grid;gap:2px}
-.detail button{border:0;background:transparent;text-align:left;padding:5px 6px;border-radius:6px;cursor:pointer;display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;font-size:12.5px}
+.detail{grid-column:1/-1;background:var(--band);border-radius:10px;padding:6px 8px;margin-top:2px;display:grid;gap:1px}
+.detail button{border:0;background:transparent;text-align:left;padding:5px 6px;border-radius:6px;display:grid;grid-template-columns:74px minmax(0,1fr);gap:8px;font-size:12.5px}
 .detail button:hover{background:var(--surface)}
 .detail .dd{font-weight:600}
-.legend-strip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2)}
-.legend-strip .mini{display:inline-flex;flex-direction:column;gap:2px;width:14px}
-.legend-strip .mini i{height:4px;border-radius:2px;background:var(--ink-2)}
-.legend-strip .mini i:nth-child(2){opacity:.35}
+.strip-key{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.strip-key span{display:inline-flex;align-items:center;gap:6px}
+.mini{display:inline-flex;flex-direction:column;gap:2px;width:14px}
+.strip-key .mini{align-items:stretch;gap:2px}
+.mini i{height:4px;border-radius:2px;background:var(--ink-2)}
+.mini i:nth-child(2){opacity:.35}
+.hintrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 0 2px;font-size:13px;color:var(--ink-2)}
+.linkbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:12.5px;font-weight:600}
 
-footer{margin-top:22px;font-size:12px;color:var(--muted);display:grid;gap:4px;max-width:75ch}
+footer{margin-top:20px;font-size:12px;color:var(--muted);display:grid;gap:4px;max-width:75ch}
 footer a{color:var(--ink-2)}
-
-#tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:6px 9px;border-radius:7px;max-width:260px;opacity:0;transition:opacity .08s;white-space:pre-line}
+#tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--surface);font-size:12px;padding:6px 9px;border-radius:7px;max-width:280px;opacity:0;transition:opacity .08s;white-space:pre-line}
 @media (prefers-reduced-motion:reduce){#tip{transition:none}}
-[hidden]{display:none !important}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <div>
-      <h1>Lịch khám Nội Thận · Nội tiết</h1>
-      <p class="sub" id="sub">BVĐK Tâm Anh TP.HCM · 12–30/11/2026</p>
+    <div class="brand">
+      <h1>Lịch khám Tâm Anh</h1>
+      <p class="sub"><span id="subSite" class="wide"></span><span id="subRange"></span></p>
     </div>
-    <div class="tabs" role="tablist" aria-label="Chế độ xem">
-      <button role="tab" id="tab-ngay" data-view="ngay" aria-selected="true">Theo ngày</button>
-      <button role="tab" id="tab-bac-si" data-view="bac-si" aria-selected="false">Theo bác sĩ</button>
+    <div class="segc tabs" role="tablist" aria-label="Chế độ xem">
+      <button role="tab" data-view="ngay" aria-selected="true">Theo ngày</button>
+      <button role="tab" data-view="bac-si" aria-selected="false">Theo bác sĩ</button>
+    </div>
+    <div class="segc" id="siteSeg" role="group" aria-label="Cơ sở">
+      <button data-site="0" aria-pressed="true">TP.HCM</button>
+      <button data-site="1" aria-pressed="false">Quận 7</button>
     </div>
   </header>
 
   <div class="banner" id="stale" hidden></div>
-
-  <div class="filters">
-    <div class="seg" id="khoaSeg" role="group" aria-label="Lọc chuyên khoa">
-      <button data-k="all" aria-pressed="true">Tất cả</button>
-      <button data-k="0" aria-pressed="false"><i class="sw than"></i>Nội Thận</button>
-      <button data-k="1" aria-pressed="false"><i class="sw tiet"></i>Nội tiết</button>
-    </div>
-    <div class="search">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" autocomplete="off" placeholder="Tìm bác sĩ, gõ không dấu cũng được" aria-label="Tìm bác sĩ">
-      <button class="clear" id="qclear" aria-label="Xoá tìm kiếm" hidden>×</button>
-    </div>
-    <button class="pinbtn" id="pinOnly" aria-pressed="false"></button>
-  </div>
+  <div class="chips" id="chips" role="group" aria-label="Khoa"></div>
 
   <main>
-    <section id="view-ngay" class="v-ngay">
-        <div class="card" id="calCard">
-          <div class="cal-head"><h2>Tháng 11/2026</h2><span class="hint" style="margin:0">số = bác sĩ khám</span></div>
-          <div class="cal" id="cal"></div>
-          <p class="hint">Ô gạch chéo: trong khoảng lịch nhưng bệnh viện chưa công bố.</p>
-        </div>
-        <div class="card" id="suggCard"></div>
+    <section id="view-ngay">
+      <div class="dstrip" id="dstrip" aria-label="Chọn ngày"></div>
+      <div class="best" id="best"></div>
       <div class="card" id="dayPanel"></div>
     </section>
 
     <section id="view-bac-si" hidden>
+      <div class="tools">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" autocomplete="off" placeholder="Tìm bác sĩ, gõ không dấu cũng được" aria-label="Tìm bác sĩ">
+          <button class="clear" id="qclear" aria-label="Xoá tìm kiếm" hidden>×</button>
+        </div>
+        <select id="sort" aria-label="Sắp xếp">
+          <option value="ten">Tên A–Z</option>
+          <option value="gan">Lịch gần nhất</option>
+          <option value="nhieu">Nhiều ngày nhất</option>
+        </select>
+      </div>
       <div class="card">
-        <div class="dl-tools">
-          <div class="legend-strip"><span class="mini"><i></i><i></i><i></i></span>Mỗi cột một ngày, 3 vạch từ trên xuống: Sáng · Trưa · Chiều. Bấm vào cột để mở ngày đó.</div>
-          <label for="sort">Sắp xếp
-            <select id="sort">
-              <option value="gan">Lịch gần nhất</option>
-              <option value="ten">Tên A–Z</option>
-              <option value="nhieu">Khám nhiều ngày nhất</option>
-            </select>
-          </label>
+        <div class="strip-key">
+          <span><span class="mini"><i></i><i></i><i></i></span>Mỗi cột một ngày: Sáng · Trưa · Chiều</span>
+          <span><i class="lg-vip"></i>Phòng VIP</span>
+          <span id="keyHol"><i class="lg-hol"></i>Khám ở cơ sở kia</span>
         </div>
         <div id="docList"></div>
       </div>
@@ -296,348 +286,400 @@ footer a{color:var(--ink-2)}
 <div id="tip" role="tooltip"></div>
 
 <script>
-const RAW = {"docs": [{"id": "2633", "k": 0, "t": "BS.CKII", "n": "Đinh Cẩm Tú", "raw": "BS.CKII Đinh Cẩm Tú"}, {"id": "1893", "k": 0, "t": "BS.CKII", "n": "Tạ Phương Dung", "raw": "BS.CKII. Tạ Phương Dung"}, {"id": "3773", "k": 0, "t": "BS.CKII", "n": "Võ Thị Kim Thanh", "raw": "Bs CKII Võ Thị Kim Thanh"}, {"id": "11467", "k": 0, "t": "ThS.BS", "n": "Trần Nguyễn Ngọc Trâm", "raw": "ThS.BS Trần Nguyễn Ngọc Trâm"}, {"id": "7215", "k": 0, "t": "ThS.BS", "n": "Nguyễn Thị Thu Thảo", "raw": "ThS.BS Nguyễn Thị Thu Thảo"}, {"id": "4680", "k": 0, "t": "BS.CKI", "n": "Mạch Thị Chúc Linh", "raw": "BS.CKI Mạch Thị Chúc Linh"}, {"id": "3371", "k": 0, "t": "BS.CKII", "n": "Ngô Đồng Dũng", "raw": "BS.CKII.Ngô Đồng Dũng"}, {"id": "3915", "k": 0, "t": "BS.CKII", "n": "Nguyễn Hữu Nhật", "raw": "BSCKII.Nguyễn Hữu Nhật"}, {"id": "4670", "k": 0, "t": "BS.CKII", "n": "Nguyễn Thị Thanh Thùy", "raw": "BS CKII. Nguyễn Thị Thanh Thùy"}, {"id": "7089", "k": 0, "t": "BS.CKII", "n": "Nguyễn Thị Huê", "raw": "BS.CKII. Nguyễn Thị Huê"}, {"id": "7722", "k": 0, "t": "BS.CKI", "n": "Nguyễn Thị Hằng", "raw": "BSCKI. Nguyễn Thị Hằng"}, {"id": "7721", "k": 0, "t": "ThS.BS", "n": "Trần Âu Quế Nhung", "raw": "ThS.BS Trần Âu Quế Nhung"}, {"id": "6117", "k": 1, "t": "ThS.BS", "n": "Trần Đình Mạnh Long", "raw": "ThS.BS. Trần Đình Mạnh Long"}, {"id": "4463", "k": 1, "t": "TS.BS", "n": "Lâm Văn Hoàng", "raw": "TS.BS Lâm Văn Hoàng"}, {"id": "2643", "k": 1, "t": "BS.CKI", "n": "Võ Trần Nguyên Duy", "raw": "BS CKI Võ Trần Nguyên Duy"}, {"id": "8963", "k": 1, "t": "BS.CKI", "n": "Trần Tấn Phát", "raw": "BS.CKI Trần Tấn Phát"}, {"id": "3907", "k": 1, "t": "BS.CKI", "n": "Đỗ Tiến Vũ", "raw": "BS.CKI Đỗ Tiến Vũ"}, {"id": "5899", "k": 1, "t": "ThS.BS", "n": "Nguyễn Thị Kim Tuyền", "raw": "ThS.BS. Nguyễn Thị Kim Tuyền"}, {"id": "6533", "k": 1, "t": "BS.CKII", "n": "Trương Thị Vành Khuyên", "raw": "BS.CKII. Trương Thị Vành Khuyên"}, {"id": "6007", "k": 1, "t": "TS.BS", "n": "Trần Hữu Thanh Tùng", "raw": "TS.BS Trần Hữu Thanh Tùng"}, {"id": "8312", "k": 1, "t": "ThS.BS", "n": "Châu Thị Trang", "raw": "ThS.BS Châu Thị Trang"}, {"id": "7911", "k": 1, "t": "ThS.BS", "n": "Võ Hoàng Gia Nghi", "raw": "ThS.BS Võ Hoàng Gia Nghi"}, {"id": "6116", "k": 1, "t": "ThS.BS", "n": "Hà Thị Ngọc Bích", "raw": "ThS.BS Hà Thị Ngọc Bích"}, {"id": "6003", "k": 1, "t": "ThS.BS", "n": "Đỗ Trúc Anh", "raw": "ThS.BS Đỗ Trúc Anh"}, {"id": "0390", "k": 1, "t": "ThS.BS", "n": "Trần Nguyễn Quỳnh Trâm", "raw": "ThS.BS Trần Nguyễn Quỳnh Trâm"}, {"id": "3186", "k": 1, "t": "BS.CKI", "n": "Phan Thị Thùy Dung", "raw": "BS.CKI.Phan Thị Thùy Dung"}, {"id": "5901", "k": 1, "t": "ThS.BS", "n": "Hoàng Thị Hồng Linh", "raw": "ThS.BS Hoàng Thị Hồng Linh"}, {"id": "7630", "k": 1, "t": "ThS.BS.CKI", "n": "Võ Đình Bảo Văn", "raw": "Ths BS.CKI Võ Đình Bảo Văn"}, {"id": "4202", "k": 1, "t": "BS.CKII", "n": "Trần Thùy Ngân", "raw": "BS.CKII.Trần Thùy Ngân"}], "sess": [["2633", "2026-11-12", "07:00", "12:00", "PK 3", 0, 0], ["1893", "2026-11-12", "07:00", "12:00", "PK 9001", 1, 0], ["3773", "2026-11-12", "07:00", "12:00", "PK 1", 0, 0], ["11467", "2026-11-12", "07:00", "11:00", "PK 2", 0, 0], ["7215", "2026-11-12", "12:00", "13:00", "PK 9001", 1, 1], ["11467", "2026-11-12", "12:00", "13:00", "PK 2", 0, 1], ["1893", "2026-11-12", "13:00", "15:00", "PK 9001", 1, 2], ["3773", "2026-11-12", "13:00", "16:00", "PK 1", 0, 2], ["11467", "2026-11-12", "13:00", "16:00", "PK 2", 0, 2], ["7215", "2026-11-12", "15:00", "16:00", "PK 9001", 1, 2], ["4680", "2026-11-13", "07:00", "11:00", "PK 2", 0, 0], ["2633", "2026-11-13", "07:00", "12:00", "PK 1", 0, 0], ["3371", "2026-11-13", "07:00", "12:00", "PK 9001", 1, 0], ["3915", "2026-11-13", "07:00", "12:00", "PK 3", 0, 0], ["4680", "2026-11-13", "12:00", "13:00", "PK 2", 0, 1], ["3371", "2026-11-13", "12:00", "13:00", "PK 9001", 1, 1], ["4680", "2026-11-13", "13:00", "16:00", "PK 2", 0, 2], ["2633", "2026-11-13", "13:00", "16:00", "PK 1", 0, 2], ["3371", "2026-11-13", "13:00", "16:00", "PK 9001", 1, 2], ["4670", "2026-11-14", "07:00", "12:00", "PK 9001", 1, 0], ["7089", "2026-11-14", "07:00", "12:00", "PK 3", 0, 0], ["3915", "2026-11-14", "07:00", "11:00", "PK 2", 0, 0], ["7215", "2026-11-14", "07:00", "12:00", "PK 1", 0, 0], ["4670", "2026-11-14", "12:00", "13:00", "PK 9001", 1, 1], ["3915", "2026-11-14", "12:00", "13:00", "PK 2", 0, 1], ["4670", "2026-11-14", "13:00", "16:00", "PK 9001", 1, 2], ["3915", "2026-11-14", "13:00", "16:00", "PK 2", 0, 2], ["7215", "2026-11-14", "13:00", "16:00", "PK 1", 0, 2], ["7089", "2026-11-16", "07:00", "12:00", "PK 9001", 1, 0], ["3371", "2026-11-16", "07:00", "12:00", "PK 3", 0, 0], ["7722", "2026-11-16", "07:00", "12:00", "PK 1", 0, 0], ["3773", "2026-11-16", "07:00", "11:00", "PK 2", 0, 0], ["7089", "2026-11-16", "12:00", "13:00", "PK 9001", 1, 1], ["3773", "2026-11-16", "12:00", "13:00", "PK 2", 0, 1], ["7089", "2026-11-16", "13:00", "16:00", "PK 9001", 1, 2], ["7722", "2026-11-16", "13:00", "16:00", "PK 1", 0, 2], ["3773", "2026-11-16", "13:00", "16:00", "PK 2", 0, 2], ["4670", "2026-11-17", "07:00", "11:00", "PK 2", 0, 0], ["1893", "2026-11-17", "07:00", "12:00", "PK 1", 0, 0], ["3371", "2026-11-17", "07:00", "12:00", "PK 3", 0, 0], ["7721", "2026-11-17", "07:00", "12:00", "PK 9001", 1, 0], ["4670", "2026-11-17", "12:00", "13:00", "PK 2", 0, 1], ["7721", "2026-11-17", "12:00", "13:00", "PK 9001", 1, 1], ["4670", "2026-11-17", "13:00", "16:00", "PK 2", 0, 2], ["1893", "2026-11-17", "13:00", "16:00", "PK 1", 0, 2], ["3371", "2026-11-17", "13:00", "16:00", "PK 3", 0, 2], ["7721", "2026-11-17", "13:00", "16:00", "PK 9001", 1, 2], ["4670", "2026-11-18", "07:00", "12:00", "PK 3", 0, 0], ["7089", "2026-11-18", "07:00", "11:00", "PK 2", 0, 0], ["3773", "2026-11-18", "07:00", "12:00", "PK 9001", 1, 0], ["7721", "2026-11-18", "07:00", "12:00", "PK 1", 0, 0], ["7089", "2026-11-18", "12:00", "13:00", "PK 2", 0, 1], ["3773", "2026-11-18", "12:00", "13:00", "PK 9001", 1, 1], ["7089", "2026-11-18", "13:00", "16:00", "PK 2", 0, 2], ["3773", "2026-11-18", "13:00", "16:00", "PK 9001", 1, 2], ["7721", "2026-11-18", "13:00", "16:00", "PK 1", 0, 2], ["4680", "2026-11-19", "07:00", "12:00", "PK 3", 0, 0], ["2633", "2026-11-19", "07:00", "12:00", "PK 9001", 1, 0], ["1893", "2026-11-19", "07:00", "11:00", "PK 2", 0, 0], ["3915", "2026-11-19", "07:00", "12:00", "PK 1", 0, 0], ["1893", "2026-11-19", "12:00", "13:00", "PK 2", 0, 1], ["11467", "2026-11-19", "12:00", "13:00", "PK 9001", 1, 1], ["2633", "2026-11-19", "13:00", "16:00", "PK 9001", 1, 2], ["1893", "2026-11-19", "13:00", "16:00", "PK 2", 0, 2], ["3915", "2026-11-19", "13:00", "16:00", "PK 1", 0, 2], ["4680", "2026-11-20", "07:00", "11:00", "PK 2", 0, 0], ["2633", "2026-11-20", "07:00", "12:00", "PK 1", 0, 0], ["3915", "2026-11-20", "07:00", "12:00", "PK 3", 0, 0], ["7215", "2026-11-20", "07:00", "12:00", "PK 9001", 1, 0], ["4680", "2026-11-20", "12:00", "13:00", "PK 2", 0, 1], ["7215", "2026-11-20", "12:00", "13:00", "PK 9001", 1, 1], ["4680", "2026-11-20", "13:00", "16:00", "PK 2", 0, 2], ["2633", "2026-11-20", "13:00", "16:00", "PK 1", 0, 2], ["7215", "2026-11-20", "13:00", "16:00", "PK 9001", 1, 2], ["4680", "2026-11-21", "07:00", "12:00", "PK 9001", 1, 0], ["7089", "2026-11-21", "07:00", "12:00", "PK 3", 0, 0], ["3915", "2026-11-21", "07:00", "11:00", "PK 2", 0, 0], ["7215", "2026-11-21", "07:00", "12:00", "PK 1", 0, 0], ["4680", "2026-11-21", "12:00", "13:00", "PK 9001", 1, 1], ["3915", "2026-11-21", "12:00", "13:00", "PK 2", 0, 1], ["4680", "2026-11-21", "13:00", "16:00", "PK 9001", 1, 2], ["3915", "2026-11-21", "13:00", "16:00", "PK 2", 0, 2], ["7215", "2026-11-21", "13:00", "16:00", "PK 1", 0, 2], ["3371", "2026-11-23", "07:00", "12:00", "PK 3", 0, 0], ["7722", "2026-11-23", "07:00", "12:00", "PK 1", 0, 0], ["3915", "2026-11-23", "07:00", "12:00", "PK 9001", 1, 0], ["3773", "2026-11-23", "07:00", "11:00", "PK 2", 0, 0], ["3915", "2026-11-23", "12:00", "13:00", "PK 9001", 1, 1], ["3773", "2026-11-23", "12:00", "13:00", "PK 2", 0, 1], ["7722", "2026-11-23", "13:00", "16:00", "PK 1", 0, 2], ["3915", "2026-11-23", "13:00", "16:00", "PK 9001", 1, 2], ["3773", "2026-11-23", "13:00", "16:00", "PK 2", 0, 2], ["4670", "2026-11-25", "07:00", "12:00", "PK 3", 0, 0], ["7089", "2026-11-25", "07:00", "11:00", "PK 2", 0, 0], ["3773", "2026-11-25", "07:00", "12:00", "PK 9001", 1, 0], ["7721", "2026-11-25", "07:00", "12:00", "PK 1", 0, 0], ["7089", "2026-11-25", "12:00", "13:00", "PK 2", 0, 1], ["3773", "2026-11-25", "12:00", "13:00", "PK 9001", 1, 1], ["7089", "2026-11-25", "13:00", "16:00", "PK 2", 0, 2], ["3773", "2026-11-25", "13:00", "16:00", "PK 9001", 1, 2], ["7721", "2026-11-25", "13:00", "16:00", "PK 1", 0, 2], ["2633", "2026-11-26", "07:00", "12:00", "PK 3", 0, 0], ["1893", "2026-11-26", "07:00", "12:00", "PK 9001", 1, 0], ["3773", "2026-11-26", "07:00", "12:00", "PK 1", 0, 0], ["11467", "2026-11-26", "07:00", "11:00", "PK 2", 0, 0], ["4670", "2026-11-26", "12:00", "13:00", "PK 9001", 1, 1], ["11467", "2026-11-26", "12:00", "13:00", "PK 2", 0, 1], ["1893", "2026-11-26", "13:00", "16:00", "PK 9001", 1, 2], ["3773", "2026-11-26", "13:00", "16:00", "PK 1", 0, 2], ["11467", "2026-11-26", "13:00", "16:00", "PK 2", 0, 2], ["4680", "2026-11-27", "07:00", "11:00", "PK 2", 0, 0], ["2633", "2026-11-27", "07:00", "12:00", "PK 1", 0, 0], ["7089", "2026-11-27", "07:00", "12:00", "PK 9001", 1, 0], ["3915", "2026-11-27", "07:00", "12:00", "PK 3", 0, 0], ["4680", "2026-11-27", "12:00", "13:00", "PK 2", 0, 1], ["7089", "2026-11-27", "12:00", "13:00", "PK 9001", 1, 1], ["4680", "2026-11-27", "13:00", "16:00", "PK 2", 0, 2], ["2633", "2026-11-27", "13:00", "16:00", "PK 1", 0, 2], ["7089", "2026-11-27", "13:00", "16:00", "PK 9001", 1, 2], ["4670", "2026-11-28", "07:00", "12:00", "PK 9001", 1, 0], ["7089", "2026-11-28", "07:00", "12:00", "PK 3", 0, 0], ["3915", "2026-11-28", "07:00", "11:00", "PK 2", 0, 0], ["7215", "2026-11-28", "07:00", "12:00", "PK 1", 0, 0], ["4670", "2026-11-28", "12:00", "13:00", "PK 9001", 1, 1], ["3915", "2026-11-28", "12:00", "13:00", "PK 2", 0, 1], ["4670", "2026-11-28", "13:00", "16:00", "PK 9001", 1, 2], ["3915", "2026-11-28", "13:00", "16:00", "PK 2", 0, 2], ["7215", "2026-11-28", "13:00", "16:00", "PK 1", 0, 2], ["7089", "2026-11-30", "07:00", "12:00", "PK 9001", 1, 0], ["3371", "2026-11-30", "07:00", "12:00", "PK 3", 0, 0], ["7722", "2026-11-30", "07:00", "12:00", "PK 1", 0, 0], ["3773", "2026-11-30", "07:00", "11:00", "PK 2", 0, 0], ["7089", "2026-11-30", "12:00", "13:00", "PK 9001", 1, 1], ["3773", "2026-11-30", "12:00", "13:00", "PK 2", 0, 1], ["7089", "2026-11-30", "13:00", "16:00", "PK 9001", 1, 2], ["7722", "2026-11-30", "13:00", "16:00", "PK 1", 0, 2], ["3773", "2026-11-30", "13:00", "16:00", "PK 2", 0, 2], ["6117", "2026-11-12", "06:00", "12:00", "PK 3", 0, 0], ["4463", "2026-11-12", "06:30", "12:00", "PK 9001", 1, 0], ["2643", "2026-11-12", "07:00", "12:00", "PK 1", 0, 0], ["8963", "2026-11-12", "07:00", "12:00", "PK 4", 0, 0], ["3907", "2026-11-12", "07:00", "12:00", "PK 2", 0, 0], ["5899", "2026-11-12", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["3907", "2026-11-12", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-12", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-12", "13:00", "16:00", "PK 1", 0, 2], ["8963", "2026-11-12", "13:00", "16:00", "PK 4", 0, 2], ["4463", "2026-11-12", "13:00", "16:00", "PK 9001", 1, 2], ["5899", "2026-11-12", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-12", "13:00", "15:00", "PK 3", 0, 2], ["3907", "2026-11-12", "14:00", "16:00", "PK 2", 0, 2], ["6533", "2026-11-13", "06:00", "12:00", "PK 3", 0, 0], ["3907", "2026-11-13", "06:30", "12:00", "PK 9001", 1, 0], ["6007", "2026-11-13", "07:00", "12:00", "PK 1", 0, 0], ["8312", "2026-11-13", "07:00", "12:00", "PK 4", 0, 0], ["7911", "2026-11-13", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-13", "07:00", "12:00", "PK 2", 0, 0], ["6007", "2026-11-13", "12:00", "13:00", "PK 1", 0, 1], ["6116", "2026-11-13", "12:00", "13:00", "PK 9001", 1, 1], ["3907", "2026-11-13", "13:00", "16:00", "PK 9001", 1, 2], ["6533", "2026-11-13", "13:00", "15:00", "PK 3", 0, 2], ["8312", "2026-11-13", "13:00", "16:00", "PK 4", 0, 2], ["7911", "2026-11-13", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-13", "13:00", "16:00", "PK 2", 0, 2], ["6007", "2026-11-13", "14:00", "16:00", "PK 1", 0, 2], ["6003", "2026-11-14", "06:00", "12:00", "PK 3", 0, 0], ["0390", "2026-11-14", "06:30", "11:00", "PK 9001", 1, 0], ["3186", "2026-11-14", "07:00", "12:00", "PK 2", 0, 0], ["6533", "2026-11-14", "07:00", "12:00", "PK 1", 0, 0], ["5901", "2026-11-14", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["7630", "2026-11-14", "07:00", "12:00", "PK 4", 0, 0], ["7911", "2026-11-14", "11:00", "13:00", "PK 9001", 1, 0], ["3186", "2026-11-14", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-14", "13:00", "16:00", "PK 1", 0, 2], ["5901", "2026-11-14", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["0390", "2026-11-14", "13:00", "16:00", "PK 9001", 1, 2], ["6003", "2026-11-14", "13:00", "15:00", "PK 3", 0, 2], ["7630", "2026-11-14", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-14", "14:00", "16:00", "PK 2", 0, 2], ["6116", "2026-11-16", "06:00", "12:00", "PK 3", 0, 0], ["2643", "2026-11-16", "06:30", "12:00", "PK 9001", 1, 0], ["3186", "2026-11-16", "07:00", "12:00", "PK 1", 0, 0], ["4463", "2026-11-16", "07:00", "12:00", "PK 2", 0, 0], ["8312", "2026-11-16", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["5899", "2026-11-16", "07:00", "12:00", "PK 4", 0, 0], ["3186", "2026-11-16", "12:00", "13:00", "PK 1", 0, 1], ["6117", "2026-11-16", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-16", "13:00", "16:00", "PK 9001", 1, 2], ["4463", "2026-11-16", "13:00", "16:00", "PK 2", 0, 2], ["8312", "2026-11-16", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6116", "2026-11-16", "13:00", "15:00", "PK 3", 0, 2], ["5899", "2026-11-16", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-16", "14:00", "16:00", "PK 1", 0, 2], ["7911", "2026-11-17", "06:00", "12:00", "PK 3", 0, 0], ["6533", "2026-11-17", "06:30", "12:00", "PK 9001", 1, 0], ["4202", "2026-11-17", "07:00", "12:00", "PK 1", 0, 0], ["6116", "2026-11-17", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-17", "07:00", "12:00", "PK 2", 0, 0], ["7630", "2026-11-17", "07:00", "12:00", "PK 4", 0, 0], ["3186", "2026-11-17", "12:00", "13:00", "PK 9001", 1, 1], ["6117", "2026-11-17", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-17", "13:00", "16:00", "PK 9001", 1, 2], ["4202", "2026-11-17", "13:00", "16:00", "PK 1", 0, 2], ["6116", "2026-11-17", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["7911", "2026-11-17", "13:00", "15:00", "PK 3", 0, 2], ["7630", "2026-11-17", "13:00", "16:00", "PK 4", 0, 2], ["6117", "2026-11-17", "14:00", "16:00", "PK 2", 0, 2], ["7630", "2026-11-18", "06:00", "12:00", "PK 3", 0, 0], ["3186", "2026-11-18", "06:30", "12:00", "PK 9001", 1, 0], ["8963", "2026-11-18", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6116", "2026-11-18", "07:00", "12:00", "PK 4", 0, 0], ["0390", "2026-11-18", "07:00", "12:00", "PK 1", 0, 0], ["6003", "2026-11-18", "07:00", "12:00", "PK 2", 0, 0], ["2643", "2026-11-18", "12:00", "13:00", "PK 9001", 1, 1], ["0390", "2026-11-18", "12:00", "13:00", "PK 1", 0, 1], ["8963", "2026-11-18", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["3186", "2026-11-18", "13:00", "16:00", "PK 9001", 1, 2], ["6116", "2026-11-18", "13:00", "16:00", "PK 4", 0, 2], ["6003", "2026-11-18", "13:00", "16:00", "PK 2", 0, 2], ["7630", "2026-11-18", "13:00", "15:00", "PK 3", 0, 2], ["0390", "2026-11-18", "14:00", "16:00", "PK 1", 0, 2], ["6117", "2026-11-19", "06:00", "12:00", "PK 3", 0, 0], ["4463", "2026-11-19", "06:30", "12:00", "PK 9001", 1, 0], ["2643", "2026-11-19", "07:00", "12:00", "PK 1", 0, 0], ["8963", "2026-11-19", "07:00", "12:00", "PK 4", 0, 0], ["3907", "2026-11-19", "07:00", "12:00", "PK 2", 0, 0], ["5899", "2026-11-19", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["3907", "2026-11-19", "12:00", "13:00", "PK 2", 0, 1], ["6003", "2026-11-19", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-19", "13:00", "16:00", "PK 1", 0, 2], ["8963", "2026-11-19", "13:00", "16:00", "PK 4", 0, 2], ["4463", "2026-11-19", "13:00", "16:00", "PK 9001", 1, 2], ["5899", "2026-11-19", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-19", "13:00", "15:00", "PK 3", 0, 2], ["3907", "2026-11-19", "14:00", "16:00", "PK 2", 0, 2], ["6533", "2026-11-20", "06:00", "12:00", "PK 3", 0, 0], ["3907", "2026-11-20", "06:30", "12:00", "PK 9001", 1, 0], ["6007", "2026-11-20", "07:00", "12:00", "PK 1", 0, 0], ["8312", "2026-11-20", "07:00", "12:00", "PK 4", 0, 0], ["7911", "2026-11-20", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-20", "07:00", "12:00", "PK 2", 0, 0], ["6007", "2026-11-20", "12:00", "13:00", "PK 1", 0, 1], ["0390", "2026-11-20", "12:00", "13:00", "PK 9001", 1, 1], ["3907", "2026-11-20", "13:00", "16:00", "PK 9001", 1, 2], ["6533", "2026-11-20", "13:00", "15:00", "PK 3", 0, 2], ["8312", "2026-11-20", "13:00", "16:00", "PK 4", 0, 2], ["7911", "2026-11-20", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-20", "13:00", "16:00", "PK 2", 0, 2], ["6007", "2026-11-20", "14:00", "16:00", "PK 1", 0, 2], ["6003", "2026-11-21", "06:00", "12:00", "PK 3", 0, 0], ["0390", "2026-11-21", "06:30", "12:00", "PK 9001", 1, 0], ["6533", "2026-11-21", "07:00", "12:00", "PK 1", 0, 0], ["8312", "2026-11-21", "07:00", "12:00", "PK 2", 0, 0], ["5901", "2026-11-21", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["7630", "2026-11-21", "07:00", "12:00", "PK 4", 0, 0], ["2643", "2026-11-21", "12:00", "13:00", "PK 9001", 1, 1], ["8312", "2026-11-21", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-21", "13:00", "16:00", "PK 1", 0, 2], ["5901", "2026-11-21", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["0390", "2026-11-21", "13:00", "16:00", "PK 9001", 1, 2], ["6003", "2026-11-21", "13:00", "15:00", "PK 3", 0, 2], ["7630", "2026-11-21", "13:00", "16:00", "PK 4", 0, 2], ["8312", "2026-11-21", "14:00", "16:00", "PK 2", 0, 2], ["3907", "2026-11-23", "06:00", "12:00", "PK 3", 0, 0], ["2643", "2026-11-23", "06:30", "12:00", "PK 9001", 1, 0], ["3186", "2026-11-23", "07:00", "12:00", "PK 1", 0, 0], ["4463", "2026-11-23", "07:00", "12:00", "PK 2", 0, 0], ["8312", "2026-11-23", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-23", "07:00", "12:00", "PK 4", 0, 0], ["3186", "2026-11-23", "12:00", "13:00", "PK 1", 0, 1], ["6003", "2026-11-23", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-23", "13:00", "16:00", "PK 9001", 1, 2], ["3907", "2026-11-23", "13:00", "15:00", "PK 3", 0, 2], ["4463", "2026-11-23", "13:00", "16:00", "PK 2", 0, 2], ["8312", "2026-11-23", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-23", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-23", "14:00", "16:00", "PK 1", 0, 2], ["7630", "2026-11-25", "06:00", "12:00", "PK 3", 0, 0], ["3186", "2026-11-25", "06:30", "12:00", "PK 9001", 1, 0], ["8963", "2026-11-25", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["3907", "2026-11-25", "07:00", "12:00", "PK 4", 0, 0], ["0390", "2026-11-25", "07:00", "12:00", "PK 1", 0, 0], ["6003", "2026-11-25", "07:00", "12:00", "PK 2", 0, 0], ["5901", "2026-11-25", "12:00", "13:00", "PK 9001", 1, 1], ["0390", "2026-11-25", "12:00", "13:00", "PK 1", 0, 1], ["8963", "2026-11-25", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["3907", "2026-11-25", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-25", "13:00", "16:00", "PK 9001", 1, 2], ["6003", "2026-11-25", "13:00", "16:00", "PK 2", 0, 2], ["7630", "2026-11-25", "13:00", "15:00", "PK 3", 0, 2], ["0390", "2026-11-25", "14:00", "16:00", "PK 1", 0, 2], ["6117", "2026-11-26", "06:00", "12:00", "PK 3", 0, 0], ["4463", "2026-11-26", "06:30", "12:00", "PK 9001", 1, 0], ["2643", "2026-11-26", "07:00", "12:00", "PK 1", 0, 0], ["8963", "2026-11-26", "07:00", "12:00", "PK 4", 0, 0], ["3907", "2026-11-26", "07:00", "12:00", "PK 2", 0, 0], ["5899", "2026-11-26", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["3907", "2026-11-26", "12:00", "13:00", "PK 2", 0, 1], ["6533", "2026-11-26", "12:00", "13:00", "PK 9001", 1, 1], ["2643", "2026-11-26", "13:00", "16:00", "PK 1", 0, 2], ["8963", "2026-11-26", "13:00", "16:00", "PK 4", 0, 2], ["4463", "2026-11-26", "13:00", "16:00", "PK 9001", 1, 2], ["5899", "2026-11-26", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-26", "13:00", "15:00", "PK 3", 0, 2], ["3907", "2026-11-26", "14:00", "16:00", "PK 2", 0, 2], ["6533", "2026-11-27", "06:00", "12:00", "PK 3", 0, 0], ["3907", "2026-11-27", "06:30", "12:00", "PK 9001", 1, 0], ["6007", "2026-11-27", "07:00", "12:00", "PK 1", 0, 0], ["8312", "2026-11-27", "07:00", "12:00", "PK 4", 0, 0], ["7911", "2026-11-27", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["6117", "2026-11-27", "07:00", "12:00", "PK 2", 0, 0], ["6007", "2026-11-27", "12:00", "13:00", "PK 1", 0, 1], ["0390", "2026-11-27", "12:00", "13:00", "PK 9001", 1, 1], ["3907", "2026-11-27", "13:00", "16:00", "PK 9001", 1, 2], ["6533", "2026-11-27", "13:00", "15:00", "PK 3", 0, 2], ["8312", "2026-11-27", "13:00", "16:00", "PK 4", 0, 2], ["7911", "2026-11-27", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6117", "2026-11-27", "13:00", "16:00", "PK 2", 0, 2], ["6007", "2026-11-27", "14:00", "16:00", "PK 1", 0, 2], ["6003", "2026-11-28", "06:00", "12:00", "PK 3", 0, 0], ["0390", "2026-11-28", "06:30", "12:00", "PK 9001", 1, 0], ["3186", "2026-11-28", "07:00", "12:00", "PK 2", 0, 0], ["6533", "2026-11-28", "07:00", "12:00", "PK 1", 0, 0], ["5901", "2026-11-28", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["7630", "2026-11-28", "07:00", "12:00", "PK 4", 0, 0], ["3186", "2026-11-28", "12:00", "13:00", "PK 2", 0, 1], ["7911", "2026-11-28", "12:00", "13:00", "PK 9001", 1, 1], ["6533", "2026-11-28", "13:00", "16:00", "PK 1", 0, 2], ["5901", "2026-11-28", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["0390", "2026-11-28", "13:00", "16:00", "PK 9001", 1, 2], ["6003", "2026-11-28", "13:00", "15:00", "PK 3", 0, 2], ["7630", "2026-11-28", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-28", "14:00", "16:00", "PK 2", 0, 2], ["6116", "2026-11-30", "06:00", "12:00", "PK 3", 0, 0], ["2643", "2026-11-30", "06:30", "12:00", "PK 9001", 1, 0], ["3186", "2026-11-30", "07:00", "12:00", "PK 1", 0, 0], ["4463", "2026-11-30", "07:00", "12:00", "PK 2", 0, 0], ["8312", "2026-11-30", "07:00", "12:00", "PK Bàn chân ĐTĐ", 0, 0], ["5899", "2026-11-30", "07:00", "12:00", "PK 4", 0, 0], ["3907", "2026-11-30", "12:00", "13:00", "PK 9001", 1, 1], ["3186", "2026-11-30", "12:00", "13:00", "PK 1", 0, 1], ["2643", "2026-11-30", "13:00", "16:00", "PK 9001", 1, 2], ["4463", "2026-11-30", "13:00", "16:00", "PK 2", 0, 2], ["8312", "2026-11-30", "13:00", "16:00", "PK Bàn chân ĐTĐ", 0, 2], ["6116", "2026-11-30", "13:00", "15:00", "PK 3", 0, 2], ["5899", "2026-11-30", "13:00", "16:00", "PK 4", 0, 2], ["3186", "2026-11-30", "14:00", "16:00", "PK 1", 0, 2]]};
+const RAW = {"docs":[["2633","BS.CKII","Đinh Cẩm Tú",0],["1893","BS.CKII","Tạ Phương Dung",0],["3773","BS.CKII","Võ Thị Kim Thanh",0],["11467","ThS.BS","Trần Nguyễn Ngọc Trâm",0],["7215","ThS.BS","Nguyễn Thị Thu Thảo",0],["4680","BS.CKI","Mạch Thị Chúc Linh",0],["3371","BS.CKII","Ngô Đồng Dũng",0],["3915","BS.CKII","Nguyễn Hữu Nhật",0],["4670","BS.CKII","Nguyễn Thị Thanh Thùy",0],["7089","BS.CKII","Nguyễn Thị Huê",0],["7722","BS.CKI","Nguyễn Thị Hằng",0],["7721","ThS.BS","Trần Âu Quế Nhung",0],["6117","ThS.BS","Trần Đình Mạnh Long",0],["4463","TS.BS","Lâm Văn Hoàng",0],["2643","BS.CKI","Võ Trần Nguyên Duy",0],["8963","BS.CKI","Trần Tấn Phát",0],["3907","BS.CKI","Đỗ Tiến Vũ",0],["5899","ThS.BS","Nguyễn Thị Kim Tuyền",0],["6533","BS.CKII","Trương Thị Vành Khuyên",0],["6007","TS.BS","Trần Hữu Thanh Tùng",0],["8312","ThS.BS","Châu Thị Trang",0],["7911","ThS.BS","Võ Hoàng Gia Nghi",0],["6116","ThS.BS","Hà Thị Ngọc Bích",0],["6003","ThS.BS","Đỗ Trúc Anh",0],["0390","ThS.BS","Trần Nguyễn Quỳnh Trâm",0],["3186","BS.CKI","Phan Thị Thùy Dung",0],["5901","ThS.BS","Hoàng Thị Hồng Linh",0],["7630","ThS.BS.CKI","Võ Đình Bảo Văn",0],["4202","BS.CKII","Trần Thùy Ngân",0],["6829","ThS.BS","Nguyễn Thị Nhung",0],["3959","ThS.BS.CKII","Phan Thị Phương Thảo",0],["1329","BS.CKII","Hồ Thị Tuyết Mai",0],["4943","BS.CKI","Triệu Minh Trưng",0],["1347","BS.CKII","Võ Ngọc Cẩm",0],["1351","BS.CKII","Vũ Năng Phúc",0],["2623","TS.BS","Nguyễn Thị Mỹ Hạnh",0],["10899","ThS.BS","Võ Tấn Huy",0],["1566","ThS.BS.CKII","Huỳnh Thanh Kiều",0],["3903","BS.CKII","Phan Thanh Toàn",0],["9680","GS.TS.BS","Võ Thành Nhân",0],["9708","BS.CKII","Huỳnh Hoàng Khang",0],["6489","ThS.BS","Trần Thúc Khang",0],["8229","ThS.BS","Vũ Quốc Anh Thy",0],["5119","ThS.BS","Nguyễn Xuân Thắng",0],["1324","BS.CKI","Hoàng Thị Bình",0],["8482","BS.CKI","Nguyễn Thị Mụi",0],["4942","BS.CKI","Nguyễn Hoàng Thiên Tân",0],["6172","BS.CKI","Huỳnh Phúc Nguyên",0],["1352","BS.CKI","Nguyễn Phạm Thùy Linh",0],["3467","BS.CKI","Nguyễn Thị Mai Liên",0],["1295","PGS.TS.BS","Phạm Nguyễn Vinh",0],["5296","ThS.BS","Phạm Thu Hằng",0],["2148","BS","Nguyễn Xuân Vinh",0],["5295","ThS.BS","Trần Trung Kiên",0],["3663","ThS.BS","Nguyễn Hồng Vinh",0],["2913","ThS.BS","Đinh Vũ Phương Thảo",0],["3096","BS","Văn Thị Thu Hương",0],["10134","BS.CKI","Lê Quốc Thiên Quyền",0],["6911","ThS.BS","Nguyễn Thị Thanh Lan",0],["1350","BS.CKI","Phạm Thục Minh Thủy",0],["10818","BS.CKI","Ngô Thị Mộng Trúc",0],["1326","ThS.BS","Phạm Đỗ Anh Thư",0],["5965","ThS.BS.CKI","Phạm Công Danh",0],["7131","ThS.BS.CKII","Phạm Thị Ngọc Bích",0],["9963","BS.CKI","Bùi Châu Hiển Đăng",0],["3953","BS.CKI","Lê Quốc Thương",0],["1325","BS.CKII","Nguyễn Tô Hòa",0],["2639","BS.CKI","Nguyễn Lê Trang Vy",0],["8483","ThS.BS","Nguyễn Huỳnh Mai Anh",0],["5113","ThS.BS","Trần Thị Nga",0],["4288","BS.CKII","Phạm Thái Thiện",0],["5112","ThS.BS","Nguyễn Ngọc Mai",0],["7195","BS","NT.CKI Vũ Thị Thùy Trang",0],["8299","ThS.BS","Bùi Quốc Thiện",0],["1890","TS.BS","Trần Vũ Minh Thư",0],["4973","BS.CKI","Trần Thị Kim Trúc",0],["4440","BS.CKI","Nguyễn Thị Bích Trâm",0],["5964","ThS.BS","Nguyễn Thị Hồng Tươi",0],["9682","BS.CKII","Nguyễn Văn Dương",0],["10025","BS.CKII","Trần Văn Hòa",0],["1346","BS.CKII","Nguyễn Thị Ngọc",0],["10445","ThS.BS","Nguyễn Thị Đào",0],["9653","BS","NT.CKI Lê Minh Quân",0],["10373","ThS.BS","Lê Xuân Hoàng",0],["9962","ThS.BS.CKII","Hồ Anh Tuấn",0],["7927","BS.CKI","Bùi Trọng Đạt",0],["1332","ThS.BS","Phạm Hoàng Trọng Hiếu",0],["4821","BS.CKI","Huỳnh Linh Đoan",0],["5350","BS.CKII","Nguyễn Lê Ngọc Phương",0],["11365","BS.CKI","Nguyễn Hoàng Anh Duy",0],["5067","ThS.BS","Võ Thị Ánh Nhật",0],["6831","BS.CKII","Phạm Thị Mỹ Hạnh",0],["4679","BS.CKI","Lê Vũ Thùy An",0],["10281","BS.CKI","Nguyễn Thị Viên",0],["3513","ThS.BS","Lê Thị Thu Thủy",0],["5351","BS.CKI","Nguyễn Thị Hồng Khang",0],["0592","BS.CKII","Trần Thị Thanh Trúc",0],["5903","BS.CKII","Trịnh Thanh Mai",0],["4682","BS.CKI","Dương Thanh Hoàng",0],["10078","ThS.BS","Lê Trung Cường",0],["2641","BS.CKII","Nguyễn Hoàng Tuấn Vũ",0],["2461","BS.CKII","Mã Thanh Phong",0],["0460","TS.BS","Trần Minh Giang",0],["4193","ThS.BS","Nguyễn Thị Đào Tiên",0],["4819","BS.CKII","Nguyễn Thành Tín",0],["5636","BS.CKI","Nguyễn Lê Phương Hồng",0],["4820","BS.CKI","Phạm Huyền Thu",0],["11792","BS.CKII","Bùi Trọng Hợp",0],["N607","PGS.TS.BS","Trần Quang Bính",0],["3669","BS.CKI","Trần Đông Hải",0],["6629","BS.CKI","Nguyễn Hoàng Anh",0],["7132","BS.CKI","Lê Thị Hạnh",0],["6832","BS.CKI","Nguyễn Minh Thuận",0],["3450","TS.BS","Đặng Thị Mai Khuê",0],["8714","BS.CKI","Phạm Phong Luân",0],["5967","ThS.BS.CKI","Nguyễn Thị Phương Thy",0],["6475","ThS.BS","Nguyễn Thị Hà",0],["11886","BS.CKI","Bùi Văn Long",0],["4088","BS.CKII","Hồ Tấn Thông",0],["7924","BS.CKI","Đỗ Thị Hằng",0],["10265","BS.CKI","Lại Tấn Tài",0],["8477","BS.CKII","Võ Thị Kim Hoàng",0],["0542","chưa công bố tên","BS VIP trực",1],["7629","BS.CKI","Đoàn Minh Yên Hà",0],["8301","BS.CKII","Nguyễn Thị Tuyết Hương",0],["7474","BS.CKII","Võ Hoàng Minh Hiền",0],["8966","BS.CKI","Nguyễn Phúc Minh Trân",0],["8960","ThS.BS","NT.CKI. Lại Thị Phương Quỳnh",0],["7714","BS.CKI","Trần Phương Giang",0],["9731","BS.CKII","Nguyễn Ngọc Yến Tuyết",0],["0522","chưa công bố tên","BS VIP trực",1],["9971","BS.CKI","NT Dương Tỏa Ngọc Trâm",0],["0514","chưa công bố tên","BS VIP trực",1],["2718","ThS.BS.CKII","Lê Thị Lan Hương",0],["7503","BS","Lương Sỹ Bắc",0],["9003","ThS.BS","Nguyễn Ngọc Hoa Quỳnh",0],["1380","BS.CKII","Huỳnh Ngọc Long",0],["10146","BS.CKII","Nguyễn Thị Hồng Hoa",0],["6488","BS.CKII","Phạm Thị Lan Anh",0],["8496","ThS.BS","Đỗ Văn Khả",0],["3769","ThS.BS","Phan Thị Mỹ Hạnh",0],["9705","BS.CKI","Nguyễn Thành Vương Đức",0],["9674","ThS.BS.CKII","Nguyễn Lê My",0],["6005","BS","Nguyễn Phạm Hoàng Long",0],["10083","BS.CKI","Vũ Phương Thy",0],["6605","BS.CKII","Lai Tố Hương",0],["3515","ThS.BS.CKII","Lưu Thị Hải Anh",0],["3188","BS.CKI","Hoàng Mỹ Linh",0],["9536","BS.CKI","Hồ Thị Kim Anh",0],["6184","BS.CKI","Phạm Thị Thu Thảo",0],["4939","BS.CKI","Tiền Cẩm Mai Trâm",0],["6830","BS.CKII","Lê Thị Thúy",0],["3514","BS.CKII","Phạm Thị Thanh Tâm",0],["7632","ThS.BS","Phạm Hữu Thái",0],["4900","TS.BS","Hoàng Lan Phương",0],["5451","BS.CKI","Nguyễn Thị Loan",0],["7633","ThS.BS.CKII","Nguyễn Thị Mỹ Hạnh",0]],"rooms":["PK 3","PK 9001","PK 1","PK 2","PK 4","PK Bàn chân ĐTĐ","PK 2 – Suy Tim","PK 4 – Bệnh van tim","PK Nhi 9001","PK 6","PK 5","PK 7","PK Nhi","PK 9002","PK 8","PK 9003","PK 11","PK 9","PK 1 ngoài giờ","PK 9004","PK 10","PK Bàn chân ĐTĐ 3","PK 12","PK ngoài giờ 1","PK Chủ nhật 2","PK Chủ nhật 3","PK Chủ nhật 1"],"days":["2026-11-12","2026-11-13","2026-11-14","2026-11-15","2026-11-16","2026-11-17","2026-11-18","2026-11-19","2026-11-20","2026-11-21","2026-11-22","2026-11-23","2026-11-24","2026-11-25","2026-11-26","2026-11-27","2026-11-28","2026-11-29","2026-11-30"],"partial":["2026-11-24"],"sess":[[0,0,0,0,0,420,720,0,0],[1,0,0,0,0,420,720,1,1],[2,0,0,0,0,420,720,2,0],[3,0,0,0,0,420,660,3,0],[4,0,0,0,0,720,780,1,1],[3,0,0,0,0,720,780,3,0],[1,0,0,0,0,780,900,1,1],[2,0,0,0,0,780,960,2,0],[3,0,0,0,0,780,960,3,0],[4,0,0,0,0,900,960,1,1],[5,0,0,0,1,420,660,3,0],[0,0,0,0,1,420,720,2,0],[6,0,0,0,1,420,720,1,1],[7,0,0,0,1,420,720,0,0],[5,0,0,0,1,720,780,3,0],[6,0,0,0,1,720,780,1,1],[5,0,0,0,1,780,960,3,0],[0,0,0,0,1,780,960,2,0],[6,0,0,0,1,780,960,1,1],[8,0,0,0,2,420,720,1,1],[9,0,0,0,2,420,720,0,0],[7,0,0,0,2,420,660,3,0],[4,0,0,0,2,420,720,2,0],[8,0,0,0,2,720,780,1,1],[7,0,0,0,2,720,780,3,0],[8,0,0,0,2,780,960,1,1],[7,0,0,0,2,780,960,3,0],[4,0,0,0,2,780,960,2,0],[9,0,0,0,4,420,720,1,1],[6,0,0,0,4,420,720,0,0],[10,0,0,0,4,420,720,2,0],[2,0,0,0,4,420,660,3,0],[9,0,0,0,4,720,780,1,1],[2,0,0,0,4,720,780,3,0],[9,0,0,0,4,780,960,1,1],[10,0,0,0,4,780,960,2,0],[2,0,0,0,4,780,960,3,0],[8,0,0,0,5,420,660,3,0],[1,0,0,0,5,420,720,2,0],[6,0,0,0,5,420,720,0,0],[11,0,0,0,5,420,720,1,1],[8,0,0,0,5,720,780,3,0],[11,0,0,0,5,720,780,1,1],[8,0,0,0,5,780,960,3,0],[1,0,0,0,5,780,960,2,0],[6,0,0,0,5,780,960,0,0],[11,0,0,0,5,780,960,1,1],[8,0,0,0,6,420,720,0,0],[9,0,0,0,6,420,660,3,0],[2,0,0,0,6,420,720,1,1],[11,0,0,0,6,420,720,2,0],[9,0,0,0,6,720,780,3,0],[2,0,0,0,6,720,780,1,1],[9,0,0,0,6,780,960,3,0],[2,0,0,0,6,780,960,1,1],[11,0,0,0,6,780,960,2,0],[5,0,0,0,7,420,720,0,0],[0,0,0,0,7,420,720,1,1],[1,0,0,0,7,420,660,3,0],[7,0,0,0,7,420,720,2,0],[1,0,0,0,7,720,780,3,0],[3,0,0,0,7,720,780,1,1],[0,0,0,0,7,780,960,1,1],[1,0,0,0,7,780,960,3,0],[7,0,0,0,7,780,960,2,0],[5,0,0,0,8,420,660,3,0],[0,0,0,0,8,420,720,2,0],[7,0,0,0,8,420,720,0,0],[4,0,0,0,8,420,720,1,1],[5,0,0,0,8,720,780,3,0],[4,0,0,0,8,720,780,1,1],[5,0,0,0,8,780,960,3,0],[0,0,0,0,8,780,960,2,0],[4,0,0,0,8,780,960,1,1],[5,0,0,0,9,420,720,1,1],[9,0,0,0,9,420,720,0,0],[7,0,0,0,9,420,660,3,0],[4,0,0,0,9,420,720,2,0],[5,0,0,0,9,720,780,1,1],[7,0,0,0,9,720,780,3,0],[5,0,0,0,9,780,960,1,1],[7,0,0,0,9,780,960,3,0],[4,0,0,0,9,780,960,2,0],[6,0,0,0,11,420,720,0,0],[10,0,0,0,11,420,720,2,0],[7,0,0,0,11,420,720,1,1],[2,0,0,0,11,420,660,3,0],[7,0,0,0,11,720,780,1,1],[2,0,0,0,11,720,780,3,0],[10,0,0,0,11,780,960,2,0],[7,0,0,0,11,780,960,1,1],[2,0,0,0,11,780,960,3,0],[8,0,0,0,13,420,720,0,0],[9,0,0,0,13,420,660,3,0],[2,0,0,0,13,420,720,1,1],[11,0,0,0,13,420,720,2,0],[9,0,0,0,13,720,780,3,0],[2,0,0,0,13,720,780,1,1],[9,0,0,0,13,780,960,3,0],[2,0,0,0,13,780,960,1,1],[11,0,0,0,13,780,960,2,0],[0,0,0,0,14,420,720,0,0],[1,0,0,0,14,420,720,1,1],[2,0,0,0,14,420,720,2,0],[3,0,0,0,14,420,660,3,0],[8,0,0,0,14,720,780,1,1],[3,0,0,0,14,720,780,3,0],[1,0,0,0,14,780,960,1,1],[2,0,0,0,14,780,960,2,0],[3,0,0,0,14,780,960,3,0],[5,0,0,0,15,420,660,3,0],[0,0,0,0,15,420,720,2,0],[9,0,0,0,15,420,720,1,1],[7,0,0,0,15,420,720,0,0],[5,0,0,0,15,720,780,3,0],[9,0,0,0,15,720,780,1,1],[5,0,0,0,15,780,960,3,0],[0,0,0,0,15,780,960,2,0],[9,0,0,0,15,780,960,1,1],[8,0,0,0,16,420,720,1,1],[9,0,0,0,16,420,720,0,0],[7,0,0,0,16,420,660,3,0],[4,0,0,0,16,420,720,2,0],[8,0,0,0,16,720,780,1,1],[7,0,0,0,16,720,780,3,0],[8,0,0,0,16,780,960,1,1],[7,0,0,0,16,780,960,3,0],[4,0,0,0,16,780,960,2,0],[9,0,0,0,18,420,720,1,1],[6,0,0,0,18,420,720,0,0],[10,0,0,0,18,420,720,2,0],[2,0,0,0,18,420,660,3,0],[9,0,0,0,18,720,780,1,1],[2,0,0,0,18,720,780,3,0],[9,0,0,0,18,780,960,1,1],[10,0,0,0,18,780,960,2,0],[2,0,0,0,18,780,960,3,0],[12,0,1,0,0,360,720,0,0],[13,0,1,0,0,390,720,1,1],[14,0,1,0,0,420,720,2,0],[15,0,1,0,0,420,720,4,0],[16,0,1,0,0,420,720,3,0],[17,0,1,0,0,420,720,5,0],[16,0,1,0,0,720,780,3,0],[18,0,1,0,0,720,780,1,1],[14,0,1,0,0,780,960,2,0],[15,0,1,0,0,780,960,4,0],[13,0,1,0,0,780,960,1,1],[17,0,1,0,0,780,960,5,0],[12,0,1,0,0,780,900,0,0],[16,0,1,0,0,840,960,3,0],[18,0,1,0,1,360,720,0,0],[16,0,1,0,1,390,720,1,1],[19,0,1,0,1,420,720,2,0],[20,0,1,0,1,420,720,4,0],[21,0,1,0,1,420,720,5,0],[12,0,1,0,1,420,720,3,0],[19,0,1,0,1,720,780,2,0],[22,0,1,0,1,720,780,1,1],[16,0,1,0,1,780,960,1,1],[18,0,1,0,1,780,900,0,0],[20,0,1,0,1,780,960,4,0],[21,0,1,0,1,780,960,5,0],[12,0,1,0,1,780,960,3,0],[19,0,1,0,1,840,960,2,0],[23,0,1,0,2,360,720,0,0],[24,0,1,0,2,390,660,1,1],[25,0,1,0,2,420,720,3,0],[18,0,1,0,2,420,720,2,0],[26,0,1,0,2,420,720,5,0],[27,0,1,0,2,420,720,4,0],[21,0,1,0,2,660,780,1,1],[25,0,1,0,2,720,780,3,0],[18,0,1,0,2,780,960,2,0],[26,0,1,0,2,780,960,5,0],[24,0,1,0,2,780,960,1,1],[23,0,1,0,2,780,900,0,0],[27,0,1,0,2,780,960,4,0],[25,0,1,0,2,840,960,3,0],[22,0,1,0,4,360,720,0,0],[14,0,1,0,4,390,720,1,1],[25,0,1,0,4,420,720,2,0],[13,0,1,0,4,420,720,3,0],[20,0,1,0,4,420,720,5,0],[17,0,1,0,4,420,720,4,0],[25,0,1,0,4,720,780,2,0],[12,0,1,0,4,720,780,1,1],[14,0,1,0,4,780,960,1,1],[13,0,1,0,4,780,960,3,0],[20,0,1,0,4,780,960,5,0],[22,0,1,0,4,780,900,0,0],[17,0,1,0,4,780,960,4,0],[25,0,1,0,4,840,960,2,0],[21,0,1,0,5,360,720,0,0],[18,0,1,0,5,390,720,1,1],[28,0,1,0,5,420,720,2,0],[22,0,1,0,5,420,720,5,0],[12,0,1,0,5,420,720,3,0],[27,0,1,0,5,420,720,4,0],[25,0,1,0,5,720,780,1,1],[12,0,1,0,5,720,780,3,0],[18,0,1,0,5,780,960,1,1],[28,0,1,0,5,780,960,2,0],[22,0,1,0,5,780,960,5,0],[21,0,1,0,5,780,900,0,0],[27,0,1,0,5,780,960,4,0],[12,0,1,0,5,840,960,3,0],[27,0,1,0,6,360,720,0,0],[25,0,1,0,6,390,720,1,1],[15,0,1,0,6,420,720,5,0],[22,0,1,0,6,420,720,4,0],[24,0,1,0,6,420,720,2,0],[23,0,1,0,6,420,720,3,0],[14,0,1,0,6,720,780,1,1],[24,0,1,0,6,720,780,2,0],[15,0,1,0,6,780,960,5,0],[25,0,1,0,6,780,960,1,1],[22,0,1,0,6,780,960,4,0],[23,0,1,0,6,780,960,3,0],[27,0,1,0,6,780,900,0,0],[24,0,1,0,6,840,960,2,0],[12,0,1,0,7,360,720,0,0],[13,0,1,0,7,390,720,1,1],[14,0,1,0,7,420,720,2,0],[15,0,1,0,7,420,720,4,0],[16,0,1,0,7,420,720,3,0],[17,0,1,0,7,420,720,5,0],[16,0,1,0,7,720,780,3,0],[23,0,1,0,7,720,780,1,1],[14,0,1,0,7,780,960,2,0],[15,0,1,0,7,780,960,4,0],[13,0,1,0,7,780,960,1,1],[17,0,1,0,7,780,960,5,0],[12,0,1,0,7,780,900,0,0],[16,0,1,0,7,840,960,3,0],[18,0,1,0,8,360,720,0,0],[16,0,1,0,8,390,720,1,1],[19,0,1,0,8,420,720,2,0],[20,0,1,0,8,420,720,4,0],[21,0,1,0,8,420,720,5,0],[12,0,1,0,8,420,720,3,0],[19,0,1,0,8,720,780,2,0],[24,0,1,0,8,720,780,1,1],[16,0,1,0,8,780,960,1,1],[18,0,1,0,8,780,900,0,0],[20,0,1,0,8,780,960,4,0],[21,0,1,0,8,780,960,5,0],[12,0,1,0,8,780,960,3,0],[19,0,1,0,8,840,960,2,0],[23,0,1,0,9,360,720,0,0],[24,0,1,0,9,390,720,1,1],[18,0,1,0,9,420,720,2,0],[20,0,1,0,9,420,720,3,0],[26,0,1,0,9,420,720,5,0],[27,0,1,0,9,420,720,4,0],[14,0,1,0,9,720,780,1,1],[20,0,1,0,9,720,780,3,0],[18,0,1,0,9,780,960,2,0],[26,0,1,0,9,780,960,5,0],[24,0,1,0,9,780,960,1,1],[23,0,1,0,9,780,900,0,0],[27,0,1,0,9,780,960,4,0],[20,0,1,0,9,840,960,3,0],[16,0,1,0,11,360,720,0,0],[14,0,1,0,11,390,720,1,1],[25,0,1,0,11,420,720,2,0],[13,0,1,0,11,420,720,3,0],[20,0,1,0,11,420,720,5,0],[12,0,1,0,11,420,720,4,0],[25,0,1,0,11,720,780,2,0],[23,0,1,0,11,720,780,1,1],[14,0,1,0,11,780,960,1,1],[16,0,1,0,11,780,900,0,0],[13,0,1,0,11,780,960,3,0],[20,0,1,0,11,780,960,5,0],[12,0,1,0,11,780,960,4,0],[25,0,1,0,11,840,960,2,0],[27,0,1,0,13,360,720,0,0],[25,0,1,0,13,390,720,1,1],[15,0,1,0,13,420,720,5,0],[16,0,1,0,13,420,720,4,0],[24,0,1,0,13,420,720,2,0],[23,0,1,0,13,420,720,3,0],[26,0,1,0,13,720,780,1,1],[24,0,1,0,13,720,780,2,0],[15,0,1,0,13,780,960,5,0],[16,0,1,0,13,780,960,4,0],[25,0,1,0,13,780,960,1,1],[23,0,1,0,13,780,960,3,0],[27,0,1,0,13,780,900,0,0],[24,0,1,0,13,840,960,2,0],[12,0,1,0,14,360,720,0,0],[13,0,1,0,14,390,720,1,1],[14,0,1,0,14,420,720,2,0],[15,0,1,0,14,420,720,4,0],[16,0,1,0,14,420,720,3,0],[17,0,1,0,14,420,720,5,0],[16,0,1,0,14,720,780,3,0],[18,0,1,0,14,720,780,1,1],[14,0,1,0,14,780,960,2,0],[15,0,1,0,14,780,960,4,0],[13,0,1,0,14,780,960,1,1],[17,0,1,0,14,780,960,5,0],[12,0,1,0,14,780,900,0,0],[16,0,1,0,14,840,960,3,0],[18,0,1,0,15,360,720,0,0],[16,0,1,0,15,390,720,1,1],[19,0,1,0,15,420,720,2,0],[20,0,1,0,15,420,720,4,0],[21,0,1,0,15,420,720,5,0],[12,0,1,0,15,420,720,3,0],[19,0,1,0,15,720,780,2,0],[24,0,1,0,15,720,780,1,1],[16,0,1,0,15,780,960,1,1],[18,0,1,0,15,780,900,0,0],[20,0,1,0,15,780,960,4,0],[21,0,1,0,15,780,960,5,0],[12,0,1,0,15,780,960,3,0],[19,0,1,0,15,840,960,2,0],[23,0,1,0,16,360,720,0,0],[24,0,1,0,16,390,720,1,1],[25,0,1,0,16,420,720,3,0],[18,0,1,0,16,420,720,2,0],[26,0,1,0,16,420,720,5,0],[27,0,1,0,16,420,720,4,0],[25,0,1,0,16,720,780,3,0],[21,0,1,0,16,720,780,1,1],[18,0,1,0,16,780,960,2,0],[26,0,1,0,16,780,960,5,0],[24,0,1,0,16,780,960,1,1],[23,0,1,0,16,780,900,0,0],[27,0,1,0,16,780,960,4,0],[25,0,1,0,16,840,960,3,0],[22,0,1,0,18,360,720,0,0],[14,0,1,0,18,390,720,1,1],[25,0,1,0,18,420,720,2,0],[13,0,1,0,18,420,720,3,0],[20,0,1,0,18,420,720,5,0],[17,0,1,0,18,420,720,4,0],[16,0,1,0,18,720,780,1,1],[25,0,1,0,18,720,780,2,0],[14,0,1,0,18,780,960,1,1],[13,0,1,0,18,780,960,3,0],[20,0,1,0,18,780,960,5,0],[22,0,1,0,18,780,900,0,0],[17,0,1,0,18,780,960,4,0],[25,0,1,0,18,840,960,2,0],[29,0,2,1,0,360,660,6,0],[30,0,2,1,0,360,660,2,0],[31,0,2,1,0,390,720,1,1],[32,0,2,1,0,420,720,7,0],[33,0,2,1,0,420,720,0,0],[34,0,2,1,0,420,720,8,1],[35,0,2,1,0,420,720,9,0],[36,0,2,1,0,420,720,10,0],[37,0,2,1,0,420,720,11,0],[38,0,2,2,0,420,720,1,1],[39,0,2,2,0,420,720,2,0],[40,0,2,3,0,420,720,3,0],[41,0,2,3,0,420,720,2,0],[31,0,2,1,0,720,780,1,1],[29,0,2,1,0,720,780,6,0],[30,0,2,1,0,720,780,2,0],[32,0,2,1,0,780,960,7,0],[33,0,2,1,0,780,960,0,0],[34,0,2,1,0,780,960,8,1],[31,0,2,1,0,780,960,1,1],[35,0,2,1,0,780,960,9,0],[29,0,2,1,0,780,900,6,0],[42,0,2,1,0,780,960,12,0],[30,0,2,1,0,780,900,2,0],[37,0,2,1,0,780,960,11,0],[38,0,2,2,0,780,960,1,1],[39,0,2,2,0,780,900,2,0],[40,0,2,3,0,780,960,3,0],[41,0,2,3,0,780,960,2,0],[43,0,2,2,0,900,960,2,0],[44,0,2,1,1,360,660,6,0],[45,0,2,1,1,360,660,2,0],[46,0,2,1,1,390,720,13,1],[47,0,2,1,1,420,720,11,0],[48,0,2,1,1,420,720,8,1],[49,0,2,1,1,420,720,10,0],[31,0,2,1,1,420,720,7,0],[50,0,2,1,1,420,720,1,1],[29,0,2,1,1,420,720,9,0],[51,0,2,1,1,420,720,0,0],[52,0,2,2,1,420,720,1,1],[53,0,2,2,1,420,720,2,0],[54,0,2,3,1,420,720,2,0],[44,0,2,1,1,720,780,6,0],[45,0,2,1,1,720,780,2,0],[55,0,2,1,1,720,780,13,1],[56,0,2,1,1,780,960,12,0],[44,0,2,1,1,780,900,6,0],[47,0,2,1,1,780,960,11,0],[46,0,2,1,1,780,960,13,1],[48,0,2,1,1,780,960,8,1],[45,0,2,1,1,780,900,2,0],[31,0,2,1,1,780,960,7,0],[29,0,2,1,1,780,960,9,0],[51,0,2,1,1,780,960,0,0],[52,0,2,2,1,780,960,1,1],[53,0,2,2,1,780,960,2,0],[54,0,2,3,1,780,960,2,0],[57,0,2,1,2,360,660,6,0],[58,0,2,1,2,360,660,2,0],[34,0,2,1,2,390,720,1,1],[56,0,2,1,2,420,720,8,1],[48,0,2,1,2,420,720,0,0],[59,0,2,1,2,420,720,10,0],[60,0,2,1,2,420,720,11,0],[61,0,2,1,2,420,720,7,0],[62,0,2,1,2,420,720,9,0],[52,0,2,2,2,420,720,2,0],[63,0,2,2,2,420,720,1,1],[64,0,2,3,2,420,720,13,1],[41,0,2,3,2,420,720,2,0],[57,0,2,1,2,720,780,6,0],[29,0,2,1,2,720,780,1,1],[58,0,2,1,2,720,780,2,0],[56,0,2,1,2,780,960,8,1],[48,0,2,1,2,780,960,0,0],[59,0,2,1,2,780,960,12,0],[34,0,2,1,2,780,960,1,1],[57,0,2,1,2,780,900,6,0],[60,0,2,1,2,780,960,11,0],[61,0,2,1,2,780,960,7,0],[62,0,2,1,2,780,960,9,0],[58,0,2,1,2,780,900,2,0],[52,0,2,2,2,780,960,2,0],[63,0,2,2,2,780,960,1,1],[41,0,2,3,2,780,960,2,0],[65,0,2,1,4,360,660,6,0],[66,0,2,1,4,360,660,2,0],[61,0,2,1,4,390,720,1,1],[46,0,2,1,4,420,720,11,0],[67,0,2,1,4,420,720,7,0],[59,0,2,1,4,420,720,0,0],[68,0,2,1,4,420,720,9,0],[69,0,2,1,4,420,720,10,0],[42,0,2,1,4,420,720,8,1],[70,0,2,2,4,420,720,1,1],[63,0,2,2,4,420,720,2,0],[41,0,2,3,4,420,720,2,0],[65,0,2,1,4,720,780,6,0],[66,0,2,1,4,720,780,2,0],[71,0,2,1,4,720,780,1,1],[65,0,2,1,4,780,900,6,0],[46,0,2,1,4,780,960,11,0],[67,0,2,1,4,780,960,7,0],[59,0,2,1,4,780,960,0,0],[66,0,2,1,4,780,900,2,0],[72,0,2,1,4,780,960,12,0],[68,0,2,1,4,780,960,9,0],[61,0,2,1,4,780,960,1,1],[42,0,2,1,4,780,960,8,1],[70,0,2,2,4,780,960,1,1],[63,0,2,2,4,780,960,2,0],[41,0,2,3,4,780,960,2,0],[73,0,2,1,5,360,660,2,0],[55,0,2,1,5,360,660,6,0],[74,0,2,1,5,390,720,1,1],[59,0,2,1,5,420,720,8,1],[75,0,2,1,5,420,720,7,0],[76,0,2,1,5,420,720,9,0],[50,0,2,1,5,420,720,0,0],[71,0,2,1,5,420,720,11,0],[77,0,2,1,5,420,720,10,0],[78,0,2,2,5,420,720,2,0],[39,0,2,2,5,420,720,1,1],[40,0,2,3,5,420,720,13,1],[79,0,2,3,5,420,720,3,0],[54,0,2,3,5,420,720,2,0],[67,0,2,1,5,720,780,1,1],[73,0,2,1,5,720,780,2,0],[55,0,2,1,5,720,780,6,0],[59,0,2,1,5,780,960,8,1],[75,0,2,1,5,780,960,7,0],[76,0,2,1,5,780,960,9,0],[74,0,2,1,5,780,960,1,1],[73,0,2,1,5,780,900,2,0],[71,0,2,1,5,780,960,11,0],[77,0,2,1,5,780,960,0,0],[42,0,2,1,5,780,960,12,0],[55,0,2,1,5,780,900,6,0],[78,0,2,2,5,780,960,2,0],[39,0,2,2,5,780,960,1,1],[40,0,2,3,5,780,960,13,1],[79,0,2,3,5,780,960,3,0],[54,0,2,3,5,780,960,2,0],[80,0,2,1,6,360,660,6,0],[31,0,2,1,6,360,660,2,0],[66,0,2,1,6,390,720,1,1],[48,0,2,1,6,420,720,8,1],[76,0,2,1,6,420,720,11,0],[34,0,2,1,6,420,720,10,0],[61,0,2,1,6,420,720,7,0],[55,0,2,1,6,420,720,0,0],[81,0,2,1,6,420,720,9,0],[82,0,2,2,6,420,720,1,1],[53,0,2,2,6,420,720,2,0],[64,0,2,3,6,420,720,2,0],[32,0,2,1,6,720,780,1,1],[80,0,2,1,6,720,780,6,0],[31,0,2,1,6,720,780,2,0],[48,0,2,1,6,780,960,8,1],[76,0,2,1,6,780,960,11,0],[80,0,2,1,6,780,900,6,0],[66,0,2,1,6,780,960,1,1],[34,0,2,1,6,780,960,12,0],[31,0,2,1,6,780,900,2,0],[61,0,2,1,6,780,960,7,0],[55,0,2,1,6,780,960,0,0],[81,0,2,1,6,780,960,9,0],[82,0,2,2,6,780,960,1,1],[53,0,2,2,6,780,960,2,0],[64,0,2,3,6,780,960,2,0],[32,0,2,1,7,360,660,6,0],[30,0,2,1,7,360,660,2,0],[31,0,2,1,7,390,720,1,1],[48,0,2,1,7,420,720,10,0],[33,0,2,1,7,420,720,0,0],[35,0,2,1,7,420,720,9,0],[29,0,2,1,7,420,720,7,0],[42,0,2,1,7,420,720,8,1],[37,0,2,1,7,420,720,11,0],[38,0,2,2,7,420,720,1,1],[39,0,2,2,7,420,720,2,0],[64,0,2,3,7,420,720,2,0],[40,0,2,3,7,420,720,3,0],[32,0,2,1,7,720,780,6,0],[31,0,2,1,7,720,780,1,1],[30,0,2,1,7,720,780,2,0],[48,0,2,1,7,780,840,12,0],[32,0,2,1,7,780,900,6,0],[33,0,2,1,7,780,960,0,0],[31,0,2,1,7,780,960,1,1],[35,0,2,1,7,780,840,9,0],[29,0,2,1,7,780,960,7,0],[42,0,2,1,7,780,960,8,1],[30,0,2,1,7,780,900,2,0],[37,0,2,1,7,780,960,11,0],[38,0,2,2,7,780,960,1,1],[39,0,2,2,7,780,900,2,0],[64,0,2,3,7,780,960,2,0],[40,0,2,3,7,780,960,3,0],[56,0,2,1,7,840,900,12,0],[46,0,2,1,7,840,900,9,0],[48,0,2,1,7,900,960,12,0],[35,0,2,1,7,900,960,9,0],[43,0,2,2,7,900,960,2,0],[44,0,2,1,8,360,660,6,0],[51,0,2,1,8,360,660,2,0],[46,0,2,1,8,390,720,13,1],[47,0,2,1,8,420,720,11,0],[49,0,2,1,8,420,720,10,0],[45,0,2,1,8,420,720,0,0],[34,0,2,1,8,420,720,8,1],[31,0,2,1,8,420,720,7,0],[50,0,2,1,8,420,720,1,1],[29,0,2,1,8,420,720,9,0],[83,0,2,2,8,420,720,1,1],[53,0,2,2,8,420,720,2,0],[54,0,2,3,8,420,720,2,0],[44,0,2,1,8,720,780,6,0],[51,0,2,1,8,720,780,2,0],[36,0,2,1,8,720,780,13,1],[56,0,2,1,8,780,960,12,0],[44,0,2,1,8,780,900,6,0],[47,0,2,1,8,780,960,11,0],[46,0,2,1,8,780,960,13,1],[45,0,2,1,8,780,960,0,0],[34,0,2,1,8,780,960,8,1],[31,0,2,1,8,780,960,7,0],[29,0,2,1,8,780,960,9,0],[51,0,2,1,8,780,900,2,0],[83,0,2,2,8,780,960,1,1],[53,0,2,2,8,780,960,2,0],[54,0,2,3,8,780,960,2,0],[57,0,2,1,9,360,660,2,0],[62,0,2,1,9,360,660,6,0],[34,0,2,1,9,390,720,1,1],[48,0,2,1,9,420,720,9,0],[59,0,2,1,9,420,720,10,0],[60,0,2,1,9,420,720,11,0],[61,0,2,1,9,420,720,7,0],[58,0,2,1,9,420,720,0,0],[70,0,2,2,9,420,720,2,0],[84,0,2,2,9,420,720,1,1],[85,0,2,3,9,420,720,13,1],[41,0,2,3,9,420,720,2,0],[49,0,2,1,9,720,780,1,1],[57,0,2,1,9,720,780,2,0],[62,0,2,1,9,720,780,6,0],[48,0,2,1,9,780,960,9,0],[59,0,2,1,9,780,960,12,0],[34,0,2,1,9,780,960,1,1],[57,0,2,1,9,780,900,2,0],[60,0,2,1,9,780,960,11,0],[61,0,2,1,9,780,960,7,0],[62,0,2,1,9,780,900,6,0],[58,0,2,1,9,780,960,0,0],[70,0,2,2,9,780,960,2,0],[84,0,2,2,9,780,960,1,1],[41,0,2,3,9,780,960,2,0],[67,0,2,1,11,360,660,6,0],[68,0,2,1,11,360,660,2,0],[61,0,2,1,11,390,720,1,1],[46,0,2,1,11,420,720,11,0],[59,0,2,1,11,420,720,0,0],[66,0,2,1,11,420,720,7,0],[34,0,2,1,11,420,720,8,1],[69,0,2,1,11,420,720,9,0],[62,0,2,1,11,420,720,10,0],[70,0,2,2,11,420,720,1,1],[84,0,2,2,11,420,720,2,0],[41,0,2,3,11,420,720,2,0],[67,0,2,1,11,720,780,6,0],[73,0,2,1,11,720,780,1,1],[68,0,2,1,11,720,780,2,0],[46,0,2,1,11,780,960,11,0],[67,0,2,1,11,780,900,6,0],[59,0,2,1,11,780,960,0,0],[66,0,2,1,11,780,960,7,0],[34,0,2,1,11,780,960,8,1],[72,0,2,1,11,780,960,12,0],[68,0,2,1,11,780,900,2,0],[61,0,2,1,11,780,960,1,1],[69,0,2,1,11,780,960,9,0],[70,0,2,2,11,780,960,1,1],[84,0,2,2,11,780,960,2,0],[41,0,2,3,11,780,960,2,0],[49,0,2,1,12,420,720,6,0],[76,0,2,1,12,420,660,2,0],[76,0,2,1,12,720,780,2,0],[49,0,2,1,12,780,960,6,0],[76,0,2,1,12,780,960,2,0],[80,0,2,1,13,360,660,6,0],[31,0,2,1,13,360,660,2,0],[66,0,2,1,13,390,720,1,1],[76,0,2,1,13,420,720,0,0],[34,0,2,1,13,420,720,10,0],[61,0,2,1,13,420,720,7,0],[42,0,2,1,13,420,720,8,1],[55,0,2,1,13,420,720,11,0],[81,0,2,1,13,420,720,9,0],[82,0,2,2,13,420,720,1,1],[86,0,2,2,13,420,720,2,0],[64,0,2,3,13,420,720,2,0],[80,0,2,1,13,720,780,6,0],[31,0,2,1,13,720,780,2,0],[51,0,2,1,13,720,780,1,1],[76,0,2,1,13,780,960,0,0],[80,0,2,1,13,780,900,6,0],[66,0,2,1,13,780,960,1,1],[34,0,2,1,13,780,960,12,0],[31,0,2,1,13,780,900,2,0],[61,0,2,1,13,780,960,7,0],[42,0,2,1,13,780,960,8,1],[55,0,2,1,13,780,960,11,0],[81,0,2,1,13,780,960,9,0],[82,0,2,2,13,780,960,1,1],[86,0,2,2,13,780,960,2,0],[64,0,2,3,13,780,960,2,0],[29,0,2,1,14,360,660,6,0],[30,0,2,1,14,360,660,2,0],[31,0,2,1,14,390,720,1,1],[48,0,2,1,14,420,720,10,0],[32,0,2,1,14,420,720,7,0],[33,0,2,1,14,420,720,0,0],[34,0,2,1,14,420,720,8,1],[71,0,2,1,14,420,720,9,0],[37,0,2,1,14,420,720,11,0],[38,0,2,2,14,420,720,1,1],[43,0,2,2,14,420,720,2,0],[64,0,2,3,14,420,720,2,0],[40,0,2,3,14,420,720,3,0],[31,0,2,1,14,720,780,1,1],[29,0,2,1,14,720,780,6,0],[30,0,2,1,14,720,780,2,0],[48,0,2,1,14,780,960,12,0],[32,0,2,1,14,780,960,7,0],[33,0,2,1,14,780,960,0,0],[34,0,2,1,14,780,960,8,1],[31,0,2,1,14,780,960,1,1],[71,0,2,1,14,780,960,9,0],[29,0,2,1,14,780,900,6,0],[30,0,2,1,14,780,900,2,0],[37,0,2,1,14,780,960,11,0],[38,0,2,2,14,780,960,1,1],[43,0,2,2,14,780,960,2,0],[64,0,2,3,14,780,960,2,0],[40,0,2,3,14,780,960,3,0],[44,0,2,1,15,360,660,6,0],[29,0,2,1,15,360,660,2,0],[46,0,2,1,15,390,720,13,1],[47,0,2,1,15,420,720,11,0],[48,0,2,1,15,420,720,8,1],[49,0,2,1,15,420,720,9,0],[45,0,2,1,15,420,720,10,0],[31,0,2,1,15,420,720,7,0],[50,0,2,1,15,420,720,1,1],[51,0,2,1,15,420,720,0,0],[83,0,2,2,15,420,720,2,0],[53,0,2,2,15,420,720,1,1],[54,0,2,3,15,420,720,2,0],[44,0,2,1,15,720,780,6,0],[71,0,2,1,15,720,780,13,1],[29,0,2,1,15,720,780,2,0],[56,0,2,1,15,780,960,12,0],[44,0,2,1,15,780,900,6,0],[47,0,2,1,15,780,960,11,0],[46,0,2,1,15,780,960,13,1],[48,0,2,1,15,780,960,8,1],[49,0,2,1,15,780,960,9,0],[31,0,2,1,15,780,900,7,0],[29,0,2,1,15,780,900,2,0],[51,0,2,1,15,780,960,0,0],[83,0,2,2,15,780,960,2,0],[53,0,2,2,15,780,960,1,1],[54,0,2,3,15,780,960,2,0],[36,0,2,1,15,900,960,7,0],[48,0,2,1,16,360,660,2,0],[36,0,2,1,16,360,660,6,0],[34,0,2,1,16,390,720,1,1],[56,0,2,1,16,420,720,8,1],[59,0,2,1,16,420,720,10,0],[60,0,2,1,16,420,720,11,0],[73,0,2,1,16,420,720,9,0],[61,0,2,1,16,420,720,7,0],[58,0,2,1,16,420,720,0,0],[43,0,2,2,16,420,720,2,0],[63,0,2,2,16,420,720,1,1],[64,0,2,3,16,420,720,13,1],[41,0,2,3,16,420,720,2,0],[67,0,2,1,16,720,780,1,1],[48,0,2,1,16,720,780,2,0],[36,0,2,1,16,720,780,6,0],[56,0,2,1,16,780,960,8,1],[48,0,2,1,16,780,900,2,0],[59,0,2,1,16,780,960,12,0],[34,0,2,1,16,780,960,1,1],[60,0,2,1,16,780,960,11,0],[73,0,2,1,16,780,960,9,0],[61,0,2,1,16,780,960,7,0],[36,0,2,1,16,780,900,6,0],[58,0,2,1,16,780,960,0,0],[43,0,2,2,16,780,960,2,0],[63,0,2,2,16,780,960,1,1],[41,0,2,3,16,780,960,2,0],[65,0,2,1,18,360,660,6,0],[59,0,2,1,18,360,660,2,0],[61,0,2,1,18,390,720,1,1],[46,0,2,1,18,420,720,11,0],[67,0,2,1,18,420,720,0,0],[66,0,2,1,18,420,720,7,0],[34,0,2,1,18,420,720,8,1],[68,0,2,1,18,420,720,9,0],[69,0,2,1,18,420,720,10,0],[70,0,2,2,18,420,720,1,1],[63,0,2,2,18,420,720,2,0],[41,0,2,3,18,420,720,2,0],[65,0,2,1,18,720,780,6,0],[45,0,2,1,18,720,780,1,1],[59,0,2,1,18,720,780,2,0],[65,0,2,1,18,780,900,6,0],[46,0,2,1,18,780,960,11,0],[67,0,2,1,18,780,960,0,0],[59,0,2,1,18,780,900,2,0],[66,0,2,1,18,780,960,7,0],[34,0,2,1,18,780,960,8,1],[72,0,2,1,18,780,960,12,0],[68,0,2,1,18,780,960,9,0],[61,0,2,1,18,780,960,1,1],[70,0,2,2,18,780,960,1,1],[63,0,2,2,18,780,960,2,0],[41,0,2,3,18,780,960,2,0],[87,0,3,0,0,360,660,4,0],[88,0,3,0,0,360,660,1,1],[89,0,3,0,0,360,660,3,0],[90,0,3,0,0,360,660,9,0],[91,0,3,0,0,390,690,11,0],[92,0,3,0,0,390,720,10,0],[93,0,3,0,0,390,720,14,0],[94,0,3,0,0,390,720,15,1],[95,0,3,0,0,420,720,13,1],[96,0,3,0,0,420,720,0,0],[97,0,3,0,0,420,720,2,0],[98,0,3,0,0,420,720,16,0],[99,0,3,0,0,420,750,17,0],[87,0,3,0,0,720,780,4,0],[88,0,3,0,0,720,780,1,1],[89,0,3,0,0,720,780,3,0],[90,0,3,0,0,720,780,9,0],[91,0,3,0,0,750,780,11,0],[87,0,3,0,0,780,900,4,0],[95,0,3,0,0,780,960,13,1],[88,0,3,0,0,780,900,1,1],[91,0,3,0,0,780,930,11,0],[96,0,3,0,0,780,870,0,0],[97,0,3,0,0,780,960,2,0],[98,0,3,0,0,780,960,16,0],[92,0,3,0,0,780,930,10,0],[89,0,3,0,0,780,900,3,0],[93,0,3,0,0,780,930,14,0],[90,0,3,0,0,780,900,9,0],[94,0,3,0,0,780,930,15,1],[99,0,3,0,0,810,960,17,0],[100,0,3,0,0,870,900,0,0],[96,0,3,0,0,900,960,0,0],[101,0,3,0,0,960,1140,18,0],[87,0,3,0,1,360,660,15,1],[102,0,3,0,1,360,660,2,0],[103,0,3,0,1,360,660,4,0],[99,0,3,0,1,360,660,9,0],[100,0,3,0,1,390,720,13,1],[104,0,3,0,1,390,690,11,0],[98,0,3,0,1,390,660,10,0],[92,0,3,0,1,390,720,14,0],[105,0,3,0,1,420,750,17,0],[106,0,3,0,1,420,720,16,0],[91,0,3,0,1,420,720,0,0],[107,0,3,0,1,420,720,3,0],[108,0,3,0,1,420,720,1,1],[90,0,3,0,1,420,720,19,1],[87,0,3,0,1,720,780,15,1],[98,0,3,0,1,720,780,10,0],[102,0,3,0,1,720,780,2,0],[103,0,3,0,1,720,780,4,0],[99,0,3,0,1,720,780,9,0],[104,0,3,0,1,750,780,11,0],[87,0,3,0,1,780,900,15,1],[106,0,3,0,1,780,960,16,0],[100,0,3,0,1,780,930,13,1],[104,0,3,0,1,780,930,11,0],[91,0,3,0,1,780,960,0,0],[97,0,3,0,1,780,960,1,1],[98,0,3,0,1,780,930,10,0],[92,0,3,0,1,780,930,14,0],[107,0,3,0,1,780,960,3,0],[102,0,3,0,1,780,900,2,0],[103,0,3,0,1,780,900,4,0],[90,0,3,0,1,780,960,19,1],[99,0,3,0,1,780,900,9,0],[105,0,3,0,1,810,960,17,0],[7,0,3,0,1,960,1140,18,0],[109,0,3,0,2,360,660,4,0],[110,0,3,0,2,360,660,3,0],[104,0,3,0,2,360,660,1,1],[93,0,3,0,2,360,660,9,0],[87,0,3,0,2,390,720,14,0],[105,0,3,0,2,390,720,10,0],[106,0,3,0,2,390,690,11,0],[103,0,3,0,2,390,720,15,1],[111,0,3,0,2,420,720,2,0],[101,0,3,0,2,420,720,16,0],[97,0,3,0,2,420,720,13,1],[89,0,3,0,2,420,750,17,0],[94,0,3,0,2,420,720,0,0],[109,0,3,0,2,720,780,4,0],[110,0,3,0,2,720,780,3,0],[104,0,3,0,2,720,780,1,1],[93,0,3,0,2,720,780,9,0],[106,0,3,0,2,750,780,11,0],[109,0,3,0,2,780,900,4,0],[87,0,3,0,2,780,930,14,0],[111,0,3,0,2,780,960,2,0],[110,0,3,0,2,780,900,3,0],[105,0,3,0,2,780,930,10,0],[106,0,3,0,2,780,930,11,0],[101,0,3,0,2,780,960,16,0],[104,0,3,0,2,780,900,1,1],[97,0,3,0,2,780,960,13,1],[93,0,3,0,2,780,900,9,0],[103,0,3,0,2,780,930,15,1],[94,0,3,0,2,780,960,0,0],[89,0,3,0,2,810,960,17,0],[112,0,3,0,2,960,1140,18,0],[109,0,3,0,3,420,720,2,0],[49,0,3,0,3,420,720,3,0],[97,0,3,0,3,420,720,0,0],[95,0,3,0,4,360,660,15,1],[106,0,3,0,4,360,660,9,0],[92,0,3,0,4,360,660,4,0],[107,0,3,0,4,360,660,3,0],[105,0,3,0,4,390,720,10,0],[104,0,3,0,4,390,720,14,0],[103,0,3,0,4,390,720,1,1],[99,0,3,0,4,390,690,11,0],[100,0,3,0,4,420,720,13,1],[91,0,3,0,4,420,720,0,0],[97,0,3,0,4,420,720,2,0],[93,0,3,0,4,420,750,17,0],[35,0,3,0,4,420,720,19,1],[90,0,3,0,4,420,720,16,0],[95,0,3,0,4,720,780,15,1],[106,0,3,0,4,720,780,9,0],[92,0,3,0,4,720,780,4,0],[107,0,3,0,4,720,780,3,0],[99,0,3,0,4,750,780,11,0],[105,0,3,0,4,780,930,10,0],[95,0,3,0,4,780,900,15,1],[106,0,3,0,4,780,900,9,0],[100,0,3,0,4,780,960,13,1],[104,0,3,0,4,780,930,14,0],[91,0,3,0,4,780,960,0,0],[97,0,3,0,4,780,960,2,0],[92,0,3,0,4,780,900,4,0],[107,0,3,0,4,780,900,3,0],[35,0,3,0,4,780,960,19,1],[103,0,3,0,4,780,930,1,1],[90,0,3,0,4,780,960,16,0],[99,0,3,0,4,780,930,11,0],[93,0,3,0,4,810,960,17,0],[97,0,3,0,4,960,1140,18,0],[87,0,3,0,5,360,660,4,0],[89,0,3,0,5,360,660,3,0],[93,0,3,0,5,360,660,9,0],[103,0,3,0,5,360,660,15,1],[95,0,3,0,5,390,720,14,0],[88,0,3,0,5,390,690,11,0],[102,0,3,0,5,390,660,1,1],[99,0,3,0,5,390,720,10,0],[111,0,3,0,5,420,750,17,0],[106,0,3,0,5,420,720,19,1],[100,0,3,0,5,420,720,0,0],[96,0,3,0,5,420,720,13,1],[97,0,3,0,5,420,720,16,0],[107,0,3,0,5,420,720,2,0],[87,0,3,0,5,720,780,4,0],[89,0,3,0,5,720,780,3,0],[93,0,3,0,5,720,780,9,0],[102,0,3,0,5,720,780,1,1],[103,0,3,0,5,720,780,15,1],[88,0,3,0,5,750,780,11,0],[87,0,3,0,5,780,900,4,0],[95,0,3,0,5,780,930,14,0],[106,0,3,0,5,780,960,19,1],[100,0,3,0,5,780,960,0,0],[88,0,3,0,5,780,930,11,0],[96,0,3,0,5,780,960,13,1],[97,0,3,0,5,780,960,16,0],[89,0,3,0,5,780,900,3,0],[93,0,3,0,5,780,900,9,0],[107,0,3,0,5,780,960,2,0],[102,0,3,0,5,780,930,1,1],[103,0,3,0,5,780,900,15,1],[99,0,3,0,5,780,930,10,0],[111,0,3,0,5,810,960,17,0],[101,0,3,0,5,960,1140,18,0],[109,0,3,0,6,360,660,15,1],[87,0,3,0,6,360,660,9,0],[107,0,3,0,6,360,660,3,0],[103,0,3,0,6,360,660,4,0],[95,0,3,0,6,390,720,10,0],[91,0,3,0,6,390,720,13,1],[92,0,3,0,6,390,720,14,0],[99,0,3,0,6,390,690,11,0],[111,0,3,0,6,420,720,16,0],[105,0,3,0,6,420,720,19,1],[88,0,3,0,6,420,720,0,0],[97,0,3,0,6,420,750,17,0],[108,0,3,0,6,420,720,1,1],[90,0,3,0,6,420,720,2,0],[109,0,3,0,6,720,780,15,1],[87,0,3,0,6,720,780,9,0],[107,0,3,0,6,720,780,3,0],[103,0,3,0,6,720,780,4,0],[99,0,3,0,6,750,780,11,0],[109,0,3,0,6,780,900,15,1],[87,0,3,0,6,780,900,9,0],[111,0,3,0,6,780,960,16,0],[105,0,3,0,6,780,960,19,1],[95,0,3,0,6,780,930,10,0],[88,0,3,0,6,780,960,0,0],[104,0,3,0,6,780,960,1,1],[91,0,3,0,6,780,930,13,1],[92,0,3,0,6,780,930,14,0],[107,0,3,0,6,780,900,3,0],[103,0,3,0,6,780,900,4,0],[90,0,3,0,6,780,960,2,0],[99,0,3,0,6,780,930,11,0],[97,0,3,0,6,810,960,17,0],[112,0,3,0,6,960,1140,18,0],[105,0,3,0,7,360,660,9,0],[95,0,3,0,7,360,660,4,0],[88,0,3,0,7,360,660,1,1],[89,0,3,0,7,360,660,3,0],[87,0,3,0,7,390,720,14,0],[91,0,3,0,7,390,690,11,0],[98,0,3,0,7,390,720,10,0],[90,0,3,0,7,390,720,15,1],[96,0,3,0,7,420,720,0,0],[97,0,3,0,7,420,720,13,1],[92,0,3,0,7,420,720,16,0],[103,0,3,0,7,420,720,2,0],[99,0,3,0,7,420,750,17,0],[105,0,3,0,7,720,780,9,0],[95,0,3,0,7,720,780,4,0],[88,0,3,0,7,720,780,1,1],[89,0,3,0,7,720,780,3,0],[91,0,3,0,7,750,780,11,0],[87,0,3,0,7,780,930,14,0],[105,0,3,0,7,780,900,9,0],[95,0,3,0,7,780,900,4,0],[88,0,3,0,7,780,900,1,1],[91,0,3,0,7,780,930,11,0],[96,0,3,0,7,780,960,0,0],[97,0,3,0,7,780,960,13,1],[98,0,3,0,7,780,930,10,0],[92,0,3,0,7,780,960,16,0],[89,0,3,0,7,780,900,3,0],[103,0,3,0,7,780,960,2,0],[90,0,3,0,7,780,930,15,1],[99,0,3,0,7,810,960,17,0],[94,0,3,0,7,960,1140,18,0],[98,0,3,0,8,360,660,15,1],[92,0,3,0,8,360,660,4,0],[102,0,3,0,8,360,660,2,0],[90,0,3,0,8,360,660,9,0],[95,0,3,0,8,390,720,14,0],[100,0,3,0,8,390,720,13,1],[97,0,3,0,8,390,690,11,0],[99,0,3,0,8,390,660,10,0],[87,0,3,0,8,420,720,19,1],[105,0,3,0,8,420,720,3,0],[104,0,3,0,8,420,720,0,0],[91,0,3,0,8,420,720,16,0],[107,0,3,0,8,420,750,17,0],[108,0,3,0,8,420,720,1,1],[98,0,3,0,8,720,780,15,1],[92,0,3,0,8,720,780,4,0],[102,0,3,0,8,720,780,2,0],[90,0,3,0,8,720,780,9,0],[99,0,3,0,8,720,780,10,0],[97,0,3,0,8,750,780,11,0],[87,0,3,0,8,780,960,19,1],[105,0,3,0,8,780,960,3,0],[95,0,3,0,8,780,930,14,0],[106,0,3,0,8,780,960,1,1],[100,0,3,0,8,780,930,13,1],[104,0,3,0,8,780,960,0,0],[91,0,3,0,8,780,960,16,0],[97,0,3,0,8,780,930,11,0],[98,0,3,0,8,780,900,15,1],[92,0,3,0,8,780,900,4,0],[102,0,3,0,8,780,900,2,0],[90,0,3,0,8,780,900,9,0],[99,0,3,0,8,780,930,10,0],[107,0,3,0,8,810,960,17,0],[3,0,3,0,8,960,1140,18,0],[110,0,3,0,9,360,660,3,0],[104,0,3,0,9,360,660,1,1],[89,0,3,0,9,360,660,9,0],[90,0,3,0,9,360,660,4,0],[87,0,3,0,9,390,690,11,0],[92,0,3,0,9,390,720,15,1],[93,0,3,0,9,390,720,10,0],[99,0,3,0,9,390,720,14,0],[109,0,3,0,9,420,720,0,0],[111,0,3,0,9,420,720,2,0],[97,0,3,0,9,420,750,17,0],[113,0,3,0,9,420,720,16,0],[94,0,3,0,9,420,720,13,1],[110,0,3,0,9,720,780,3,0],[104,0,3,0,9,720,780,1,1],[89,0,3,0,9,720,780,9,0],[90,0,3,0,9,720,780,4,0],[87,0,3,0,9,750,780,11,0],[109,0,3,0,9,780,960,0,0],[87,0,3,0,9,780,930,11,0],[111,0,3,0,9,780,960,2,0],[110,0,3,0,9,780,900,3,0],[104,0,3,0,9,780,900,1,1],[92,0,3,0,9,780,930,15,1],[89,0,3,0,9,780,900,9,0],[93,0,3,0,9,780,930,10,0],[113,0,3,0,9,780,960,16,0],[90,0,3,0,9,780,900,4,0],[99,0,3,0,9,780,930,14,0],[94,0,3,0,9,780,960,13,1],[97,0,3,0,9,810,960,17,0],[95,0,3,0,9,960,1140,18,0],[114,0,3,0,10,420,720,3,0],[92,0,3,0,10,420,720,2,0],[93,0,3,0,10,420,720,0,0],[87,0,3,0,11,360,660,4,0],[89,0,3,0,11,360,660,3,0],[103,0,3,0,11,360,660,15,1],[99,0,3,0,11,360,660,9,0],[95,0,3,0,11,390,720,10,0],[97,0,3,0,11,390,690,11,0],[92,0,3,0,11,390,720,14,0],[102,0,3,0,11,390,660,1,1],[111,0,3,0,11,420,720,2,0],[100,0,3,0,11,420,720,13,1],[88,0,3,0,11,420,720,0,0],[93,0,3,0,11,420,750,17,0],[90,0,3,0,11,420,720,16,0],[87,0,3,0,11,720,780,4,0],[89,0,3,0,11,720,780,3,0],[102,0,3,0,11,720,780,1,1],[103,0,3,0,11,720,780,15,1],[99,0,3,0,11,720,780,9,0],[97,0,3,0,11,750,780,11,0],[87,0,3,0,11,780,900,4,0],[111,0,3,0,11,780,960,2,0],[95,0,3,0,11,780,930,10,0],[100,0,3,0,11,780,960,13,1],[88,0,3,0,11,780,960,0,0],[97,0,3,0,11,780,930,11,0],[92,0,3,0,11,780,930,14,0],[89,0,3,0,11,780,900,3,0],[102,0,3,0,11,780,930,1,1],[103,0,3,0,11,780,900,15,1],[90,0,3,0,11,780,960,16,0],[99,0,3,0,11,780,900,9,0],[93,0,3,0,11,810,960,17,0],[115,0,3,0,11,960,1140,18,0],[89,0,3,0,12,420,720,0,0],[113,0,3,0,12,420,720,2,0],[103,0,3,0,12,420,660,3,0],[103,0,3,0,12,720,780,3,0],[89,0,3,0,12,780,960,0,0],[113,0,3,0,12,780,960,2,0],[103,0,3,0,12,780,960,3,0],[109,0,3,0,13,360,660,15,1],[92,0,3,0,13,360,660,9,0],[107,0,3,0,13,360,660,3,0],[90,0,3,0,13,360,660,4,0],[91,0,3,0,13,390,720,13,1],[98,0,3,0,13,390,690,11,0],[93,0,3,0,13,390,720,10,0],[103,0,3,0,13,390,720,14,0],[111,0,3,0,13,420,750,17,0],[105,0,3,0,13,420,720,19,1],[106,0,3,0,13,420,720,2,0],[104,0,3,0,13,420,720,0,0],[97,0,3,0,13,420,720,16,0],[108,0,3,0,13,420,720,1,1],[109,0,3,0,13,720,780,15,1],[92,0,3,0,13,720,780,9,0],[107,0,3,0,13,720,780,3,0],[90,0,3,0,13,720,780,4,0],[98,0,3,0,13,750,780,11,0],[109,0,3,0,13,780,900,15,1],[105,0,3,0,13,780,960,19,1],[106,0,3,0,13,780,960,2,0],[104,0,3,0,13,780,960,0,0],[91,0,3,0,13,780,930,13,1],[97,0,3,0,13,780,960,16,0],[98,0,3,0,13,780,930,11,0],[92,0,3,0,13,780,900,9,0],[93,0,3,0,13,780,930,10,0],[107,0,3,0,13,780,900,3,0],[103,0,3,0,13,780,930,14,0],[90,0,3,0,13,780,900,4,0],[94,0,3,0,13,780,960,1,1],[111,0,3,0,13,810,960,17,0],[89,0,3,0,13,960,1140,18,0],[88,0,3,0,14,360,660,1,1],[98,0,3,0,14,360,660,9,0],[89,0,3,0,14,360,660,3,0],[103,0,3,0,14,360,660,4,0],[87,0,3,0,14,390,720,14,0],[105,0,3,0,14,390,720,10,0],[95,0,3,0,14,390,690,11,0],[94,0,3,0,14,390,720,15,1],[111,0,3,0,14,420,720,2,0],[91,0,3,0,14,420,720,16,0],[96,0,3,0,14,420,720,0,0],[93,0,3,0,14,420,750,17,0],[90,0,3,0,14,420,720,13,1],[88,0,3,0,14,720,780,1,1],[98,0,3,0,14,720,780,9,0],[89,0,3,0,14,720,780,3,0],[103,0,3,0,14,720,780,4,0],[95,0,3,0,14,750,780,11,0],[87,0,3,0,14,780,930,14,0],[111,0,3,0,14,780,960,2,0],[105,0,3,0,14,780,930,10,0],[95,0,3,0,14,780,930,11,0],[88,0,3,0,14,780,900,1,1],[91,0,3,0,14,780,960,16,0],[96,0,3,0,14,780,960,0,0],[98,0,3,0,14,780,900,9,0],[89,0,3,0,14,780,900,3,0],[103,0,3,0,14,780,900,4,0],[90,0,3,0,14,780,960,13,1],[94,0,3,0,14,780,930,15,1],[93,0,3,0,14,810,960,17,0],[101,0,3,0,14,960,1140,18,0],[87,0,3,0,15,360,660,4,0],[95,0,3,0,15,360,660,15,1],[102,0,3,0,15,360,660,2,0],[90,0,3,0,15,360,660,9,0],[111,0,3,0,15,390,720,14,0],[100,0,3,0,15,390,720,13,1],[98,0,3,0,15,390,690,11,0],[103,0,3,0,15,390,660,10,0],[88,0,3,0,15,420,720,16,0],[91,0,3,0,15,420,720,0,0],[93,0,3,0,15,420,750,17,0],[107,0,3,0,15,420,720,3,0],[108,0,3,0,15,420,720,1,1],[99,0,3,0,15,420,720,19,1],[87,0,3,0,15,720,780,4,0],[95,0,3,0,15,720,780,15,1],[102,0,3,0,15,720,780,2,0],[103,0,3,0,15,720,780,10,0],[90,0,3,0,15,720,780,9,0],[98,0,3,0,15,750,780,11,0],[87,0,3,0,15,780,900,4,0],[111,0,3,0,15,780,930,14,0],[95,0,3,0,15,780,900,15,1],[100,0,3,0,15,780,930,13,1],[88,0,3,0,15,780,960,16,0],[104,0,3,0,15,780,960,1,1],[91,0,3,0,15,780,960,0,0],[98,0,3,0,15,780,930,11,0],[107,0,3,0,15,780,960,3,0],[102,0,3,0,15,780,900,2,0],[103,0,3,0,15,780,930,10,0],[90,0,3,0,15,780,900,9,0],[99,0,3,0,15,780,960,19,1],[93,0,3,0,15,810,960,17,0],[116,0,3,0,15,960,1140,18,0],[109,0,3,0,16,360,660,4,0],[104,0,3,0,16,360,660,1,1],[93,0,3,0,16,360,660,9,0],[99,0,3,0,16,360,660,3,0],[110,0,3,0,16,390,720,15,1],[106,0,3,0,16,390,690,11,0],[88,0,3,0,16,390,720,14,0],[90,0,3,0,16,390,720,10,0],[87,0,3,0,16,420,750,17,0],[111,0,3,0,16,420,720,16,0],[105,0,3,0,16,420,720,2,0],[97,0,3,0,16,420,720,13,1],[94,0,3,0,16,420,720,0,0],[109,0,3,0,16,720,780,4,0],[104,0,3,0,16,720,780,1,1],[93,0,3,0,16,720,780,9,0],[99,0,3,0,16,720,780,3,0],[106,0,3,0,16,750,780,11,0],[109,0,3,0,16,780,900,4,0],[111,0,3,0,16,780,960,16,0],[110,0,3,0,16,780,930,15,1],[105,0,3,0,16,780,960,2,0],[106,0,3,0,16,780,930,11,0],[88,0,3,0,16,780,930,14,0],[104,0,3,0,16,780,900,1,1],[97,0,3,0,16,780,960,13,1],[93,0,3,0,16,780,900,9,0],[90,0,3,0,16,780,930,10,0],[99,0,3,0,16,780,900,3,0],[94,0,3,0,16,780,960,0,0],[87,0,3,0,16,810,960,17,0],[112,0,3,0,16,960,1140,18,0],[49,0,3,0,17,420,720,3,0],[98,0,3,0,17,420,720,2,0],[90,0,3,0,17,420,720,0,0],[87,0,3,0,18,360,660,4,0],[105,0,3,0,18,360,660,3,0],[98,0,3,0,18,360,660,9,0],[90,0,3,0,18,360,660,15,1],[95,0,3,0,18,390,690,11,0],[89,0,3,0,18,390,720,14,0],[102,0,3,0,18,390,660,1,1],[103,0,3,0,18,390,720,10,0],[111,0,3,0,18,420,750,17,0],[100,0,3,0,18,420,720,13,1],[88,0,3,0,18,420,720,16,0],[91,0,3,0,18,420,720,0,0],[97,0,3,0,18,420,720,2,0],[87,0,3,0,18,720,780,4,0],[105,0,3,0,18,720,780,3,0],[98,0,3,0,18,720,780,9,0],[102,0,3,0,18,720,780,1,1],[90,0,3,0,18,720,780,15,1],[95,0,3,0,18,750,780,11,0],[87,0,3,0,18,780,900,4,0],[105,0,3,0,18,780,900,3,0],[95,0,3,0,18,780,930,11,0],[100,0,3,0,18,780,960,13,1],[88,0,3,0,18,780,960,16,0],[91,0,3,0,18,780,960,0,0],[97,0,3,0,18,780,960,2,0],[98,0,3,0,18,780,900,9,0],[89,0,3,0,18,780,930,14,0],[102,0,3,0,18,780,930,1,1],[103,0,3,0,18,780,930,10,0],[90,0,3,0,18,780,900,15,1],[111,0,3,0,18,810,960,17,0],[117,0,3,0,18,960,1140,18,0],[118,1,0,0,0,390,660,3,0],[119,1,0,0,0,420,720,2,0],[120,1,0,0,0,420,720,20,1],[118,1,0,0,0,720,780,3,0],[119,1,0,0,0,780,960,2,0],[120,1,0,0,0,780,960,20,1],[118,1,0,0,0,780,930,3,0],[121,1,0,0,1,390,660,3,0],[119,1,0,0,1,420,720,20,1],[118,1,0,0,1,420,720,2,0],[121,1,0,0,1,720,780,3,0],[121,1,0,0,1,780,930,3,0],[119,1,0,0,1,780,960,20,1],[118,1,0,0,1,780,960,2,0],[119,1,0,0,2,420,720,20,1],[120,1,0,0,2,420,720,2,0],[119,1,0,0,2,780,960,20,1],[120,1,0,0,2,780,960,2,0],[121,1,0,0,4,390,660,3,0],[119,1,0,0,4,420,720,2,0],[120,1,0,0,4,420,720,20,1],[121,1,0,0,4,720,780,3,0],[121,1,0,0,4,780,930,3,0],[119,1,0,0,4,780,960,2,0],[120,1,0,0,4,780,960,20,1],[118,1,0,0,5,390,660,3,0],[119,1,0,0,5,420,720,20,1],[2,1,0,0,5,420,720,2,0],[118,1,0,0,5,720,780,3,0],[119,1,0,0,5,780,960,20,1],[118,1,0,0,5,780,930,3,0],[2,1,0,0,5,780,960,2,0],[118,1,0,0,6,390,660,3,0],[120,1,0,0,6,420,720,2,0],[1,1,0,0,6,420,720,20,1],[118,1,0,0,6,720,780,3,0],[120,1,0,0,6,780,960,2,0],[118,1,0,0,6,780,930,3,0],[1,1,0,0,6,780,960,20,1],[118,1,0,0,7,390,660,3,0],[119,1,0,0,7,420,720,2,0],[120,1,0,0,7,420,720,20,1],[118,1,0,0,7,720,780,3,0],[119,1,0,0,7,780,960,2,0],[120,1,0,0,7,780,960,20,1],[118,1,0,0,7,780,930,3,0],[121,1,0,0,8,390,660,3,0],[119,1,0,0,8,420,720,20,1],[118,1,0,0,8,420,720,2,0],[121,1,0,0,8,720,780,3,0],[121,1,0,0,8,780,930,3,0],[119,1,0,0,8,780,960,20,1],[118,1,0,0,8,780,960,2,0],[120,1,0,0,9,420,720,2,0],[118,1,0,0,9,420,720,20,1],[120,1,0,0,9,780,960,2,0],[118,1,0,0,9,780,960,20,1],[121,1,0,0,11,390,660,3,0],[119,1,0,0,11,420,720,2,0],[118,1,0,0,11,420,720,20,1],[121,1,0,0,11,720,780,3,0],[121,1,0,0,11,780,930,3,0],[119,1,0,0,11,780,960,2,0],[118,1,0,0,11,780,960,20,1],[118,1,0,0,13,390,660,3,0],[120,1,0,0,13,420,720,20,1],[1,1,0,0,13,420,720,2,0],[118,1,0,0,13,720,780,3,0],[120,1,0,0,13,780,960,20,1],[118,1,0,0,13,780,930,3,0],[1,1,0,0,13,780,960,2,0],[118,1,0,0,14,390,660,3,0],[119,1,0,0,14,420,720,2,0],[120,1,0,0,14,420,720,20,1],[118,1,0,0,14,720,780,3,0],[119,1,0,0,14,780,960,2,0],[120,1,0,0,14,780,960,20,1],[118,1,0,0,14,780,930,3,0],[121,1,0,0,15,390,660,3,0],[119,1,0,0,15,420,720,20,1],[118,1,0,0,15,420,720,2,0],[121,1,0,0,15,720,780,3,0],[121,1,0,0,15,780,930,3,0],[119,1,0,0,15,780,960,20,1],[118,1,0,0,15,780,960,2,0],[120,1,0,0,16,420,720,2,0],[118,1,0,0,16,420,720,20,1],[120,1,0,0,16,780,960,2,0],[118,1,0,0,16,780,960,20,1],[121,1,0,0,18,390,660,3,0],[119,1,0,0,18,420,720,2,0],[118,1,0,0,18,420,720,20,1],[121,1,0,0,18,720,930,3,0],[119,1,0,0,18,780,960,2,0],[118,1,0,0,18,780,960,20,1],[24,1,1,0,0,360,660,21,0],[122,1,1,0,0,420,720,20,1],[123,1,1,0,0,420,720,3,0],[124,1,1,0,0,420,720,2,0],[122,1,1,0,0,720,780,20,1],[24,1,1,0,0,720,780,21,0],[122,1,1,0,0,780,960,20,1],[123,1,1,0,0,780,960,3,0],[124,1,1,0,0,780,960,2,0],[24,1,1,0,0,780,900,21,0],[27,1,1,0,1,360,660,21,0],[122,1,1,0,1,420,720,20,1],[125,1,1,0,1,420,720,2,0],[28,1,1,0,1,420,720,3,0],[122,1,1,0,1,720,780,20,1],[27,1,1,0,1,720,780,21,0],[122,1,1,0,1,780,960,20,1],[125,1,1,0,1,780,960,2,0],[28,1,1,0,1,780,960,3,0],[27,1,1,0,1,780,900,21,0],[16,1,1,0,2,360,660,21,0],[122,1,1,0,2,420,720,20,1],[28,1,1,0,2,420,720,3,0],[124,1,1,0,2,420,720,2,0],[122,1,1,0,2,720,780,20,1],[16,1,1,0,2,720,780,21,0],[122,1,1,0,2,780,960,20,1],[16,1,1,0,2,780,900,21,0],[28,1,1,0,2,780,960,3,0],[124,1,1,0,2,780,960,2,0],[18,1,1,0,4,360,660,21,0],[122,1,1,0,4,420,720,20,1],[125,1,1,0,4,420,720,2,0],[28,1,1,0,4,420,720,3,0],[122,1,1,0,4,720,780,20,1],[18,1,1,0,4,720,780,21,0],[122,1,1,0,4,780,960,20,1],[125,1,1,0,4,780,960,2,0],[18,1,1,0,4,780,900,21,0],[28,1,1,0,4,780,960,3,0],[126,1,1,0,5,360,660,21,0],[14,1,1,0,5,420,720,3,0],[122,1,1,0,5,420,720,20,1],[127,1,1,0,5,420,720,2,0],[122,1,1,0,5,720,780,20,1],[126,1,1,0,5,720,780,21,0],[14,1,1,0,5,780,960,3,0],[122,1,1,0,5,780,960,20,1],[126,1,1,0,5,780,900,21,0],[127,1,1,0,5,780,960,2,0],[123,1,1,0,6,360,660,21,0],[28,1,1,0,6,420,720,3,0],[13,1,1,0,6,420,720,20,1],[127,1,1,0,6,420,720,2,0],[123,1,1,0,6,720,780,21,0],[13,1,1,0,6,720,780,20,1],[123,1,1,0,6,780,900,21,0],[28,1,1,0,6,780,960,3,0],[13,1,1,0,6,780,960,20,1],[127,1,1,0,6,780,960,2,0],[124,1,1,0,7,360,660,21,0],[122,1,1,0,7,420,720,20,1],[28,1,1,0,7,420,720,3,0],[24,1,1,0,7,420,720,2,0],[122,1,1,0,7,720,780,20,1],[124,1,1,0,7,720,780,21,0],[122,1,1,0,7,780,960,20,1],[28,1,1,0,7,780,960,3,0],[124,1,1,0,7,780,900,21,0],[24,1,1,0,7,780,960,2,0],[27,1,1,0,8,360,660,21,0],[122,1,1,0,8,420,720,20,1],[125,1,1,0,8,420,720,2,0],[28,1,1,0,8,420,720,3,0],[122,1,1,0,8,720,780,20,1],[27,1,1,0,8,720,780,21,0],[122,1,1,0,8,780,960,20,1],[125,1,1,0,8,780,960,2,0],[28,1,1,0,8,780,960,3,0],[27,1,1,0,8,780,900,21,0],[28,1,1,0,9,360,660,21,0],[122,1,1,0,9,420,720,20,1],[124,1,1,0,9,420,720,2,0],[127,1,1,0,9,420,720,3,0],[122,1,1,0,9,720,780,20,1],[28,1,1,0,9,720,780,21,0],[122,1,1,0,9,780,960,20,1],[28,1,1,0,9,780,900,21,0],[124,1,1,0,9,780,960,2,0],[127,1,1,0,9,780,960,3,0],[28,1,1,0,11,360,660,21,0],[122,1,1,0,11,420,720,20,1],[125,1,1,0,11,420,720,2,0],[18,1,1,0,11,420,720,3,0],[122,1,1,0,11,720,780,20,1],[28,1,1,0,11,720,780,21,0],[122,1,1,0,11,780,960,20,1],[125,1,1,0,11,780,960,2,0],[18,1,1,0,11,780,960,3,0],[28,1,1,0,11,780,900,21,0],[126,1,1,0,13,360,660,21,0],[122,1,1,0,13,420,720,20,1],[123,1,1,0,13,420,720,3,0],[127,1,1,0,13,420,720,2,0],[122,1,1,0,13,720,780,20,1],[126,1,1,0,13,720,780,21,0],[122,1,1,0,13,780,960,20,1],[126,1,1,0,13,780,900,21,0],[123,1,1,0,13,780,960,3,0],[127,1,1,0,13,780,960,2,0],[24,1,1,0,14,360,660,21,0],[122,1,1,0,14,420,720,20,1],[123,1,1,0,14,420,720,3,0],[124,1,1,0,14,420,720,2,0],[122,1,1,0,14,720,780,20,1],[24,1,1,0,14,720,780,21,0],[122,1,1,0,14,780,960,20,1],[123,1,1,0,14,780,960,3,0],[124,1,1,0,14,780,960,2,0],[24,1,1,0,14,780,900,21,0],[27,1,1,0,15,360,660,21,0],[122,1,1,0,15,420,720,20,1],[125,1,1,0,15,420,720,2,0],[28,1,1,0,15,420,720,3,0],[122,1,1,0,15,720,780,20,1],[27,1,1,0,15,720,780,21,0],[122,1,1,0,15,780,960,20,1],[125,1,1,0,15,780,960,2,0],[28,1,1,0,15,780,960,3,0],[27,1,1,0,15,780,900,21,0],[16,1,1,0,16,360,660,21,0],[122,1,1,0,16,420,720,20,1],[28,1,1,0,16,420,720,3,0],[124,1,1,0,16,420,720,2,0],[122,1,1,0,16,720,780,20,1],[16,1,1,0,16,720,780,21,0],[122,1,1,0,16,780,960,20,1],[16,1,1,0,16,780,900,21,0],[28,1,1,0,16,780,960,3,0],[124,1,1,0,16,780,960,2,0],[18,1,1,0,18,360,660,21,0],[122,1,1,0,18,420,720,20,1],[125,1,1,0,18,420,720,2,0],[28,1,1,0,18,420,720,3,0],[122,1,1,0,18,720,780,20,1],[18,1,1,0,18,720,780,21,0],[122,1,1,0,18,780,960,20,1],[125,1,1,0,18,780,960,2,0],[18,1,1,0,18,780,900,21,0],[28,1,1,0,18,780,960,3,0],[128,1,2,1,0,360,660,0,0],[129,1,2,1,0,420,720,3,0],[50,1,2,1,0,420,720,2,0],[74,1,2,1,0,420,720,20,1],[130,1,2,2,0,420,720,20,1],[131,1,2,2,0,420,720,2,0],[132,1,2,3,0,420,720,20,1],[85,1,2,3,0,420,720,2,0],[128,1,2,1,0,720,780,0,0],[128,1,2,1,0,780,900,0,0],[129,1,2,1,0,780,960,3,0],[74,1,2,1,0,780,960,20,1],[133,1,2,1,0,780,960,2,0],[130,1,2,2,0,780,960,20,1],[131,1,2,2,0,780,960,2,0],[132,1,2,3,0,780,960,20,1],[85,1,2,3,0,780,960,2,0],[134,1,2,1,1,360,660,0,0],[35,1,2,1,1,420,720,20,1],[74,1,2,1,1,420,720,2,0],[135,1,2,1,1,420,720,3,0],[130,1,2,2,1,420,720,20,1],[132,1,2,3,1,420,720,20,1],[85,1,2,3,1,420,720,2,0],[40,1,2,3,1,420,720,3,0],[136,1,2,2,1,450,720,2,0],[134,1,2,1,1,720,780,0,0],[134,1,2,1,1,780,900,0,0],[35,1,2,1,1,780,960,20,1],[74,1,2,1,1,780,960,2,0],[135,1,2,1,1,780,960,3,0],[130,1,2,2,1,780,960,20,1],[131,1,2,2,1,780,960,2,0],[132,1,2,3,1,780,960,20,1],[85,1,2,3,1,780,960,2,0],[40,1,2,3,1,780,960,3,0],[137,1,2,1,2,360,660,0,0],[138,1,2,1,2,420,720,2,0],[135,1,2,1,2,420,720,3,0],[139,1,2,1,2,420,720,20,1],[130,1,2,2,2,420,720,20,1],[131,1,2,2,2,420,720,2,0],[132,1,2,3,2,420,720,20,1],[54,1,2,3,2,420,720,2,0],[137,1,2,1,2,720,780,0,0],[138,1,2,1,2,780,960,2,0],[137,1,2,1,2,780,900,0,0],[135,1,2,1,2,780,960,3,0],[139,1,2,1,2,780,960,20,1],[130,1,2,2,2,780,960,20,1],[131,1,2,2,2,780,960,2,0],[132,1,2,3,2,780,960,20,1],[54,1,2,3,2,780,960,2,0],[140,1,2,1,4,360,660,0,0],[141,1,2,1,4,420,720,3,0],[138,1,2,1,4,420,720,20,1],[142,1,2,1,4,420,720,2,0],[130,1,2,2,4,420,720,20,1],[132,1,2,3,4,420,720,20,1],[85,1,2,3,4,420,720,2,0],[136,1,2,2,4,450,720,2,0],[140,1,2,1,4,720,780,0,0],[141,1,2,1,4,780,960,3,0],[138,1,2,1,4,780,960,20,1],[142,1,2,1,4,780,960,2,0],[140,1,2,1,4,780,900,0,0],[130,1,2,2,4,780,960,20,1],[86,1,2,2,4,780,960,2,0],[132,1,2,3,4,780,960,20,1],[85,1,2,3,4,780,960,2,0],[129,1,2,1,5,360,660,0,0],[34,1,2,1,5,420,720,20,1],[139,1,2,1,5,420,720,3,0],[37,1,2,1,5,420,720,2,0],[130,1,2,2,5,420,720,20,1],[131,1,2,2,5,420,720,2,0],[132,1,2,3,5,420,720,20,1],[85,1,2,3,5,420,720,2,0],[129,1,2,1,5,720,780,0,0],[34,1,2,1,5,780,960,20,1],[129,1,2,1,5,780,900,0,0],[139,1,2,1,5,780,960,3,0],[37,1,2,1,5,780,960,2,0],[130,1,2,2,5,780,960,20,1],[131,1,2,2,5,780,960,2,0],[132,1,2,3,5,780,960,20,1],[85,1,2,3,5,780,960,2,0],[128,1,2,1,6,360,660,0,0],[47,1,2,1,6,420,720,3,0],[142,1,2,1,6,420,720,20,1],[37,1,2,1,6,420,720,2,0],[39,1,2,2,6,420,720,20,1],[132,1,2,3,6,420,720,20,1],[41,1,2,3,6,420,720,2,0],[136,1,2,2,6,450,720,2,0],[128,1,2,1,6,720,780,0,0],[47,1,2,1,6,780,960,3,0],[128,1,2,1,6,780,900,0,0],[142,1,2,1,6,780,960,20,1],[37,1,2,1,6,780,960,2,0],[131,1,2,2,6,780,960,2,0],[39,1,2,2,6,780,960,20,1],[132,1,2,3,6,780,960,20,1],[41,1,2,3,6,780,960,2,0],[128,1,2,1,7,360,660,0,0],[143,1,2,1,7,420,720,3,0],[50,1,2,1,7,420,720,20,1],[74,1,2,1,7,420,720,2,0],[130,1,2,2,7,420,720,20,1],[131,1,2,2,7,420,720,2,0],[132,1,2,3,7,420,720,20,1],[85,1,2,3,7,420,720,2,0],[128,1,2,1,7,720,780,0,0],[143,1,2,1,7,780,960,3,0],[128,1,2,1,7,780,900,0,0],[74,1,2,1,7,780,960,2,0],[133,1,2,1,7,780,960,20,1],[130,1,2,2,7,780,960,20,1],[131,1,2,2,7,780,960,2,0],[132,1,2,3,7,780,960,20,1],[85,1,2,3,7,780,960,2,0],[35,1,2,1,8,360,660,0,0],[134,1,2,1,8,420,720,3,0],[74,1,2,1,8,420,720,2,0],[135,1,2,1,8,420,720,20,1],[130,1,2,2,8,420,720,20,1],[132,1,2,3,8,420,720,20,1],[85,1,2,3,8,420,720,2,0],[40,1,2,3,8,420,720,3,0],[136,1,2,2,8,450,720,2,0],[35,1,2,1,8,720,780,0,0],[134,1,2,1,8,780,960,3,0],[35,1,2,1,8,780,900,0,0],[74,1,2,1,8,780,960,2,0],[135,1,2,1,8,780,960,20,1],[130,1,2,2,8,780,960,20,1],[131,1,2,2,8,780,960,2,0],[132,1,2,3,8,780,960,20,1],[85,1,2,3,8,780,960,2,0],[40,1,2,3,8,780,960,3,0],[137,1,2,1,9,360,660,0,0],[138,1,2,1,9,420,720,2,0],[135,1,2,1,9,420,720,3,0],[139,1,2,1,9,420,720,20,1],[130,1,2,2,9,420,720,20,1],[131,1,2,2,9,420,720,2,0],[132,1,2,3,9,420,720,20,1],[54,1,2,3,9,420,720,2,0],[137,1,2,1,9,720,780,0,0],[138,1,2,1,9,780,960,2,0],[137,1,2,1,9,780,900,0,0],[135,1,2,1,9,780,960,3,0],[142,1,2,1,9,780,960,20,1],[130,1,2,2,9,780,960,20,1],[131,1,2,2,9,780,960,2,0],[132,1,2,3,9,780,960,20,1],[54,1,2,3,9,780,960,2,0],[141,1,2,1,11,360,660,0,0],[138,1,2,1,11,420,720,20,1],[142,1,2,1,11,420,720,2,0],[140,1,2,1,11,420,720,3,0],[130,1,2,2,11,420,720,20,1],[132,1,2,3,11,420,720,20,1],[85,1,2,3,11,420,720,2,0],[136,1,2,2,11,450,720,2,0],[141,1,2,1,11,720,780,0,0],[141,1,2,1,11,780,900,0,0],[138,1,2,1,11,780,960,20,1],[142,1,2,1,11,780,960,2,0],[140,1,2,1,11,780,960,3,0],[130,1,2,2,11,780,960,20,1],[86,1,2,2,11,780,960,2,0],[132,1,2,3,11,780,960,20,1],[85,1,2,3,11,780,960,2,0],[142,1,2,1,13,360,660,0,0],[47,1,2,1,13,420,720,3,0],[128,1,2,1,13,420,720,20,1],[37,1,2,1,13,420,720,2,0],[130,1,2,2,13,420,720,20,1],[132,1,2,3,13,420,720,20,1],[41,1,2,3,13,420,720,2,0],[136,1,2,2,13,450,720,2,0],[142,1,2,1,13,720,780,0,0],[47,1,2,1,13,780,960,3,0],[128,1,2,1,13,780,960,20,1],[142,1,2,1,13,780,900,0,0],[37,1,2,1,13,780,960,2,0],[130,1,2,2,13,780,960,20,1],[131,1,2,2,13,780,960,2,0],[132,1,2,3,13,780,960,20,1],[41,1,2,3,13,780,960,2,0],[128,1,2,1,14,360,660,0,0],[143,1,2,1,14,420,720,3,0],[50,1,2,1,14,420,720,2,0],[74,1,2,1,14,420,720,20,1],[130,1,2,2,14,420,720,20,1],[131,1,2,2,14,420,720,2,0],[132,1,2,3,14,420,720,20,1],[85,1,2,3,14,420,720,2,0],[128,1,2,1,14,720,780,0,0],[143,1,2,1,14,780,960,3,0],[128,1,2,1,14,780,900,0,0],[74,1,2,1,14,780,960,20,1],[133,1,2,1,14,780,960,2,0],[130,1,2,2,14,780,960,20,1],[131,1,2,2,14,780,960,2,0],[132,1,2,3,14,780,960,20,1],[85,1,2,3,14,780,960,2,0],[134,1,2,1,15,360,660,0,0],[35,1,2,1,15,420,720,20,1],[74,1,2,1,15,420,720,2,0],[135,1,2,1,15,420,720,3,0],[130,1,2,2,15,420,720,20,1],[132,1,2,3,15,420,720,20,1],[85,1,2,3,15,420,720,2,0],[40,1,2,3,15,420,720,3,0],[136,1,2,2,15,450,720,2,0],[134,1,2,1,15,720,780,0,0],[134,1,2,1,15,780,900,0,0],[35,1,2,1,15,780,960,20,1],[74,1,2,1,15,780,960,2,0],[135,1,2,1,15,780,960,3,0],[130,1,2,2,15,780,960,20,1],[131,1,2,2,15,780,960,2,0],[132,1,2,3,15,780,960,20,1],[85,1,2,3,15,780,960,2,0],[40,1,2,3,15,780,960,3,0],[137,1,2,1,16,360,660,0,0],[138,1,2,1,16,420,720,2,0],[135,1,2,1,16,420,720,3,0],[139,1,2,1,16,420,720,20,1],[130,1,2,2,16,420,720,20,1],[131,1,2,2,16,420,720,2,0],[132,1,2,3,16,420,720,20,1],[54,1,2,3,16,420,720,2,0],[137,1,2,1,16,720,780,0,0],[138,1,2,1,16,780,960,2,0],[137,1,2,1,16,780,900,0,0],[135,1,2,1,16,780,960,3,0],[139,1,2,1,16,780,960,20,1],[130,1,2,2,16,780,960,20,1],[131,1,2,2,16,780,960,2,0],[132,1,2,3,16,780,960,20,1],[54,1,2,3,16,780,960,2,0],[140,1,2,1,18,360,660,0,0],[141,1,2,1,18,420,720,3,0],[138,1,2,1,18,420,720,20,1],[142,1,2,1,18,420,720,2,0],[130,1,2,2,18,420,720,20,1],[132,1,2,3,18,420,720,20,1],[85,1,2,3,18,420,720,2,0],[136,1,2,2,18,450,720,2,0],[140,1,2,1,18,720,780,0,0],[141,1,2,1,18,780,960,3,0],[138,1,2,1,18,780,960,20,1],[142,1,2,1,18,780,960,2,0],[140,1,2,1,18,780,900,0,0],[130,1,2,2,18,780,960,20,1],[86,1,2,2,18,780,960,2,0],[132,1,2,3,18,780,960,20,1],[85,1,2,3,18,780,960,2,0],[144,1,3,0,0,360,660,3,0],[102,1,3,0,0,360,660,4,0],[145,1,3,0,0,390,660,11,0],[146,1,3,0,0,390,660,16,1],[147,1,3,0,0,420,720,2,0],[148,1,3,0,0,420,720,17,0],[149,1,3,0,0,420,720,22,1],[150,1,3,0,0,420,720,0,0],[151,1,3,0,0,420,720,14,0],[152,1,3,0,0,420,720,20,1],[145,1,3,0,0,720,780,11,0],[144,1,3,0,0,720,780,3,0],[102,1,3,0,0,720,780,4,0],[146,1,3,0,0,720,780,16,1],[147,1,3,0,0,780,960,2,0],[148,1,3,0,0,780,960,17,0],[149,1,3,0,0,780,960,22,1],[150,1,3,0,0,780,960,0,0],[145,1,3,0,0,780,930,11,0],[151,1,3,0,0,780,960,14,0],[152,1,3,0,0,780,960,20,1],[144,1,3,0,0,780,900,3,0],[102,1,3,0,0,780,900,4,0],[146,1,3,0,0,780,930,16,1],[150,1,3,0,0,960,1140,23,0],[148,1,3,0,1,360,660,3,0],[153,1,3,0,1,360,660,4,0],[150,1,3,0,1,390,660,16,1],[145,1,3,0,1,390,660,11,0],[147,1,3,0,1,420,720,17,0],[149,1,3,0,1,420,720,0,0],[151,1,3,0,1,420,720,14,0],[152,1,3,0,1,420,720,20,1],[144,1,3,0,1,420,720,22,1],[146,1,3,0,1,420,720,2,0],[148,1,3,0,1,720,780,3,0],[150,1,3,0,1,720,780,16,1],[145,1,3,0,1,720,780,11,0],[153,1,3,0,1,720,780,4,0],[147,1,3,0,1,780,960,17,0],[148,1,3,0,1,780,900,3,0],[149,1,3,0,1,780,960,0,0],[150,1,3,0,1,780,930,16,1],[145,1,3,0,1,780,930,11,0],[151,1,3,0,1,780,960,14,0],[152,1,3,0,1,780,960,20,1],[144,1,3,0,1,780,960,22,1],[153,1,3,0,1,780,900,4,0],[146,1,3,0,1,780,960,2,0],[149,1,3,0,1,960,1140,23,0],[150,1,3,0,2,360,660,3,0],[151,1,3,0,2,360,660,4,0],[145,1,3,0,2,390,660,11,0],[146,1,3,0,2,390,660,16,1],[147,1,3,0,2,420,720,0,0],[148,1,3,0,2,420,720,14,0],[149,1,3,0,2,420,720,22,1],[152,1,3,0,2,420,720,2,0],[154,1,3,0,2,420,720,20,1],[153,1,3,0,2,420,720,17,0],[150,1,3,0,2,720,780,3,0],[145,1,3,0,2,720,780,11,0],[151,1,3,0,2,720,780,4,0],[146,1,3,0,2,720,780,16,1],[147,1,3,0,2,780,960,0,0],[148,1,3,0,2,780,960,14,0],[149,1,3,0,2,780,960,22,1],[150,1,3,0,2,780,900,3,0],[145,1,3,0,2,780,930,11,0],[151,1,3,0,2,780,900,4,0],[152,1,3,0,2,780,960,2,0],[154,1,3,0,2,780,960,20,1],[153,1,3,0,2,780,960,17,0],[146,1,3,0,2,780,930,16,1],[148,1,3,0,2,960,1140,23,0],[150,1,3,0,3,420,720,24,0],[137,1,3,0,3,420,720,25,0],[146,1,3,0,3,420,720,26,0],[150,1,3,0,4,360,660,3,0],[153,1,3,0,4,360,660,4,0],[148,1,3,0,4,390,660,16,1],[145,1,3,0,4,390,660,11,0],[147,1,3,0,4,420,720,17,0],[149,1,3,0,4,420,720,14,0],[151,1,3,0,4,420,720,22,1],[152,1,3,0,4,420,720,2,0],[154,1,3,0,4,420,720,20,1],[146,1,3,0,4,420,720,0,0],[148,1,3,0,4,720,780,16,1],[150,1,3,0,4,720,780,3,0],[145,1,3,0,4,720,780,11,0],[153,1,3,0,4,720,780,4,0],[147,1,3,0,4,780,960,17,0],[148,1,3,0,4,780,930,16,1],[149,1,3,0,4,780,960,14,0],[150,1,3,0,4,780,900,3,0],[145,1,3,0,4,780,930,11,0],[151,1,3,0,4,780,960,22,1],[152,1,3,0,4,780,960,2,0],[154,1,3,0,4,780,960,20,1],[153,1,3,0,4,780,900,4,0],[146,1,3,0,4,780,960,0,0],[151,1,3,0,4,960,1140,23,0],[148,1,3,0,5,360,660,4,0],[146,1,3,0,5,360,660,3,0],[147,1,3,0,5,390,660,16,1],[149,1,3,0,5,390,660,11,0],[155,1,3,0,5,420,720,0,0],[150,1,3,0,5,420,720,17,0],[152,1,3,0,5,420,720,2,0],[154,1,3,0,5,420,720,20,1],[153,1,3,0,5,420,720,14,0],[147,1,3,0,5,720,780,16,1],[148,1,3,0,5,720,780,4,0],[149,1,3,0,5,720,780,11,0],[146,1,3,0,5,720,780,3,0],[147,1,3,0,5,780,930,16,1],[148,1,3,0,5,780,900,4,0],[155,1,3,0,5,780,960,0,0],[149,1,3,0,5,780,930,11,0],[150,1,3,0,5,780,960,17,0],[152,1,3,0,5,780,960,2,0],[154,1,3,0,5,780,960,20,1],[153,1,3,0,5,780,960,14,0],[146,1,3,0,5,780,900,3,0],[155,1,3,0,5,960,1140,23,0],[147,1,3,0,6,360,660,3,0],[151,1,3,0,6,360,660,4,0],[144,1,3,0,6,390,660,11,0],[146,1,3,0,6,390,660,16,1],[148,1,3,0,6,420,720,17,0],[150,1,3,0,6,420,720,22,1],[152,1,3,0,6,420,720,20,1],[96,1,3,0,6,420,720,2,0],[154,1,3,0,6,420,720,0,0],[153,1,3,0,6,420,720,14,0],[147,1,3,0,6,720,780,3,0],[151,1,3,0,6,720,780,4,0],[144,1,3,0,6,720,780,11,0],[146,1,3,0,6,720,780,16,1],[147,1,3,0,6,780,900,3,0],[148,1,3,0,6,780,960,17,0],[150,1,3,0,6,780,960,22,1],[151,1,3,0,6,780,900,4,0],[152,1,3,0,6,780,960,20,1],[96,1,3,0,6,780,960,2,0],[144,1,3,0,6,780,930,11,0],[154,1,3,0,6,780,960,0,0],[153,1,3,0,6,780,960,14,0],[146,1,3,0,6,780,930,16,1],[156,1,3,0,6,960,1140,23,0],[148,1,3,0,7,360,660,3,0],[144,1,3,0,7,360,660,4,0],[145,1,3,0,7,390,660,11,0],[102,1,3,0,7,390,660,16,1],[147,1,3,0,7,420,720,2,0],[150,1,3,0,7,420,720,0,0],[151,1,3,0,7,420,720,17,0],[153,1,3,0,7,420,720,14,0],[146,1,3,0,7,420,720,20,1],[148,1,3,0,7,720,780,3,0],[145,1,3,0,7,720,780,11,0],[144,1,3,0,7,720,780,4,0],[102,1,3,0,7,720,780,16,1],[147,1,3,0,7,780,960,2,0],[148,1,3,0,7,780,900,3,0],[150,1,3,0,7,780,960,0,0],[145,1,3,0,7,780,930,11,0],[151,1,3,0,7,780,960,17,0],[144,1,3,0,7,780,900,4,0],[102,1,3,0,7,780,930,16,1],[153,1,3,0,7,780,960,14,0],[146,1,3,0,7,780,960,20,1],[153,1,3,0,7,960,1140,23,0],[149,1,3,0,8,360,660,3,0],[144,1,3,0,8,360,660,4,0],[150,1,3,0,8,390,660,16,1],[145,1,3,0,8,390,660,11,0],[147,1,3,0,8,420,720,22,1],[155,1,3,0,8,420,720,14,0],[151,1,3,0,8,420,720,0,0],[152,1,3,0,8,420,720,20,1],[153,1,3,0,8,420,720,17,0],[146,1,3,0,8,420,720,2,0],[149,1,3,0,8,720,780,3,0],[150,1,3,0,8,720,780,16,1],[145,1,3,0,8,720,780,11,0],[144,1,3,0,8,720,780,4,0],[147,1,3,0,8,780,960,22,1],[155,1,3,0,8,780,960,14,0],[149,1,3,0,8,780,900,3,0],[150,1,3,0,8,780,930,16,1],[145,1,3,0,8,780,930,11,0],[151,1,3,0,8,780,960,0,0],[152,1,3,0,8,780,960,20,1],[144,1,3,0,8,780,900,4,0],[153,1,3,0,8,780,960,17,0],[146,1,3,0,8,780,960,2,0],[147,1,3,0,8,960,1140,23,0],[150,1,3,0,9,360,660,3,0],[151,1,3,0,9,360,660,4,0],[145,1,3,0,9,390,660,11,0],[152,1,3,0,9,390,660,16,1],[155,1,3,0,9,420,720,14,0],[149,1,3,0,9,420,720,22,1],[144,1,3,0,9,420,720,0,0],[154,1,3,0,9,420,720,20,1],[153,1,3,0,9,420,720,17,0],[146,1,3,0,9,420,720,2,0],[150,1,3,0,9,720,780,3,0],[145,1,3,0,9,720,780,11,0],[151,1,3,0,9,720,780,4,0],[152,1,3,0,9,720,780,16,1],[155,1,3,0,9,780,960,14,0],[149,1,3,0,9,780,960,22,1],[150,1,3,0,9,780,900,3,0],[145,1,3,0,9,780,930,11,0],[151,1,3,0,9,780,900,4,0],[152,1,3,0,9,780,930,16,1],[144,1,3,0,9,780,960,0,0],[154,1,3,0,9,780,960,20,1],[153,1,3,0,9,780,960,17,0],[146,1,3,0,9,780,960,2,0],[146,1,3,0,9,960,1140,23,0],[149,1,3,0,10,420,720,26,0],[144,1,3,0,10,420,720,24,0],[124,1,3,0,10,420,720,25,0],[147,1,3,0,11,360,660,3,0],[153,1,3,0,11,360,660,4,0],[145,1,3,0,11,390,660,11,0],[151,1,3,0,11,390,660,16,1],[149,1,3,0,11,420,720,14,0],[150,1,3,0,11,420,720,17,0],[152,1,3,0,11,420,720,20,1],[144,1,3,0,11,420,720,22,1],[154,1,3,0,11,420,720,2,0],[146,1,3,0,11,420,720,0,0],[147,1,3,0,11,720,780,3,0],[145,1,3,0,11,720,780,11,0],[151,1,3,0,11,720,780,16,1],[153,1,3,0,11,720,780,4,0],[147,1,3,0,11,780,900,3,0],[149,1,3,0,11,780,960,14,0],[150,1,3,0,11,780,960,17,0],[145,1,3,0,11,780,930,11,0],[151,1,3,0,11,780,930,16,1],[152,1,3,0,11,780,960,20,1],[144,1,3,0,11,780,960,22,1],[154,1,3,0,11,780,960,2,0],[153,1,3,0,11,780,900,4,0],[146,1,3,0,11,780,960,0,0],[156,1,3,0,11,960,1140,23,0],[155,1,3,0,12,420,660,3,0],[152,1,3,0,12,420,720,2,0],[155,1,3,0,12,720,780,3,0],[155,1,3,0,12,780,960,3,0],[152,1,3,0,12,780,960,2,0],[151,1,3,0,13,360,660,4,0],[146,1,3,0,13,360,660,3,0],[147,1,3,0,13,390,660,11,0],[155,1,3,0,13,390,660,16,1],[149,1,3,0,13,420,720,22,1],[150,1,3,0,13,420,720,0,0],[96,1,3,0,13,420,720,20,1],[144,1,3,0,13,420,720,14,0],[154,1,3,0,13,420,720,2,0],[153,1,3,0,13,420,720,17,0],[147,1,3,0,13,720,780,11,0],[155,1,3,0,13,720,780,16,1],[151,1,3,0,13,720,780,4,0],[146,1,3,0,13,720,780,3,0],[147,1,3,0,13,780,930,11,0],[155,1,3,0,13,780,930,16,1],[149,1,3,0,13,780,960,22,1],[150,1,3,0,13,780,960,0,0],[151,1,3,0,13,780,900,4,0],[96,1,3,0,13,780,960,20,1],[144,1,3,0,13,780,960,14,0],[154,1,3,0,13,780,960,2,0],[153,1,3,0,13,780,960,17,0],[146,1,3,0,13,780,900,3,0],[149,1,3,0,13,960,1140,23,0],[144,1,3,0,14,360,660,3,0],[102,1,3,0,14,360,660,4,0],[145,1,3,0,14,390,660,11,0],[146,1,3,0,14,390,660,16,1],[147,1,3,0,14,420,720,2,0],[148,1,3,0,14,420,720,17,0],[149,1,3,0,14,420,720,14,0],[150,1,3,0,14,420,720,0,0],[152,1,3,0,14,420,720,20,1],[145,1,3,0,14,720,780,11,0],[144,1,3,0,14,720,780,3,0],[102,1,3,0,14,720,780,4,0],[146,1,3,0,14,720,780,16,1],[147,1,3,0,14,780,960,2,0],[148,1,3,0,14,780,960,17,0],[149,1,3,0,14,780,960,14,0],[150,1,3,0,14,780,960,0,0],[145,1,3,0,14,780,930,11,0],[152,1,3,0,14,780,960,20,1],[144,1,3,0,14,780,900,3,0],[102,1,3,0,14,780,900,4,0],[146,1,3,0,14,780,930,16,1],[148,1,3,0,14,960,1140,23,0],[148,1,3,0,15,360,660,3,0],[151,1,3,0,15,360,660,4,0],[150,1,3,0,15,390,660,16,1],[145,1,3,0,15,390,660,11,0],[147,1,3,0,15,420,720,22,1],[155,1,3,0,15,420,720,17,0],[149,1,3,0,15,420,720,2,0],[152,1,3,0,15,420,720,20,1],[144,1,3,0,15,420,720,14,0],[146,1,3,0,15,420,720,0,0],[148,1,3,0,15,720,780,3,0],[150,1,3,0,15,720,780,16,1],[145,1,3,0,15,720,780,11,0],[151,1,3,0,15,720,780,4,0],[147,1,3,0,15,780,960,22,1],[148,1,3,0,15,780,900,3,0],[155,1,3,0,15,780,960,17,0],[149,1,3,0,15,780,960,2,0],[150,1,3,0,15,780,930,16,1],[145,1,3,0,15,780,930,11,0],[151,1,3,0,15,780,900,4,0],[152,1,3,0,15,780,960,20,1],[144,1,3,0,15,780,960,14,0],[146,1,3,0,15,780,960,0,0],[155,1,3,0,15,960,1140,23,0],[148,1,3,0,16,360,660,4,0],[149,1,3,0,16,360,660,3,0],[145,1,3,0,16,390,660,11,0],[146,1,3,0,16,390,660,16,1],[147,1,3,0,16,420,720,0,0],[155,1,3,0,16,420,720,22,1],[150,1,3,0,16,420,720,17,0],[152,1,3,0,16,420,720,2,0],[144,1,3,0,16,420,720,14,0],[154,1,3,0,16,420,720,20,1],[148,1,3,0,16,720,780,4,0],[149,1,3,0,16,720,780,3,0],[145,1,3,0,16,720,780,11,0],[146,1,3,0,16,720,780,16,1],[147,1,3,0,16,780,960,0,0],[148,1,3,0,16,780,900,4,0],[155,1,3,0,16,780,960,22,1],[149,1,3,0,16,780,900,3,0],[150,1,3,0,16,780,960,17,0],[145,1,3,0,16,780,930,11,0],[152,1,3,0,16,780,960,2,0],[144,1,3,0,16,780,960,14,0],[154,1,3,0,16,780,960,20,1],[146,1,3,0,16,780,930,16,1],[150,1,3,0,16,960,1140,23,0],[148,1,3,0,17,420,720,26,0],[120,1,3,0,17,420,720,25,0],[156,1,3,0,17,420,720,24,0],[147,1,3,0,18,360,660,3,0],[153,1,3,0,18,360,660,4,0],[148,1,3,0,18,390,660,16,1],[145,1,3,0,18,390,660,11,0],[149,1,3,0,18,420,720,17,0],[150,1,3,0,18,420,720,0,0],[151,1,3,0,18,420,720,22,1],[152,1,3,0,18,420,720,2,0],[144,1,3,0,18,420,720,14,0],[154,1,3,0,18,420,720,20,1],[147,1,3,0,18,720,780,3,0],[148,1,3,0,18,720,780,16,1],[145,1,3,0,18,720,780,11,0],[153,1,3,0,18,720,780,4,0],[147,1,3,0,18,780,900,3,0],[148,1,3,0,18,780,930,16,1],[149,1,3,0,18,780,960,17,0],[150,1,3,0,18,780,960,0,0],[145,1,3,0,18,780,930,11,0],[151,1,3,0,18,780,960,22,1],[152,1,3,0,18,780,960,2,0],[144,1,3,0,18,780,960,14,0],[154,1,3,0,18,780,960,20,1],[153,1,3,0,18,780,900,4,0],[151,1,3,0,18,960,1140,23,0]]};
 
-const RANGE = {start:"2026-11-12", end:"2026-11-30", collected:"2026-11-12"};
-const KHOA = [{name:"Nội Thận", cls:"than"}, {name:"Nội tiết", cls:"tiet"}];
-const CA = ["Sáng","Trưa","Chiều"];
+const SITES = [{short:"TP.HCM", name:"BVĐK Tâm Anh TP.HCM"}, {short:"Quận 7", name:"PKĐK Tâm Anh Quận 7"}];
+const DEPTS = [{name:"Nội Thận", short:"Nội Thận"}, {name:"Nội tiết", short:"Nội tiết"}, {name:"Tim mạch (TTTM)", short:"Tim mạch"}, {name:"Nội tổng quát", short:"Nội TQ"}];
+const SUBS = ["", "Tim mạch", "Tim mạch can thiệp", "Ngoại Tim mạch"];
+const DAYS = RAW.days, PARTIAL = new Set(RAW.partial);
 const WD = ["CN","T2","T3","T4","T5","T6","T7"];
 const WD_LONG = ["Chủ nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"];
-const D0 = 6*60, D1 = 16*60;
+const D0 = 6*60;
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.6l-5.3 2.9 1.1-5.9-4.4-4.1 6-.8z" fill="FILL" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
 const star = on => STAR.replace("FILL", on ? "currentColor" : "none");
+const $ = id => document.getElementById(id);
 
 function norm(s){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();}
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const toMin = s => {const [h,m] = s.split(":").map(Number); return h*60+m;};
 const fmt = m => String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
-const pct = m => ((m-D0)/(D1-D0))*100;
 function dObj(s){const [y,m,d]=s.split("-").map(Number);return new Date(Date.UTC(y,m-1,d));}
-const isoOf = d => d.toISOString().slice(0,10);
-function addDays(s,n){const d=dObj(s);d.setUTCDate(d.getUTCDate()+n);return isoOf(d);}
+function addDays(s,n){const d=dObj(s);d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
 const wd = s => dObj(s).getUTCDay();
 const dm = s => {const [,m,d]=s.split("-");return (+d)+"/"+(+m);};
+const uniq = a => [...new Set(a)];
 
-const DOCS = new Map(RAW.docs.map(d => [d.id, {...d, given:d.n.split(" ").pop(), key:norm(d.t+" "+d.n), sessions:[]}]));
-const SESS = RAW.sess.map(([id,date,s,e,room,vip,ca]) => ({id,date,s:toMin(s),e:toMin(e),room,vip:!!vip,ca}));
-SESS.forEach(x => DOCS.get(x.id).sessions.push(x));
-const BY_DATE = new Map();
-SESS.forEach(x => { if(!BY_DATE.has(x.date)) BY_DATE.set(x.date, []); BY_DATE.get(x.date).push(x); });
-const COLS = [];
-for(let d=RANGE.start; d<=RANGE.end; d=addDays(d,1)) if(wd(d)!==0) COLS.push(d);
+const DOCS = RAW.docs.map(([id,t,n,anon],i) => ({i,id,t,n,anon:!!anon,given:n.split(" ").pop(),key:norm(t+" "+n),sess:[]}));
+const SESS = RAW.sess.map(([doc,site,dept,sub,day,s,e,room,vip]) => ({doc:DOCS[doc],site,dept,sub,date:DAYS[day],s,e,room:RAW.rooms[room],vip:!!vip,ca:s<720?0:s<780?1:2}));
+const IDX = new Map();
+SESS.forEach(x => { x.doc.sess.push(x); const k=x.site+"|"+x.date; if(!IDX.has(k)) IDX.set(k,[]); IDX.get(k).push(x); });
+const RANGE_TXT = dm(DAYS[0]).split("/")[0]+"–"+dm(DAYS[DAYS.length-1])+"/"+DAYS[0].slice(0,4);
 
 function vnNow(){
   try{
     const p = Object.fromEntries(new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Ho_Chi_Minh",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()).map(x=>[x.type,x.value]));
     return {date:`${p.year}-${p.month}-${p.day}`, min:(+p.hour)*60+(+p.minute)};
-  }catch(e){const d=new Date();return {date:isoOf(d), min:d.getHours()*60+d.getMinutes()};}
+  }catch(e){const d=new Date();return {date:d.toISOString().slice(0,10), min:d.getHours()*60+d.getMinutes()};}
 }
-const NOW = vnNow();
+let NOW = vnNow();
 const store = {
   get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 };
-function defaultDate(){
-  const t = NOW.date;
-  if(t>=RANGE.start && t<=RANGE.end){ return wd(t)===0 ? addDays(t,1) : t; }
-  return COLS[0];
-}
+const ui = store.get("ta-lich-ui",{});
 const state = {
-  view:"ngay", khoa:"all", q:"", pinOnly:false,
-  pins:new Set(store.get("ta-lich-pins",[]).filter(id => DOCS.has(id))),
-  date:defaultDate(), open:new Set(), sort:store.get("ta-lich-sort","gan")
+  view:"ngay",
+  site: ui.site===1 ? 1 : 0,
+  dept: [0,1,2,3,"pin","all"].includes(ui.dept) ? ui.dept : "all",
+  sort: ["ten","gan","nhieu"].includes(ui.sort) ? ui.sort : "ten",
+  collapsed: new Set(Array.isArray(ui.collapsed) ? ui.collapsed : []),
+  pins: new Set(store.get("ta-lich-pins",[]).filter(id => DOCS.some(d => d.id===id))),
+  date: DAYS.includes(NOW.date) ? NOW.date : (NOW.date<DAYS[0] ? DAYS[0] : DAYS[DAYS.length-1]),
+  q:"", open:new Set()
 };
+if(state.dept==="pin" && !state.pins.size) state.dept="all";
+const saveUi = () => store.set("ta-lich-ui",{site:state.site,dept:state.dept,sort:state.sort,collapsed:[...state.collapsed]});
+const other = () => 1-state.site;
 
-function visible(d){
-  if(state.khoa!=="all" && d.k!==state.khoa) return false;
-  if(state.pinOnly && !state.pins.has(d.id)) return false;
-  const q = norm(state.q.trim());
-  if(q && !q.split(/\s+/).every(w => d.key.includes(w))) return false;
-  return true;
-}
+/* ---------- helpers ---------- */
+const deptOk = s => state.dept==="all" ? true : state.dept==="pin" ? state.pins.has(s.doc.id) : s.dept===state.dept;
+const vcmp = (a,b) => a.anon-b.anon || a.given.localeCompare(b.given,"vi") || a.n.localeCompare(b.n,"vi");
 function spans(segs){
   const out=[];
   [...segs].sort((a,b)=>a.s-b.s).forEach(s=>{
     const l=out[out.length-1];
-    if(l && l.room===s.room && l.e>=s.s){ l.e=Math.max(l.e,s.e); }
+    if(l && l.room===s.room && l.e>=s.s) l.e=Math.max(l.e,s.e);
     else out.push({s:s.s,e:s.e,room:s.room,vip:s.vip});
+  });
+  return out;
+}
+function blocks(segs){ // khoảng thời gian liền nhau, không phân biệt phòng
+  const out=[];
+  [...segs].sort((a,b)=>a.s-b.s).forEach(s=>{
+    const l=out[out.length-1];
+    if(l && l.e>=s.s) l.e=Math.max(l.e,s.e); else out.push({s:s.s,e:s.e});
   });
   return out;
 }
 const roomLabel = (r,vip) => vip ? r+" (VIP)" : r;
 function spanText(sp){
-  const rooms=[...new Set(sp.map(x=>x.room))];
-  if(rooms.length===1) return sp.map(x=>fmt(x.s)+"–"+fmt(x.e)).join(", ")+" · "+roomLabel(rooms[0],sp[0].vip);
+  const rooms=uniq(sp.map(x=>roomLabel(x.room,x.vip)));
+  if(rooms.length===1) return sp.map(x=>fmt(x.s)+"–"+fmt(x.e)).join(", ")+" · "+rooms[0];
   return sp.map(x=>fmt(x.s)+"–"+fmt(x.e)+" "+roomLabel(x.room,x.vip)).join(" · ");
 }
-function dayDocs(date, all){
+function groupsOf(segs){ // gom theo cơ sở + khoa
   const m=new Map();
-  (BY_DATE.get(date)||[]).forEach(s=>{
-    const d=DOCS.get(s.id);
-    if(!all && !visible(d)) return;
-    if(!m.has(d.id)) m.set(d.id,{doc:d,segs:[]});
-    m.get(d.id).segs.push(s);
+  segs.forEach(s=>{const k=s.site+"|"+s.dept; if(!m.has(k)) m.set(k,{site:s.site,dept:s.dept,segs:[]}); m.get(k).segs.push(s);});
+  return [...m.values()].sort((a,b)=>a.segs[0].s-b.segs[0].s);
+}
+function dayRows(date){
+  const m=new Map();
+  (IDX.get(state.site+"|"+date)||[]).forEach(s=>{
+    if(!deptOk(s)) return;
+    const k=s.dept+"|"+s.doc.i;
+    if(!m.has(k)) m.set(k,{doc:s.doc,dept:s.dept,sub:s.sub,segs:[]});
+    m.get(k).segs.push(s);
   });
   return [...m.values()];
 }
+const pinDocs = date => uniq((IDX.get(state.site+"|"+date)||[]).filter(s=>state.pins.has(s.doc.id)).map(s=>s.doc));
 function dayLabel(date, short){
   if(date===NOW.date) return "Hôm nay";
   if(date===addDays(NOW.date,1)) return "Ngày mai";
-  return short ? WD[wd(date)]+" "+dm(date) : WD_LONG[wd(date)]+", "+dm(date);
+  return (short?WD[wd(date)]:WD_LONG[wd(date)]+",")+" "+dm(date);
 }
-function liveState(sp, date){
+function liveState(bl, date){
   if(date!==NOW.date) return null;
-  const n=NOW.min;
-  const cur=sp.find(x=>n>=x.s && n<x.e);
+  const n=NOW.min, cur=bl.find(x=>n>=x.s && n<x.e);
   if(cur) return {cls:"live", txt:"Đang khám đến "+fmt(cur.e)};
-  const nxt=sp.find(x=>x.s>n);
-  if(nxt && sp.some(x=>x.e<=n)) return {cls:"gap", txt:"Trống đến "+fmt(nxt.s)};
+  const nxt=bl.find(x=>x.s>n);
+  if(nxt && bl.some(x=>x.e<=n)) return {cls:"gap", txt:"Nghỉ đến "+fmt(nxt.s)};
   if(nxt) return {cls:"soon", txt:"Bắt đầu "+fmt(nxt.s)};
   return {cls:"done", txt:"Hết ca"};
 }
-const vcmp = (a,b) => a.given.localeCompare(b.given,"vi") || a.n.localeCompare(b.n,"vi");
-
-/* ---------- render: calendar ---------- */
-function renderCal(){
-  const first = "2026-11-09", el = document.getElementById("cal");
-  let h = ["T2","T3","T4","T5","T6","T7","CN"].map(w=>`<div class="wd">${w}</div>`).join("");
-  for(let i=0;i<28;i++){
-    const d = addDays(first,i), inR = d>=RANGE.start && d<=RANGE.end, has = BY_DATE.has(d);
-    const num = +d.slice(8);
-    if(!inR || wd(d)===0){
-      h += `<div class="day is-out" aria-hidden="true"><span class="dnum">${num}</span></div>`; continue;
-    }
-    const dd = dayDocs(d,false), n0 = dd.filter(x=>x.doc.k===0).length, n1 = dd.length-n0;
-    const pinN = state.pins.size ? dayDocs(d,true).filter(x=>state.pins.has(x.doc.id)).length : 0;
-    const cls = ["day", d===state.date?"is-sel":"", d===NOW.date?"is-today":"", !has?"is-none":"", has&&!dd.length?"is-zero":""].join(" ");
-    const label = `${WD_LONG[wd(d)]} ${dm(d)}: ${has ? dd.length+" bác sĩ" : "chưa có lịch"}${pinN?", "+pinN+" bác sĩ đã ghim":""}`;
-    h += `<button class="${cls}" data-date="${d}" aria-label="${label}" aria-pressed="${d===state.date}">
-      <span class="dnum">${num}</span>
-      ${pinN?`<span class="pinct">${star(true)}${pinN}</span>`:""}
-      <span><span class="dcnt">${has ? dd.length : "–"}</span>
-      <span class="mix">${n0?`<i class="than" style="flex:${n0}"></i>`:""}${n1?`<i class="tiet" style="flex:${n1}"></i>`:""}</span></span>
-    </button>`;
-  }
-  el.innerHTML = h;
+function nameBtn(d, attr){
+  return `<button class="dname${d.anon?" anon":""}" ${attr}><span class="dt">${esc(d.t)}</span><span class="dn">${esc(d.n)}</span></button>`;
+}
+function pinBtn(d){
+  if(d.anon) return `<span class="pin ghost">${star(false)}</span>`;
+  const on=state.pins.has(d.id);
+  return `<button class="pin" data-pin="${d.i}" aria-pressed="${on}" aria-label="${on?"Bỏ ghim":"Ghim"} ${esc(d.n)}">${star(on)}</button>`;
 }
 
-/* ---------- render: pinned suggestion ---------- */
-function renderSugg(){
-  const el = document.getElementById("suggCard");
+/* ---------- khoa ---------- */
+function renderChips(){
+  const n=state.pins.size;
+  let h=`<button class="chip" data-dept="all" aria-pressed="${state.dept==="all"}">Tất cả khoa</button>`;
+  DEPTS.forEach((d,i)=>{ h+=`<button class="chip" data-dept="${i}" aria-pressed="${state.dept===i}"><i class="dot d${i}"></i>${d.short}</button>`; });
+  h+=`<button class="chip" data-dept="pin" aria-pressed="${state.dept==="pin"}"${n?"":" disabled"}>${star(state.dept==="pin")}Đã ghim${n?" · "+n:""}</button>`;
+  $("chips").innerHTML=h;
+}
+
+/* ---------- dải ngày ---------- */
+let stripKey="";
+function renderStrip(){
+  const el=$("dstrip"), keep=el.scrollLeft;
+  el.innerHTML = DAYS.map((d,i)=>{
+    const n=uniq(dayRows(d).map(r=>r.doc)).length;
+    const p=state.dept==="pin" ? 0 : pinDocs(d).length;
+    const cls=["dchip", i&&wd(d)===1?"wk":"", d===state.date?"is-sel":"", d===NOW.date?"is-today":"", d<NOW.date?"is-past":"", PARTIAL.has(d)?"is-partial":""].join(" ");
+    const label=`${WD_LONG[wd(d)]} ${dm(d)}: ${n} bác sĩ${p?", "+p+" bác sĩ đã ghim":""}${PARTIAL.has(d)?", lịch chưa công bố đủ":""}`;
+    return `<button class="${cls}" data-date="${d}" aria-pressed="${d===state.date}" aria-label="${label}"><span class="dw">${WD[wd(d)]}</span><span class="dn">${+d.slice(8)}</span><span class="dc">${n||"–"}</span>${p?`<span class="dp">${star(true)}${p}</span>`:""}</button>`;
+  }).join("");
+  const key=state.date+"|"+state.site;
+  if(key!==stripKey){
+    stripKey=key;
+    const sel=el.querySelector(".is-sel");
+    if(sel) el.scrollLeft = sel.offsetLeft - el.offsetLeft - (el.clientWidth-sel.offsetWidth)/2;
+  } else el.scrollLeft=keep;
+}
+function renderBest(){
+  const el=$("best");
   if(!state.pins.size){
-    el.innerHTML = `<h2>Ngày nên đi gặp</h2><p class="hint" style="margin:0">Bấm ${star(false).replace('<svg','<svg style="width:12px;height:12px;vertical-align:-1px"')} cạnh tên bác sĩ để ghim. Lịch sẽ đánh dấu ngày có các BS này và gợi ý ngày gặp được nhiều người nhất.</p>`;
+    el.innerHTML=`<span>Số dưới mỗi ngày là số bác sĩ khám. Bấm ${star(false)} cạnh tên để ghim bác sĩ cần gặp.</span>`;
     return;
   }
-  const from = NOW.date>RANGE.start ? NOW.date : RANGE.start;
-  const rows = COLS.filter(d=>d>=from && BY_DATE.has(d)).map(d=>{
-    const ds = dayDocs(d,true).filter(x=>state.pins.has(x.doc.id)).map(x=>x.doc);
-    return {d, ds};
-  }).filter(r=>r.ds.length).sort((a,b)=>b.ds.length-a.ds.length || (a.d<b.d?-1:1)).slice(0,4);
-  const total = state.pins.size;
-  el.innerHTML = `<h2>Ngày nên đi gặp <span class="hint" style="font-weight:400">· ${total} BS đã ghim</span></h2>` +
-    (rows.length ? `<div class="sugg">${rows.map(r=>`<button data-date="${r.d}"><span class="sd">${dayLabel(r.d,true)}</span><span class="sn"><b>${r.ds.length}/${total}</b> · ${esc(r.ds.sort(vcmp).map(x=>x.given).join(", "))}</span></button>`).join("")}</div>`
-     : `<p class="hint" style="margin:0">Các BS đã ghim không còn lịch nào từ hôm nay đến 30/11.</p>`);
+  const total=DOCS.filter(d=>state.pins.has(d.id) && d.sess.some(s=>s.site===state.site)).length;
+  const rows=DAYS.filter(d=>d>=NOW.date).map(d=>({d,n:pinDocs(d).length})).filter(r=>r.n).sort((a,b)=>b.n-a.n||a.d.localeCompare(b.d)).slice(0,3);
+  if(!rows.length){ el.innerHTML=`<span>${star(true)} Các bác sĩ đã ghim không còn lịch tại ${SITES[state.site].short} đến ${dm(DAYS[DAYS.length-1])}.</span>`; return; }
+  el.innerHTML=`<span>${star(true)} Gặp được nhiều BS đã ghim nhất:</span>`+rows.map(r=>`<button class="pill" data-date="${r.d}">${dayLabel(r.d,true)} · <b>${r.n}/${total}</b></button>`).join("");
 }
 
-/* ---------- render: day timeline ---------- */
+/* ---------- theo ngày ---------- */
 function renderDay(){
-  const el = document.getElementById("dayPanel"), d = state.date;
-  const has = BY_DATE.has(d), dd = dayDocs(d,false);
-  const isToday = d===NOW.date;
-  const todayBtn = (!isToday && NOW.date>=RANGE.start && NOW.date<=RANGE.end && wd(NOW.date)!==0) ? `<button class="pill" data-date="${NOW.date}">Về hôm nay</button>` : "";
-  let h = `<div class="dayhead"><h2>${WD_LONG[wd(d)]}, ${dm(d)}/2026</h2>${isToday?'<span class="pill solid">Hôm nay</span>':""}${todayBtn}</div>`;
-  if(!has){
-    el.innerHTML = h + `<div class="empty">Bệnh viện chưa công bố lịch ngày ${dm(d)} tại thời điểm lấy dữ liệu (12/11).</div>`;
+  const el=$("dayPanel"), d=state.date, isToday=d===NOW.date;
+  const rows=dayRows(d), docs=uniq(rows.map(r=>r.doc));
+  const backBtn=(!isToday && DAYS.includes(NOW.date)) ? `<button class="pill" data-date="${NOW.date}">Về hôm nay</button>` : "";
+  let h=`<div class="dayhead"><h2>${WD_LONG[wd(d)]}, ${dm(d)}</h2>${isToday?'<span class="pill solid">Hôm nay</span>':""}${backBtn}</div>`;
+  if(PARTIAL.has(d)) h+=`<div class="note">Ngày ${dm(d)} bệnh viện gần như chưa công bố lịch. Danh sách bên dưới chưa đầy đủ.</div>`;
+  if(!rows.length){
+    const scope = state.dept==="pin" ? "Các bác sĩ đã ghim" : state.dept==="all" ? "Các khoa" : DEPTS[state.dept].name;
+    el.innerHTML=h+`<div class="empty">${scope} không có lịch khám tại ${SITES[state.site].short} ngày ${dm(d)}.</div>`;
     return;
   }
-  const caN = [0,1,2].map(c => new Set(dd.flatMap(x=>x.segs.filter(s=>s.ca===c).map(s=>s.id))).size);
-  const caSes = dd.reduce((a,x)=>a+x.segs.length,0);
-  h += `<div class="daystats"><span><b class="num">${dd.length}</b> bác sĩ · <b class="num">${caSes}</b> ca</span>${CA.map((c,i)=>`<span>${c} <b class="num">${caN[i]}</b></span>`).join("")}</div>`;
-  h += `<div class="legend"><span><i class="sw than"></i>Nội Thận</span><span><i class="sw tiet"></i>Nội tiết</span><span><i class="lg-vip"></i>Phòng VIP 9001</span>${isToday && NOW.min>=D0 && NOW.min<=D1?`<span><i class="lg-now"></i>Bây giờ ${fmt(NOW.min)}</span>`:""}</div>`;
-  if(!dd.length){
-    el.innerHTML = h + `<div class="empty">Không có bác sĩ nào khớp bộ lọc trong ngày này.</div>`;
-    return;
-  }
-  let axis = "";
-  for(let t=6;t<=16;t++){
-    const c = [t===6?"first":"", t===16?"last":"", t%2?"odd":""].join(" ");
-    axis += `<span class="${c}" style="left:${pct(t*60)}%">${t}h</span>`;
-  }
-  h += `<div class="tl-axis-row"><div class="tl-axis">${axis}</div></div>`;
-  const nowOn = isToday && NOW.min>=D0 && NOW.min<=D1;
-  [0,1].forEach(k=>{
-    const rows = dd.filter(x=>x.doc.k===k).map(x=>({...x, sp:spans(x.segs)}))
-      .sort((a,b)=>a.sp[0].s-b.sp[0].s || vcmp(a.doc,b.doc));
-    if(!rows.length) return;
-    h += `<div class="tgroup"><h3><i class="sw ${KHOA[k].cls}"></i>${KHOA[k].name} <span class="ct">· ${rows.length} BS</span></h3>`;
-    rows.forEach(r=>{
-      const st = liveState(r.sp, d), pinned = state.pins.has(r.doc.id);
-      const segs = r.sp.map(x=>`<span class="bar ${KHOA[k].cls}${x.vip?" vip":""}" style="left:${pct(x.s)}%;width:calc(${pct(x.e)-pct(x.s)}% - 2px)" data-tip="${esc(r.doc.n)}\n${fmt(x.s)}–${fmt(x.e)} · ${esc(roomLabel(x.room,x.vip))}"></span>`).join("");
-      h += `<div class="trow${st&&st.cls==="done"?" is-done":""}">
-        <div class="who">
-          <button class="pin" data-pin="${r.doc.id}" aria-pressed="${pinned}" aria-label="${pinned?"Bỏ ghim":"Ghim"} ${esc(r.doc.n)}">${star(pinned)}</button>
-          <div class="wb"><button class="dname" data-open="${r.doc.id}" title="Xem cả tháng của BS này"><span class="dt">${esc(r.doc.t)}</span><span class="dn">${esc(r.doc.n)}</span></button>
-          ${st?`<span class="state ${st.cls}">${st.txt}</span>`:""}</div>
-        </div>
-        <div class="track">${segs}${nowOn?`<span class="nowline" style="left:${pct(NOW.min)}%"></span>`:""}</div>
-        <div class="meta">${esc(spanText(r.sp))}</div>
-      </div>`;
-    });
-    h += `</div>`;
+  // dữ liệu vẽ cho từng dòng
+  rows.forEach(r=>{
+    r.all=r.doc.sess.filter(s=>s.date===d);
+    r.here=r.all.filter(s=>s.site===state.site);
+    r.sp=spans(r.segs);
+    r.pinned=state.pins.has(r.doc.id);
   });
-  el.innerHTML = h;
+  const maxEnd=Math.max(...rows.flatMap(r=>r.all.map(s=>s.e)));
+  const D1=(maxEnd>16*60?19:16)*60, P=m=>((m-D0)/(D1-D0))*100;
+  const anyHol=rows.some(r=>r.all.some(s=>s.site!==state.site));
+  const caN=[0,1,2].map(c=>uniq(rows.filter(r=>r.segs.some(s=>s.ca===c && s.s<960)).map(r=>r.doc)).length);
+  const lateN=uniq(rows.filter(r=>r.segs.some(s=>s.s>=960)).map(r=>r.doc)).length;
+  h+=`<div class="daystats"><span><b class="num">${docs.length}</b> bác sĩ</span><span>Sáng <b class="num">${caN[0]}</b></span><span>Trưa <b class="num">${caN[1]}</b></span><span>Chiều <b class="num">${caN[2]}</b></span>${lateN?`<span>Ngoài giờ <b class="num">${lateN}</b></span>`:""}</div>`;
+  const nowOn=isToday && NOW.min>=D0 && NOW.min<=D1;
+  h+=`<div class="legend"><span><i class="lg-vip"></i>Phòng VIP</span>${anyHol?`<span><i class="lg-hol"></i>Khám ở ${SITES[other()].short}</span>`:""}${nowOn?`<span><i class="lg-now"></i>Bây giờ ${fmt(NOW.min)}</span>`:""}</div>`;
+  let axis="";
+  for(let t=6;t<=D1/60;t++) axis+=`<span class="${t===6?"first":""} ${t===D1/60?"last":""} ${t%2?"odd":""}" style="left:${P(t*60)}%">${t}h</span>`;
+  h+=`<div class="axis-row"><div class="axis">${axis}</div></div>`;
+  const step=(100/((D1-D0)/60)).toFixed(4)+"%";
+  const multi=state.dept==="all"||state.dept==="pin";
+  const rowHtml=r=>{
+    const st=liveState(blocks(r.here), d);
+    const bars=groupsOf(r.all).map(g=>spans(g.segs).map(x=>{
+      const hol=g.site!==state.site;
+      const tipTxt=`${r.doc.n}\n${fmt(x.s)}–${fmt(x.e)} · ${roomLabel(x.room,x.vip)}\n${DEPTS[g.dept].name}${hol?" · "+SITES[g.site].short:""}`;
+      return `<span class="bar ${hol?"hol":"d"+g.dept+(x.vip?" vip":"")}" style="left:${P(x.s)}%;width:calc(${P(x.e)-P(x.s)}% - 2px)" data-tip="${esc(tipTxt)}"></span>`;
+    }).join("")).join("");
+    const extra=groupsOf(r.all.filter(s=>!(s.site===state.site && s.dept===r.dept))).map(g=>`${g.site!==state.site?SITES[g.site].short:DEPTS[g.dept].short} ${blocks(g.segs).map(x=>fmt(x.s)+"–"+fmt(x.e)).join(", ")}`).join("; ");
+    return `<div class="trow${st&&st.cls==="done"?" is-done":""}">
+      <div class="who">${pinBtn(r.doc)}<div class="wb">${nameBtn(r.doc,`data-open="${r.doc.i}" title="Xem cả tháng của bác sĩ này"`)}${st?`<span class="state ${st.cls}">${st.txt}</span>`:""}</div></div>
+      <div class="track" style="--step:${step}"><span class="lunch" style="left:${P(720)}%;width:${P(780)-P(720)}%"></span>${bars}${nowOn?`<span class="nowline" style="left:${P(NOW.min)}%"></span>`:""}</div>
+      <div class="meta">${esc(spanText(r.sp))}${extra?` <i>· cùng ngày: ${esc(extra)}</i>`:""}</div>
+    </div>`;
+  };
+  const order=(a,b)=>b.pinned-a.pinned || a.sp[0].s-b.sp[0].s || vcmp(a.doc,b.doc);
+  DEPTS.forEach((dep,k)=>{
+    const list=rows.filter(r=>r.dept===k).sort(order);
+    if(!list.length) return;
+    const closed=multi && state.collapsed.has(k);
+    h+=`<div class="sec">`;
+    if(multi) h+=`<button class="sec-h" data-collapse="${k}" aria-expanded="${!closed}"><i class="dot d${k}"></i>${dep.name}<span class="ct">· ${list.length} BS</span><span class="chev">${closed?"Mở ▸":"▾"}</span></button>`;
+    if(!closed){
+      const subs=uniq(list.map(r=>r.sub)).sort();
+      subs.forEach(sb=>{
+        if(subs.length>1) h+=`<div class="subh">${SUBS[sb]} · ${list.filter(r=>r.sub===sb).length}</div>`;
+        h+=list.filter(r=>r.sub===sb).map(rowHtml).join("");
+      });
+    }
+    h+=`</div>`;
+  });
+  el.innerHTML=h;
 }
 
-/* ---------- render: doctor list ---------- */
-function nextOf(doc){
-  const days = [...new Set(doc.sessions.map(s=>s.date))].sort();
-  for(const d of days){
+/* ---------- theo bác sĩ ---------- */
+const matchQ = d => { const q=norm(state.q.trim()); return !q || q.split(/\s+/).every(w=>d.key.includes(w)); };
+function nextOf(here){
+  for(const d of uniq(here.map(s=>s.date)).sort()){
     if(d<NOW.date) continue;
-    const sp = spans(doc.sessions.filter(s=>s.date===d));
-    const rest = d===NOW.date ? sp.filter(x=>x.e>NOW.min) : sp;
-    if(rest.length) return {d, sp:rest, live: d===NOW.date && rest[0].s<=NOW.min};
+    const sp=spans(here.filter(s=>s.date===d));
+    const rest=d===NOW.date ? sp.filter(x=>x.e>NOW.min) : sp;
+    if(rest.length) return {d, sp:rest, live:d===NOW.date && rest[0].s<=NOW.min};
   }
   return null;
 }
-function stripTemplate(){
-  const parts=[]; COLS.forEach((d,i)=>{ if(i && wd(d)===1) parts.push("4px"); parts.push("minmax(0,1fr)"); });
-  return parts.join(" ");
-}
-const STRIP_T = stripTemplate();
-function stripCells(fn){
-  let h=""; COLS.forEach((d,i)=>{ if(i && wd(d)===1) h+=`<span class="sp"></span>`; h+=fn(d); }); return h;
-}
+const mode = a => { const c=new Map(); a.forEach(x=>c.set(x,(c.get(x)||0)+1)); return [...c.entries()].sort((x,y)=>y[1]-x[1])[0][0]; };
+const STRIP_T = DAYS.map((d,i)=>(i&&wd(d)===1?"3px ":"")+"minmax(0,1fr)").join(" ");
+const stripCells = fn => DAYS.map((d,i)=>(i&&wd(d)===1?`<span class="sp"></span>`:"")+fn(d)).join("");
 function renderDocs(){
-  const el = document.getElementById("docList");
-  const docs = [...DOCS.values()].filter(visible).map(d=>{
-    const days = new Set(d.sessions.map(s=>s.date));
-    const wds = [...new Set(d.sessions.map(s=>wd(s.date)))].sort().map(w=>WD[w]);
-    return {d, nDays:days.size, nCa:d.sessions.length, wds, next:nextOf(d)};
-  });
-  const sorters = {
+  const el=$("docList");
+  const pinMode=state.dept==="pin", one=typeof state.dept==="number";
+  const base=DOCS.filter(d=>matchQ(d) && (!pinMode || state.pins.has(d.id)));
+  const list=base.map(d=>{
+    const here=d.sess.filter(s=>s.site===state.site);
+    if(!here.length) return null;
+    if(one && !here.some(s=>s.dept===state.dept)) return {d, out:true};
+    const gd=one ? state.dept : mode(here.map(s=>s.dept));
+    const inDept=here.filter(s=>s.dept===gd);
+    return {d, here, gd, gs:mode(inDept.map(s=>s.sub)), nDays:uniq(here.map(s=>s.date)).length, next:nextOf(here), away:d.sess.some(s=>s.site!==state.site)};
+  }).filter(Boolean);
+  const shown=list.filter(x=>!x.out);
+  const otherDept=list.length-shown.length, otherSite=base.filter(d=>!d.sess.some(s=>s.site===state.site) && (!one || d.sess.some(s=>s.dept===state.dept))).length;
+  $("keyHol").hidden = !shown.some(x=>x.away);
+  const sorters={
     ten:(a,b)=>vcmp(a.d,b.d),
-    nhieu:(a,b)=>b.nDays-a.nDays || b.nCa-a.nCa || vcmp(a.d,b.d),
+    nhieu:(a,b)=>b.nDays-a.nDays || vcmp(a.d,b.d),
     gan:(a,b)=>{
       if(!a.next||!b.next) return (a.next?-1:0)-(b.next?-1:0) || vcmp(a.d,b.d);
       return a.next.d.localeCompare(b.next.d) || a.next.sp[0].s-b.next.sp[0].s || vcmp(a.d,b.d);
     }
   };
-  docs.sort(sorters[state.sort]||sorters.ten);
-  let h = `<div class="dl-head"><span class="lbl">Bác sĩ</span><div class="strip" style="grid-template-columns:${STRIP_T}">${stripCells(d=>`<span class="hd${d===NOW.date?" today":""}"><b>${+d.slice(8)}</b><i>${WD[wd(d)]}</i></span>`)}</div><span class="nlbl">Lịch kế tiếp</span></div>`;
-  if(!docs.length){ el.innerHTML = h + `<div class="empty">Không có bác sĩ nào khớp bộ lọc.</div>`; return; }
-  [0,1].forEach(k=>{
-    const list = docs.filter(x=>x.d.k===k);
-    if(!list.length) return;
-    h += `<div class="dsec"><h3><i class="sw ${KHOA[k].cls}"></i>${KHOA[k].name} <span class="ct" style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">· ${list.length} BS</span></h3>`;
-    list.forEach(x=>{
-      const d=x.d, pinned=state.pins.has(d.id), open=state.open.has(d.id);
-      const strip = stripCells(day=>{
-        if(!BY_DATE.has(day)) return `<span class="sc na" data-tip="${dm(day)}: chưa có lịch"><i></i><i></i><i></i></span>`;
-        const ss = d.sessions.filter(s=>s.date===day);
-        const bars = [0,1,2].map(c=>{const s=ss.find(v=>v.ca===c);return `<i class="${s?"on"+(s.vip?" vip":""):""}"></i>`;}).join("");
-        const tip = ss.length ? `${WD[wd(day)]} ${dm(day)}\n${spanText(spans(ss))}` : `${WD[wd(day)]} ${dm(day)}: không khám`;
-        return `<button class="sc ${KHOA[k].cls}${day===NOW.date?" today":""}" data-date="${day}" data-tip="${esc(tip)}" aria-label="${esc(tip.replace("\n",": "))}">${bars}</button>`;
-      });
-      let nx;
-      if(!x.next) nx = `<span>Hết lịch trong tháng</span>`;
-      else if(x.next.live) nx = `<span class="state live" style="margin-right:4px">Đang khám</span>đến <b>${fmt(x.next.sp[0].e)}</b> · ${esc(roomLabel(x.next.sp[0].room,x.next.sp[0].vip))}`;
-      else nx = `Kế tiếp: <b>${dayLabel(x.next.d,true)}</b> · ${esc(spanText(x.next.sp))}`;
-      h += `<div class="drow">
-        <div class="who">
-          <button class="pin" data-pin="${d.id}" aria-pressed="${pinned}" aria-label="${pinned?"Bỏ ghim":"Ghim"} ${esc(d.n)}">${star(pinned)}</button>
-          <div class="wb"><button class="dname" data-toggle="${d.id}" aria-expanded="${open}"><span class="dt">${esc(d.t)}</span><span class="dn">${esc(d.n)}</span></button>
-          <span class="stats num">${x.nDays} ngày · ${x.nCa} ca · ${x.wds.join(", ")}</span></div>
-        </div>
-        <div class="strip" style="grid-template-columns:${STRIP_T}">${strip}</div>
-        <div class="next">${nx}</div>
-        ${open?`<div class="detail">${[...new Set(d.sessions.map(s=>s.date))].sort().map(day=>`<button data-date="${day}"><span class="dd">${WD[wd(day)]} ${dm(day)}</span><span>${esc(spanText(spans(d.sessions.filter(s=>s.date===day))))}</span></button>`).join("")}</div>`:""}
-      </div>`;
+  shown.sort(sorters[state.sort]);
+  let h=`<div class="dl-head"><span class="lbl">Bác sĩ</span><div class="strip" style="grid-template-columns:${STRIP_T}">${stripCells(d=>`<span class="hd${d===NOW.date?" today":""}${wd(d)===0?" sun":""}"><b>${+d.slice(8)}</b><i>${WD[wd(d)]}</i></span>`)}</div><span class="lbl">Lịch kế tiếp tại ${SITES[state.site].short}</span></div>`;
+  const rowHtml=x=>{
+    const d=x.d, open=state.open.has(d.i);
+    const strip=stripCells(day=>{
+      const ss=d.sess.filter(s=>s.date===day), hs=ss.filter(s=>s.site===state.site), os=ss.filter(s=>s.site!==state.site);
+      const bars=[0,1,2].map(c=>{
+        const s=hs.find(v=>v.ca===c);
+        if(s) return `<i class="on d${s.dept}${s.vip?" vip":""}"></i>`;
+        return os.some(v=>v.ca===c) ? `<i class="hol"></i>` : `<i></i>`;
+      }).join("");
+      const cls=`sc${PARTIAL.has(day)?" part":""}${day===NOW.date?" today":""}`;
+      if(!ss.length) return `<span class="${cls}" data-tip="${WD[wd(day)]} ${dm(day)}: ${PARTIAL.has(day)?"lịch chưa công bố đủ":"không khám"}">${bars}</span>`;
+      const tipTxt=`${WD[wd(day)]} ${dm(day)}\n`+groupsOf(ss).map(g=>spanText(spans(g.segs))+(g.site!==state.site?" · tại "+SITES[g.site].short:"")).join("\n");
+      return `<button class="${cls}" data-date="${day}" data-gosite="${hs.length?state.site:other()}" data-tip="${esc(tipTxt)}" aria-label="${esc(tipTxt.replace(/\n/g,"; "))}">${bars}</button>`;
     });
-    h += `</div>`;
+    let nx;
+    if(!x.next) nx=`Hết lịch tại ${SITES[state.site].short} đến ${dm(DAYS[DAYS.length-1])}`;
+    else if(x.next.live) nx=`<span class="state live" style="margin-right:4px">Đang khám</span>đến <b>${fmt(x.next.sp[0].e)}</b> · ${esc(roomLabel(x.next.sp[0].room,x.next.sp[0].vip))}`;
+    else nx=`Kế tiếp: <b>${dayLabel(x.next.d,true)}</b> · ${esc(spanText(x.next.sp))}`;
+    const manyDept=uniq(d.sess.map(s=>s.dept)).length>1;
+    const detail=open ? `<div class="detail">${uniq(d.sess.map(s=>s.date)).sort().map(day=>{
+      const gs=groupsOf(d.sess.filter(s=>s.date===day));
+      const txt=gs.map(g=>spanText(spans(g.segs))+(manyDept?" · "+DEPTS[g.dept].short:"")+(g.site!==state.site?" · tại "+SITES[g.site].short:"")).join("; ");
+      return `<button data-date="${day}" data-gosite="${gs.some(g=>g.site===state.site)?state.site:other()}"><span class="dd">${WD[wd(day)]} ${dm(day)}</span><span>${esc(txt)}</span></button>`;
+    }).join("")}</div>` : "";
+    return `<div class="drow" id="doc-${d.i}">
+      <div class="who">${pinBtn(d)}<div class="wb">${nameBtn(d,`data-toggle="${d.i}" aria-expanded="${open}"`)}${x.away?`<span class="tag">+ ${SITES[other()].short}</span>`:""}</div></div>
+      <div class="strip" style="grid-template-columns:${STRIP_T}">${strip}</div>
+      <div class="next">${nx}</div>${detail}
+    </div>`;
+  };
+  if(!shown.length) h+=`<div class="empty">Không có bác sĩ nào khớp tại ${SITES[state.site].short}${one?" · "+DEPTS[state.dept].name:""}.</div>`;
+  DEPTS.forEach((dep,k)=>{
+    const grp=shown.filter(x=>x.gd===k);
+    if(!grp.length) return;
+    h+=`<div class="sec">`;
+    if(!one) h+=`<div class="sec-h"><i class="dot d${k}"></i>${dep.name}<span class="ct">· ${grp.length} BS</span></div>`;
+    const subs=uniq(grp.map(x=>x.gs)).sort();
+    subs.forEach(sb=>{
+      if(subs.length>1) h+=`<div class="subh">${SUBS[sb]} · ${grp.filter(x=>x.gs===sb).length}</div>`;
+      h+=grp.filter(x=>x.gs===sb).map(rowHtml).join("");
+    });
+    h+=`</div>`;
   });
-  el.innerHTML = h;
+  if((state.q.trim()||pinMode) && (otherDept||otherSite)){
+    h+=`<div class="hintrow">`;
+    if(otherDept) h+=`<span>${otherDept} bác sĩ khớp ở khoa khác.</span><button class="linkbtn" data-dept="all">Xem tất cả khoa</button>`;
+    if(otherSite) h+=`<span>${otherSite} bác sĩ khớp chỉ khám ở ${SITES[other()].short}.</span><button class="linkbtn" data-site="${other()}">Xem ${SITES[other()].short}</button>`;
+    h+=`</div>`;
+  }
+  el.innerHTML=h;
 }
 
-/* ---------- shell ---------- */
-function renderChrome(){
-  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.view===state.view)));
-  document.getElementById("view-ngay").hidden = state.view!=="ngay";
-  document.getElementById("view-bac-si").hidden = state.view!=="bac-si";
-  document.querySelectorAll("#khoaSeg button").forEach(b=>b.setAttribute("aria-pressed", String(String(state.khoa)===b.dataset.k)));
-  const pb = document.getElementById("pinOnly");
-  pb.innerHTML = `${star(state.pinOnly)} Chỉ BS đã ghim (${state.pins.size})`;
-  pb.setAttribute("aria-pressed", String(state.pinOnly));
-  pb.disabled = !state.pins.size && !state.pinOnly;
-  document.getElementById("qclear").hidden = !state.q;
-  document.getElementById("sort").value = state.sort;
-}
+/* ---------- khung ---------- */
 function render(){
-  renderChrome();
-  if(state.view==="ngay"){ renderCal(); renderSugg(); renderDay(); }
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.view===state.view)));
+  document.querySelectorAll("#siteSeg button").forEach(b=>b.setAttribute("aria-pressed", String(+b.dataset.site===state.site)));
+  $("view-ngay").hidden = state.view!=="ngay";
+  $("view-bac-si").hidden = state.view!=="bac-si";
+  $("subSite").textContent = SITES[state.site].name+" · ";
+  $("subRange").textContent = "Lịch "+RANGE_TXT;
+  $("qclear").hidden = !state.q;
+  $("sort").value = state.sort;
+  renderChips();
+  if(state.view==="ngay"){ renderStrip(); renderBest(); renderDay(); }
   else renderDocs();
 }
 function setView(v){
-  state.view = v;
-  try{ if(location.hash !== "#"+v) history.replaceState(null,"","#"+v); }catch(e){}
+  state.view=v;
+  try{ if(location.hash!=="#"+v) history.replaceState(null,"","#"+v); }catch(e){}
   render();
   window.scrollTo({top:0});
 }
-function goDate(d){ state.date = d; if(state.view!=="ngay") setView("ngay"); else render(); }
+function goDate(d, site){
+  if(site===0||site===1) state.site=site;
+  state.date=d; saveUi();
+  if(state.view!=="ngay") setView("ngay"); else render();
+}
 
 document.addEventListener("click", e=>{
-  const t = e.target.closest("button");
+  const t=e.target.closest("button");
   if(!t) return;
-  if(t.dataset.view){ setView(t.dataset.view); return; }
-  if(t.dataset.k){ state.khoa = t.dataset.k==="all" ? "all" : +t.dataset.k; render(); return; }
-  if(t.dataset.pin){
-    const id=t.dataset.pin;
+  const ds=t.dataset;
+  if(ds.view){ setView(ds.view); return; }
+  if(ds.date){ hideTip(); goDate(ds.date, ds.gosite!==undefined ? +ds.gosite : undefined); return; }
+  if(ds.site!==undefined){ state.site=+ds.site; saveUi(); render(); return; }
+  if(ds.dept!==undefined){ state.dept = ds.dept==="all"||ds.dept==="pin" ? ds.dept : +ds.dept; saveUi(); render(); return; }
+  if(ds.pin!==undefined){
+    const id=DOCS[+ds.pin].id;
     state.pins.has(id) ? state.pins.delete(id) : state.pins.add(id);
-    if(!state.pins.size) state.pinOnly=false;
-    store.set("ta-lich-pins",[...state.pins]); render(); return;
+    if(!state.pins.size && state.dept==="pin") state.dept="all";
+    store.set("ta-lich-pins",[...state.pins]); saveUi(); render(); return;
   }
-  if(t.id==="pinOnly"){ state.pinOnly=!state.pinOnly; render(); return; }
-  if(t.id==="qclear"){ state.q=""; document.getElementById("q").value=""; render(); return; }
-  if(t.dataset.open){
-    state.open = new Set([t.dataset.open]); setView("bac-si");
-    const row = document.querySelector(`[data-toggle="${t.dataset.open}"]`);
-    if(row) row.closest(".drow").scrollIntoView({block:"center"});
+  if(ds.collapse!==undefined){ const k=+ds.collapse; state.collapsed.has(k)?state.collapsed.delete(k):state.collapsed.add(k); saveUi(); render(); return; }
+  if(t.id==="qclear"){ state.q=""; $("q").value=""; render(); return; }
+  if(ds.open!==undefined){
+    state.open=new Set([+ds.open]); state.q=""; $("q").value="";
+    setView("bac-si");
+    const row=$("doc-"+ds.open);
+    if(row) row.scrollIntoView({block:"center"});
     return;
   }
-  if(t.dataset.toggle){ const id=t.dataset.toggle; state.open.has(id)?state.open.delete(id):state.open.add(id); render(); return; }
-  if(t.dataset.date){ hideTip(); goDate(t.dataset.date); return; }
+  if(ds.toggle!==undefined){ const i=+ds.toggle; state.open.has(i)?state.open.delete(i):state.open.add(i); render(); return; }
 });
-document.getElementById("q").addEventListener("input", e=>{ state.q = e.target.value; render(); });
-document.getElementById("sort").addEventListener("change", e=>{ state.sort = e.target.value; store.set("ta-lich-sort", state.sort); render(); });
+$("q").addEventListener("input", e=>{ state.q=e.target.value; render(); });
+$("sort").addEventListener("change", e=>{ state.sort=e.target.value; saveUi(); render(); });
 window.addEventListener("hashchange", ()=>{ const v=location.hash.slice(1); if((v==="ngay"||v==="bac-si") && v!==state.view){ state.view=v; render(); } });
+setInterval(()=>{ if(document.hidden) return; const n=vnNow(); if(n.date!==NOW.date||n.min!==NOW.min){ NOW=n; if(state.view==="ngay"||!state.q) render(); } }, 60000);
 
 /* tooltip (chuột) */
-const tip = document.getElementById("tip");
-function hideTip(){ tip.style.opacity = 0; }
+const tip=$("tip");
+function hideTip(){ tip.style.opacity=0; }
 document.addEventListener("pointermove", e=>{
   if(e.pointerType!=="mouse") return;
-  const t = e.target.closest("[data-tip]");
+  const t=e.target.closest("[data-tip]");
   if(!t){ hideTip(); return; }
-  tip.textContent = t.dataset.tip;
-  const w = tip.offsetWidth, hgt = tip.offsetHeight;
-  let x = e.clientX+12, y = e.clientY+14;
-  if(x+w > innerWidth-8) x = e.clientX-w-12;
-  if(y+hgt > innerHeight-8) y = e.clientY-hgt-12;
-  tip.style.left = x+"px"; tip.style.top = y+"px"; tip.style.opacity = 1;
+  tip.textContent=t.dataset.tip;
+  const w=tip.offsetWidth, hgt=tip.offsetHeight;
+  let x=e.clientX+12, y=e.clientY+14;
+  if(x+w>innerWidth-8) x=e.clientX-w-12;
+  if(y+hgt>innerHeight-8) y=e.clientY-hgt-12;
+  tip.style.left=x+"px"; tip.style.top=y+"px"; tip.style.opacity=1;
 });
 document.addEventListener("scroll", hideTip, {passive:true});
 
-/* init */
 (function init(){
-  const nDocs = DOCS.size, nCa = SESS.length;
-  const n0 = SESS.filter(s=>DOCS.get(s.id).k===0).length;
-  document.getElementById("sub").textContent = `BVĐK Tâm Anh TP.HCM · 12–30/11/2026 · ${nDocs} bác sĩ · ${nCa} ca`;
-  document.getElementById("srcline").textContent = `Dữ liệu: ${n0} ca Nội Thận, ${nCa-n0} ca Nội tiết, ${[...DOCS.values()].filter(d=>d.k===0).length} + ${[...DOCS.values()].filter(d=>d.k===1).length} bác sĩ. Quy ước ca: Sáng bắt đầu trước 12:00, Trưa 12:00–13:00, Chiều từ 13:00.`;
-  if(NOW.date>RANGE.end){
-    const b=document.getElementById("stale"); b.hidden=false;
-    b.textContent = "Lịch này chỉ đến 30/11/2026. Cần lấy lịch mới từ bệnh viện để xem các ngày sau.";
+  const named=DOCS.filter(d=>!d.anon).length;
+  $("srcline").textContent=`Dữ liệu ${RANGE_TXT}: ${named} bác sĩ, ${SESS.length.toLocaleString("vi-VN")} ca tại 2 cơ sở, 4 khoa. Tim mạch (TTTM) gồm Tim mạch, Tim mạch can thiệp và Ngoại Tim mạch. Sáng bắt đầu trước 12:00, Trưa 12:00–13:00, Chiều từ 13:00, Ngoài giờ từ 16:00. Một số ca VIP ở Quận 7 do bác sĩ trực đảm nhận, bệnh viện chưa công bố tên.`;
+  if(NOW.date>DAYS[DAYS.length-1]){
+    const b=$("stale"); b.hidden=false;
+    b.textContent=`Lịch này chỉ đến ${dm(DAYS[DAYS.length-1])}. Cần lấy lịch mới từ bệnh viện để xem các ngày sau.`;
   }
-  const v = location.hash.slice(1);
-  if(v==="bac-si") state.view = "bac-si";
+  if(location.hash.slice(1)==="bac-si") state.view="bac-si";
   render();
 })();
 </script>
