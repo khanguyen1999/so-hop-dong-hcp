@@ -266,6 +266,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .combo-opt[aria-selected="true"],.combo-opt:hover{background:var(--surface-2)}
 .combo-opt small{display:block;color:var(--muted);font-size:12.5px}
 .combo-opt.new{color:var(--accent);font-weight:600}
+.topic-in + .combo-list .combo-opt{line-height:1.4}
 
 /* pay */
 .paybar{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;padding:12px 16px;box-shadow:var(--shadow);margin-top:14px;z-index:20}
@@ -2159,7 +2160,6 @@ function syncRows() {
 }
 function renderRows() {
   const box = $('#eng-rows'); if (!box || !edit) return;
-  const topicsOf = id => [...new Set(state.engs.filter(e => e.hcpId === id && e.topic).map(e => e.topic))];
   box.innerHTML = edit.rows.map((r, i) => {
     const h = hcpById(r.hcpId); const miss = h ? hcpMissing(h) : [];
     const n = k => `name="r.${r.rid}.${k}"`;
@@ -2171,11 +2171,10 @@ function renderRows() {
         <label class="field"><span>Phí (VND)</span><input class="input mono" ${n('fee')} value="${r.fee ? fmtVND(r.fee) : ''}" inputmode="numeric" data-money></label>
         <label class="field"><span>Thời lượng</span><input class="input" ${n('duration')} value="${esc(r.duration)}" inputmode="numeric"></label>
         <label class="field"><span>Chuẩn bị</span><input class="input" ${n('prep')} value="${esc(r.prep)}" inputmode="numeric"></label>
-        <label class="field full"><span>Chủ đề</span><input class="input" ${n('topic')} value="${esc(r.topic)}" list="dl-topic-${r.rid}" placeholder="Tên bài báo cáo / phiên chủ tọa"></label>
+        <div class="field full"><span>Chủ đề</span><div class="combo"><input class="input topic-in" ${n('topic')} value="${esc(r.topic)}" data-rid="${r.rid}" placeholder="Bấm để chọn chủ đề đã dùng, hoặc gõ mới" autocomplete="off" role="combobox" aria-expanded="false"><div class="combo-list" hidden></div></div></div>
         <label class="field"><span>Lĩnh vực chuyên môn</span><input class="input" ${n('specialty')} value="${esc(r.specialty)}" list="dl-spec2"></label>
         <div class="field er-status">${h ? (miss.length ? `<div class="miss">Hồ sơ thiếu: ${miss.map(x => `<span class="tag crit">${x}</span>`).join('')} <button type="button" class="btn sm" data-act="row-edit-hcp" data-rid="${r.rid}">Bổ sung</button></div>` : `<div class="miss"><span class="tag ok">Hồ sơ đủ</span> <span class="muted small">${esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · '))}</span></div>`) : ''}</div>
       </div>
-      <datalist id="dl-topic-${r.rid}">${topicsOf(r.hcpId).map(t => `<option>${esc(t)}</option>`).join('')}</datalist>
     </div>`; }).join('');
   const live = edit.rows.filter(r => r.hcpId);
   const sumEl = $('#ev-sum'); if (sumEl) sumEl.textContent = live.length ? `${live.length} BS · ${fmtVND(live.reduce((a, r) => a + (+r.fee || 0), 0))} VND` : '';
@@ -2199,6 +2198,32 @@ function comboRender(input) {
   list.innerHTML = hits.map((h, i) => `<button type="button" class="combo-opt" data-act="combo-pick" data-rid="${input.dataset.rid}" data-id="${h.id}" aria-selected="${i === 0}">${esc(h.name)}${used.has(h.id) ? ' <span class="tag warn">đã có trong sự kiện</span>' : ''}<small>${esc([h.position || h.khoa, h.hospital].filter(Boolean).join(' · ') || '—')}</small></button>`).join('')
     + (clean(input.value) ? `<button type="button" class="combo-opt new" data-act="combo-new" data-rid="${input.dataset.rid}" aria-selected="${!hits.length}">${I.plus.replace('<svg', '<svg width="14" height="14"')} Tạo hồ sơ “${esc(clean(input.value))}”</button>` : '');
   list.hidden = !list.innerHTML; input.setAttribute('aria-expanded', String(!list.hidden));
+}
+// Gợi ý chủ đề: mọi chủ đề đã dùng; của BS đang chọn lên đầu, còn lại theo lần dùng gần nhất
+function topicIndex() {
+  const m = new Map();
+  for (const e of state.engs) {
+    const t = clean(e.topic); if (!t) continue;
+    const k = norm(t), d = evById(e.eventId)?.date || '';
+    const x = m.get(k) || {t, n:0, d:'', hcps:new Set()};
+    x.n++; x.hcps.add(e.hcpId); if (d > x.d) { x.d = d; x.t = t; }
+    m.set(k, x);
+  }
+  return [...m.values()];
+}
+function topicRender(input) {
+  const list = input.parentElement.querySelector('.combo-list');
+  const r = edit?.rows.find(x => x.rid === input.dataset.rid);
+  const q = norm(input.value).split(' ').filter(Boolean);
+  const hits = topicIndex().filter(x => q.every(w => norm(x.t).includes(w)) && norm(x.t) !== norm(input.value))
+    .sort((a, b) => (b.hcps.has(r?.hcpId) - a.hcps.has(r?.hcpId)) || b.d.localeCompare(a.d) || b.n - a.n).slice(0, 12);
+  list.innerHTML = hits.map(x => {
+    const mine = r?.hcpId && x.hcps.has(r.hcpId);
+    const who = [...x.hcps].map(id => hcpById(id)?.name).filter(Boolean);
+    const meta = [mine ? 'BS này đã trình bày' : who.slice(0, 2).join(', ') + (who.length > 2 ? ` +${who.length - 2}` : ''), x.d ? fmtDate(x.d) : '', x.n > 1 ? `dùng ${x.n} lần` : ''].filter(Boolean).join(' · ');
+    return `<button type="button" class="combo-opt" data-act="topic-pick" data-rid="${input.dataset.rid}" data-t="${esc(x.t)}" aria-selected="false">${mine ? '<span class="tag acc">BS này</span> ' : ''}${esc(x.t)}<small>${esc(meta)}</small></button>`;
+  }).join('');
+  list.hidden = !hits.length; input.setAttribute('aria-expanded', String(!list.hidden));
 }
 function saveEvent(dl) {
   const w = topModal(); if (!edit || !w) return;
@@ -2591,6 +2616,7 @@ const ACT = {
   'add-row': () => { syncRows(); edit.rows.push(blankRow()); renderRows(); const last = edit.rows[edit.rows.length - 1]; topModal()?.querySelector(`[name="r.${last.rid}.hcpName"]`)?.focus(); },
   'del-row': t => { syncRows(); edit.rows = edit.rows.filter(r => r.rid !== t.dataset.rid); if (!edit.rows.length) edit.rows.push(blankRow()); renderRows(); },
   'combo-pick': t => pickHcpForRow(t.dataset.rid, hcpById(t.dataset.id)),
+  'topic-pick': t => { const inp = t.closest('.combo').querySelector('.topic-in'); inp.value = t.dataset.t; t.parentElement.hidden = true; inp.setAttribute('aria-expanded', 'false'); syncRows(); },
   'combo-new': t => {
     const rid = t.dataset.rid; syncRows(); const r = edit.rows.find(x => x.rid === rid);
     openHcpModal(null, {prefill:{name:clean(r.hcpName)}, onSaved:h => pickHcpForRow(rid, h)});
@@ -2668,11 +2694,11 @@ document.addEventListener('click', e => {
 document.addEventListener('mousedown', e => { if (e.target.closest('.combo-opt')) e.preventDefault(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { const open = document.querySelector('.combo-list:not([hidden])'); if (open) { open.hidden = true; return; } if (modals.length) closeModal(); }
-  const ci = e.target.closest?.('.combo-in');
+  const ci = e.target.closest?.('.combo-in, .topic-in'), isTopic = ci?.classList.contains('topic-in');
   if (ci && ['ArrowDown','ArrowUp','Enter'].includes(e.key)) {
-    const list = ci.parentElement.querySelector('.combo-list'); if (list.hidden) { if (e.key !== 'Enter') comboRender(ci); return; }
+    const list = ci.parentElement.querySelector('.combo-list'); if (list.hidden) { if (e.key !== 'Enter') (isTopic ? topicRender : comboRender)(ci); return; }
     const opts = $$('.combo-opt', list); let i = opts.findIndex(o => o.getAttribute('aria-selected') === 'true');
-    if (e.key === 'Enter') { e.preventDefault(); opts[Math.max(i, 0)]?.click(); return; }
+    if (e.key === 'Enter') { if (isTopic && i < 0) { list.hidden = true; return; } e.preventDefault(); opts[Math.max(i, 0)]?.click(); return; }
     e.preventDefault(); i = (i + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
     opts.forEach((o, k) => o.setAttribute('aria-selected', String(k === i))); opts[i]?.scrollIntoView({block:'nearest'});
   }
@@ -2685,10 +2711,12 @@ document.addEventListener('input', e => {
     const r = edit?.rows.find(x => x.rid === t.dataset.rid); if (r && r.hcpId && norm(t.value) !== norm(hcpById(r.hcpId)?.name)) { r.hcpId = ''; }
     comboRender(t); return;
   }
+  if (t.classList.contains('topic-in')) { topicRender(t); return; }
   if (t.dataset.note) { const en = engById(t.dataset.note); if (en) { en.payNote = t.value; save(true); } return; }
 });
-document.addEventListener('focusin', e => { if (e.target.classList?.contains('combo-in')) comboRender(e.target); });
-document.addEventListener('focusout', e => { if (e.target.classList?.contains('combo-in')) setTimeout(() => { const l = e.target.parentElement?.querySelector('.combo-list'); if (l) l.hidden = true; }, 120); });
+document.addEventListener('focusin', e => { if (e.target.classList?.contains('combo-in')) comboRender(e.target); else if (e.target.classList?.contains('topic-in')) topicRender(e.target); });
+document.addEventListener('click', e => { const t = e.target; if (t.classList?.contains('topic-in') && t.parentElement.querySelector('.combo-list').hidden) topicRender(t); });
+document.addEventListener('focusout', e => { if (e.target.classList?.contains('combo-in') || e.target.classList?.contains('topic-in')) setTimeout(() => { if (document.activeElement === e.target) return; const l = e.target.parentElement?.querySelector('.combo-list'); if (l) l.hidden = true; }, 120); });
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.matches('[data-money]')) { const v = money(t.value); t.value = v ? fmtVND(v) : ''; }
