@@ -1961,7 +1961,7 @@ function openHcpModal(id, {prefill = {}, onSaved, quick} = {}) {
       <div class="fsec"><h3>Ghi chú</h3><textarea class="input" name="note" rows="2">${esc(h.note)}</textarea></div>
       ${!isNew ? `<div class="fsec"><h3>Tiện ích</h3>
         <div class="actions"><button type="button" class="btn sm" data-act="copy-hcp" data-id="${id}">${I.copy} Copy thông tin (Veeva)</button>
-        ${miss.length ? `<button type="button" class="btn sm" data-act="ask-info" data-id="${id}">${I.copy} Copy tin nhắn xin bổ sung (${[...new Set(miss)].length} mục)</button>` : ''}</div></div>
+        ${askInfoItems(h).length ? `<button type="button" class="btn sm" data-act="ask-info" data-id="${id}">${I.copy} Tin nhắn xin bổ sung (${askInfoItems(h).length} mục)</button>` : ''}</div></div>
       <div class="fsec"><h3>Lịch sử engage · ${hist.length}</h3>${hist.length ? `<div class="tbl-wrap"><table class="tbl"><tbody>${hist.map(({e, ev}) => `<tr class="clickable" data-act="open-event" data-id="${ev.id}"><td class="mono small nowrap">${fmtDate(ev.date)}</td><td>${esc(ev.name)}<div class="t-sub">${esc(e.role)}${e.topic ? ' · ' + esc(e.topic) : ''}</div></td><td class="num mono">${fmtVND(e.fee)}</td><td>${chip(stageOf(e), stageLabel(e))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small" style="margin:0">Chưa có.</p>'}</div>` : ''}
       <datalist id="dl-tier"><option>Tier 1</option><option>Tier 2</option><option>Tier 3</option><option>TL Tier1</option><option>TL Tier2</option></datalist>
       <datalist id="dl-role">${ROLES.map(r => `<option>${r}</option>`).join('')}</datalist>
@@ -2068,17 +2068,50 @@ function engCopyText(e) {
   return [`Sự kiện: ${ev.name}`, `Sản phẩm: ${prodLabel(productFor(ev)) || '—'}`, `Ngày: ${fmtDate(ev.date)}`, `Địa điểm: ${[ev.venue, ev.city].filter(Boolean).join(', ')}`, `HCP: ${h.name}`, `Chức vụ: ${[h.position || h.khoa, h.hospital].filter(Boolean).join(' – ')}`,
     `CCCD/MST: ${h.cccd || ''}`, `Vai trò: ${e.role}`, `Chủ đề: ${e.topic || ''}`, `Thời lượng: ${e.duration || ''} phút · Chuẩn bị: ${e.prep || ''} phút`, `Thù lao: ${fmtVND(e.fee)} VND`].join('\n');
 }
-function askInfoText(h) {
-  const miss = new Set([...hcpMissing(h), ...hcpMissing(h, 'pay')]);
-  const asks = [];
-  if (miss.has('CCCD/MST')) asks.push('Số CCCD (hoặc MST cá nhân)');
-  if (miss.has('Số TK') || miss.has('Ngân hàng') || miss.has('Mã NH')) asks.push('Số tài khoản, tên ngân hàng và chi nhánh');
-  if (miss.has('Địa chỉ') || miss.has('Thành phố')) asks.push('Địa chỉ ghi trên hợp đồng');
-  if (miss.has('Email')) asks.push('Email'); if (miss.has('SĐT')) asks.push('Số điện thoại');
-  if (miss.has('Chuyên môn')) asks.push('Lĩnh vực chuyên môn');
-  if (miss.has('Bệnh viện') || miss.has('Chức vụ/Khoa')) asks.push('Chức vụ, khoa và bệnh viện công tác');
-  const given = titleCase(lastWord(h.name)); const me = lastWord(state.settings.staffName) || 'em';
-  return `Dạ em chào BS ${given}, em là ${me} bên Bayer. Để làm hợp đồng cho chương trình sắp tới, BS gửi giúp em thêm thông tin sau nhé:\n${asks.map(a => '- ' + a).join('\n')}\nEm cảm ơn BS ạ!`;
+// Tin nhắn xin BS bổ sung thông tin (giọng của người dùng, chỉ hỏi mục còn thiếu)
+function askInfoItems(h) {
+  const miss = new Set([...hcpMissing(h), ...hcpMissing(h, 'pay')]), out = [];
+  if (miss.has('CCCD/MST')) out.push('Số CCCD:');
+  if (miss.has('Số TK') || miss.has('Ngân hàng') || miss.has('Mã NH')) out.push('Số tài khoản, tên ngân hàng:');
+  if (!clean(h.dob)) out.push('Ngày tháng năm sinh:');
+  if (!clean(h.birthplace)) out.push('Nơi sinh:');
+  if (miss.has('Địa chỉ') || miss.has('Thành phố')) out.push('Địa chỉ:');
+  if (miss.has('Email')) out.push('Email:');
+  if (miss.has('SĐT')) out.push('Số điện thoại:');
+  if (miss.has('Bệnh viện') || miss.has('Chức vụ/Khoa')) out.push('Khoa, bệnh viện công tác:');
+  if (miss.has('Chuyên môn')) out.push('Lĩnh vực chuyên môn:');
+  return out;
+}
+const XUNG = ['chị', 'anh', 'cô', 'thầy', 'BS'];
+function guessXung(h) {
+  if (XUNG.includes(h.xung)) return h.xung;
+  const n = ' ' + norm(h.name) + ' ', note = norm(h.note);
+  if (/gioi: ?nu|\bnu\b/.test(note) || / thi /.test(n)) return 'chị';
+  if (/gioi: ?nam/.test(note) || / van /.test(n)) return 'anh';
+  return 'BS';
+}
+function askInfoText(h, xung = guessXung(h)) {
+  const given = titleCase(lastWord(h.name)), items = askInfoItems(h);
+  const who = `${xung} ${given}`;
+  return `Dạ em nhờ ${who} cho em xin 1 số thông tin sau để em hoàn thiện hợp đồng cho ${xung} zới nhen ${xung} ^^\n${items.map(a => '- ' + a).join('\n')}\nEm cảm ơn ${who} nhiều ạ :B`;
+}
+function openAskInfo(id) {
+  const h = hcpById(id); if (!h) return;
+  let xung = guessXung(h);
+  const w = openModal(`
+    <div class="modal-h"><div><h2>Tin nhắn xin bổ sung</h2><p>${esc(h.name)} · thiếu ${askInfoItems(h).length} mục</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
+    <div class="modal-b stack">
+      <div class="field"><span>Gọi BS là</span><div class="seg" id="ask-xung">${XUNG.map(x => `<button type="button" class="btn sm${x === xung ? ' primary' : ''}" data-x="${x}">${x}</button>`).join('')}</div></div>
+      <label class="field"><span>Tin nhắn (sửa được trước khi copy)</span><textarea class="input" id="ask-text" rows="9">${esc(askInfoText(h, xung))}</textarea></label>
+    </div>
+    <div class="modal-f"><button class="btn" data-act="close">Đóng</button><button class="btn primary" id="ask-copy">${I.copy} Copy</button></div>`);
+  $('#ask-xung', w).addEventListener('click', e => {
+    const b = e.target.closest('[data-x]'); if (!b) return;
+    xung = b.dataset.x; $$('#ask-xung .btn', w).forEach(x => x.classList.toggle('primary', x === b));
+    $('#ask-text', w).value = askInfoText(h, xung);
+    if (h.xung !== xung) { h.xung = xung; h.updatedAt = Date.now(); save(true); }
+  });
+  $('#ask-copy', w).addEventListener('click', () => { copyText($('#ask-text', w).value, 'Đã copy tin nhắn. Dán vào Zalo gửi BS.'); closeModal(); });
 }
 
 /* --- event editor --- */
@@ -2606,7 +2639,7 @@ const ACT = {
     checkpoint(); state.hcps = state.hcps.filter(h => h.id !== id); save(); closeModal(); render(); toast('Đã xoá.', {action:'Hoàn tác', onAction:undo});
   },
   'copy-hcp': t => copyText(hcpCopyText(hcpById(t.dataset.id)), 'Đã copy thông tin BS.'),
-  'ask-info': t => copyText(askInfoText(hcpById(t.dataset.id)), 'Đã copy tin nhắn. Dán vào Zalo gửi BS.'),
+  'ask-info': t => openAskInfo(t.dataset.id),
   'export-hcps': () => exportHcps(),
   'new-event': () => openEventEditor(null),
   'edit-event': t => openEventEditor(t.dataset.id),
