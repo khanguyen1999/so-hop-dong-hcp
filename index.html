@@ -287,7 +287,6 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .modal-b{padding:18px 22px;overflow:auto;display:grid;gap:4px}
 .modal-f{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center;padding:14px 22px;border-top:1px solid var(--line)}
 .modal-f .left{margin-right:auto}
-@media (max-width:640px){.overlay{padding:0}.modal,.modal.wide{max-width:none;max-height:none;min-height:100%;border-radius:0;border:0}.modal-h{padding-top:max(18px,env(safe-area-inset-top,0px))}.modal-f{padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}}
 .kv{display:grid;grid-template-columns:minmax(110px,auto) minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:13px}
 .kv dt{color:var(--muted)}
 .kv dd{margin:0;overflow-wrap:anywhere}
@@ -303,6 +302,88 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-body);font-size:13px;background
 .toast button{margin-left:auto;background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
 @keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.toast{animation:none}}
+/* ===== Điện thoại & tablet (≤900px): thanh tab dưới đáy, thẻ thay bảng, hộp thoại dạng tấm trượt ===== */
+.l-short,.rail-title{display:none}
+html.modal-open,html.modal-open body{overflow:hidden}
+.overlay{overscroll-behavior:contain}
+.modal-b{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.upd{position:fixed;z-index:150;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));display:flex;gap:10px;align-items:center;background:var(--ink);color:var(--bg);border-radius:99px;padding:8px 8px 8px 16px;box-shadow:var(--shadow);font-size:13.5px;font-weight:500;white-space:nowrap}
+.upd .btn{min-height:32px;padding:5px 12px;border-radius:99px}
+@media (max-width:900px){
+  .shell{padding-top:0;gap:14px;align-content:start}
+  .rail{top:0;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-left,0px)));border-radius:0;border:0;border-bottom:1px solid var(--line);box-shadow:none;padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));gap:8px;overflow:visible;background:var(--surface)}
+  .nav a .cnt.quiet{display:none}
+  .brand{padding:0;gap:10px;min-width:0;flex:1}
+  .brand svg{width:30px;height:30px}
+  .brand>div{display:none}
+  .rail-title{display:block;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acct{order:3;padding:6px 10px;min-height:36px}
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -6px 20px rgba(20,32,42,.06);padding:4px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));transition:transform .22s ease}
+  .nav a{position:relative;flex-direction:column;justify-content:center;gap:3px;padding:6px 2px;min-height:54px;border-radius:10px;font-size:12px;font-weight:600;color:var(--muted);text-align:center}
+  .nav a[aria-current="page"]{background:none;color:var(--accent)}
+  .nav a[aria-current="page"] svg{background:var(--accent-soft);border-radius:99px;padding:3px 14px;box-sizing:content-box}
+  .nav svg{width:20px;height:20px}
+  .nav a .l-full{display:none}.nav a .l-short{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .nav a .cnt{position:absolute;top:2px;left:calc(50% + 8px);margin:0;font-size:11px;line-height:17px;padding:0 6px;border:2px solid var(--surface)}
+  html.nav-hide .nav,html.kb .nav{transform:translateY(110%)}
+  main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .toasts{bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+  html.nav-hide .toasts,html.kb .toasts,html.modal-open .toasts{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:640px){
+  body{font-size:14.5px}
+  .page-h{margin-bottom:16px;gap:10px}
+  .page-h h1{font-size:22px}
+  .page-h p{font-size:13.5px;margin-top:4px}
+  .page-h .actions{width:100%}
+  .btn{min-height:40px;padding:8px 14px}
+  .btn.sm{min-height:36px;padding:6px 11px;font-size:13px}
+  .input,select.input,textarea.input{font-size:16px;min-height:44px}
+  .field>span{font-size:13px}
+  .panel-b{padding:14px}
+  .toolbar{flex-wrap:wrap}
+  .toolbar>.input,.toolbar>select{max-width:none!important;flex:1 1 100%}
+  /* bảng → thẻ */
+  .tbl-wrap{overflow:visible}
+  table.tbl,.tbl tbody,.tbl tr,.tbl td{display:block;width:auto}
+  .tbl thead{display:none}
+  .tbl tbody tr{position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:5px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .tbl tbody tr:last-child{border-bottom:0}
+  .tbl td{padding:0;border:0;min-width:0!important;text-align:left!important;white-space:normal!important}
+  .tbl td:empty{display:none}
+  .tbl td[data-label]{display:flex;gap:10px;align-items:baseline;font-size:13.5px}
+  .tbl td[data-label]::before{content:attr(data-label);flex:none;width:92px;font-size:12px;font-weight:600;color:var(--muted)}
+  .tbl td[data-label]>*{min-width:0;flex:1}
+  .tbl tbody tr>td:first-child,.tbl tbody tr>td.c-check+td{font-size:14.5px}
+  .tbl tbody tr>td:first-child::before,.tbl tbody tr>td.c-check+td::before{display:none}
+  .tbl td.c-check{position:absolute;right:12px;top:12px;width:auto}
+  .tbl td.c-check input{width:22px;height:22px}
+  .tbl td.c-check+td{padding-right:36px}
+  .tbl td .actions,.tbl td:last-child:not([data-label]){justify-content:flex-start}
+  .tbl-hcp td:nth-child(3),.tbl-hcp td:nth-child(4),.tbl-hcp td:nth-child(5){display:none}
+  .tbl-prod td .input{min-width:0!important}
+  .tbl td[data-label]:has(.steps){flex-direction:column;gap:6px}
+  .steps{width:100%}
+  .step{flex:1 1 0;min-width:0}
+  .step .lbl{font-size:12px;white-space:normal;text-align:center;line-height:1.25}
+  .tbl-prod td[data-label]{align-items:center}
+  .group-h{padding-inline:14px}
+  /* hộp thoại: tấm trượt từ đáy */
+  .overlay{padding:0!important;align-items:flex-end}
+  .modal,.modal.wide,.modal.narrow{max-width:none;width:100%;min-height:0;max-height:calc(100dvh - max(14px,env(safe-area-inset-top,0px)) - 6px);border-radius:18px 18px 0 0;border:0;animation:sheet .22s ease-out}
+  .modal::before{content:"";flex:none;width:38px;height:4px;border-radius:2px;background:var(--line-strong);margin:8px auto 0}
+  .modal-h{padding:10px 16px 12px}
+  .modal-h h2{font-size:18px}
+  .modal-b{padding:14px 16px}
+  .modal-f{padding:10px 16px max(12px,env(safe-area-inset-bottom,0px));gap:8px}
+  .modal-f .btn{flex:1 1 auto}
+  .modal-f .left{flex:0 0 auto}
+}
+@media (hover:none){.nav a:hover{background:none}.btn:hover{background:var(--surface)}.btn.primary:hover{background:var(--accent);border-color:var(--accent)}.btn.ghost:hover{background:transparent}.tbl tbody tr.clickable:hover td{background:none}.acct:hover{background:var(--surface)}.btn:active{background:var(--surface-2)}.btn.primary:active{background:var(--accent-hover)}}
+.btn,.nav a,.tbl tr.clickable{-webkit-tap-highlight-color:transparent}
+@keyframes sheet{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.modal{animation:none!important}.nav{transition:none!important}}
+
 .busy{position:fixed;inset:0;z-index:250;display:grid;place-items:center;background:var(--scrim)}
 .busy div{background:var(--surface);border-radius:12px;padding:16px 20px;box-shadow:var(--shadow);font-weight:500}
 </style>
@@ -1605,16 +1686,18 @@ const I = {
 function renderRail() {
   const held = state.engs.filter(e => stageOf(e) === 'held').length;
   const upcoming = state.events.filter(ev => ev.date >= today()).length;
+  const SHORT = {events:'Sự kiện', settings:'Cài đặt', home:'Tổng quan', pay:'Thanh toán', hcps:'Bác sĩ'};
   const nav = [['home','Tổng quan',''], ['events','Sự kiện & HĐ', upcoming ? `<span class="cnt">${upcoming}</span>` : ''], ['pay','Thanh toán', held ? `<span class="cnt hot">${held}</span>` : ''],
-    ['hcps','Bác sĩ', state.hcps.length ? `<span class="cnt">${state.hcps.length}</span>` : ''], ['settings','Cài đặt','']];
+    ['hcps','Bác sĩ', state.hcps.length ? `<span class="cnt quiet">${state.hcps.length}</span>` : ''], ['settings','Cài đặt','']];
   const days = state.lastBackupAt ? Math.floor((Date.now() - state.lastBackupAt) / 86400000) : null;
   const due = !sync.user && state.changes > 0 && (days === null || days >= 7) && state.hcps.length > 0;
   $('#rail').innerHTML = `
     <div class="brand">
       <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="var(--accent)"/><path d="M5 18h6l2.5-6 4 12 3-9 1.5 3H29" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div><b>Sổ hợp đồng HCP</b><span>Speaker Agreement · YCTT</span></div>
+      <strong class="rail-title">${esc((nav.find(n => n[0] === ui.view) || nav[0])[1])}</strong>
     </div>
-    <nav class="nav">${nav.map(([v, l, c]) => `<a href="#${ROUTE_OF[v]}" data-act="nav" data-v="${v}" ${ui.view === v ? 'aria-current="page"' : ''}>${I[v]}<span>${l}</span>${c}</a>`).join('')}</nav>
+    <nav class="nav">${nav.map(([v, l, c]) => `<a href="#${ROUTE_OF[v]}" data-act="nav" data-v="${v}" ${ui.view === v ? 'aria-current="page"' : ''}>${I[v]}<span class="l-full">${l}</span><span class="l-short">${SHORT[v] || l}</span>${c}</a>`).join('')}</nav>
     ${SYNC_ON ? `<button class="acct" data-act="account" title="${esc(syncText())}"><i class="sd sd-${sync.status}"></i><span class="acct-t"><b>${sync.user ? esc(sync.user.email) : 'Đăng nhập'}</b><small>${esc(syncText())}</small></span></button>` : ''}
     <div class="store ${SYNC_ON ? 'with-acct' : ''}">
       ${sync.user ? '' : `<div class="row">${storageOK ? 'Dữ liệu lưu trong trình duyệt này' : '<span class="due">Trình duyệt chặn lưu dữ liệu</span>'}</div>`}
@@ -1666,7 +1749,7 @@ function onboardHtml() {
     <div class="flow">${['prep','ready','held','sent','paid'].map((s, i) => (i ? '→ ' : '') + chip(s, ['Tạo HĐ','Raise Veeva','Event','Gửi admin','Đã chi'][i])).join(' ')}</div></div>
     <div class="panel-b"><div class="onboard">
       <div class="ob ${s1 ? 'done' : ''}"><span class="ob-n">${s1 ? 'XONG' : 'BƯỚC 1'}</span><b>Nạp phôi hợp đồng</b><p>Tải file “Phoi_Speaker_Agreement.docx” lên. ${sync.user ? 'Phôi lưu cùng tài khoản, máy khác không cần tải lại.' : 'Phôi chỉ lưu trong trình duyệt này.'}</p><div><button class="btn sm ${s1 ? '' : 'primary'}" data-act="pick" data-f="f-template">${I.up} Chọn file phôi</button></div></div>
-      <div class="ob ${s2 ? 'done' : ''}"><span class="ob-n">${s2 ? 'XONG' : 'BƯỚC 2'}</span><b>Nhập danh sách bác sĩ</b><p>Từ file Excel YCTT cũ (sheet Data HCPs và các sheet YCTT), và từ hợp đồng cũ (Word, PDF hoặc ảnh chụp, mẫu nào cũng được) để lấy CCCD, số tài khoản.</p><div class="actions"><button class="btn sm ${s2 ? '' : 'primary'}" data-act="pick" data-f="f-excel">Từ Excel</button><button class="btn sm" data-act="pick" data-f="f-contracts">Từ hợp đồng .docx</button></div></div>
+      <div class="ob ${s2 ? 'done' : ''}"><span class="ob-n">${s2 ? 'XONG' : 'BƯỚC 2'}</span><b>Nhập danh sách bác sĩ</b><p>Từ file Excel YCTT cũ (sheet Data HCPs và các sheet YCTT), và từ hợp đồng cũ (Word, PDF hoặc ảnh chụp, mẫu nào cũng được) để lấy CCCD, số tài khoản.</p><div class="actions"><button class="btn sm ${s2 ? '' : 'primary'}" data-act="pick" data-f="f-excel">Từ Excel</button><button class="btn sm" data-act="pick" data-f="f-contracts">Từ hợp đồng cũ</button></div></div>
       <div class="ob ${s3 ? 'done' : ''}"><span class="ob-n">${s3 ? 'XONG' : 'BƯỚC 3'}</span><b>Tạo sự kiện đầu tiên</b><p>Chọn BS, nhập chủ đề và phí, bấm xuất: mỗi BS ra một file hợp đồng đúng phôi.</p><div><button class="btn sm" data-act="new-event">${I.plus} Sự kiện mới</button></div></div>
     </div></div></section>`;
 }
@@ -1909,11 +1992,11 @@ function openModal(html, {size, onClose} = {}) {
   wrap.innerHTML = `<div class="modal ${size || ''}" role="dialog" aria-modal="true">${html}</div>`;
   wrap.addEventListener('mousedown', e => { if (e.target === wrap) closeModal(); });
   document.body.appendChild(wrap); modals.push({el:wrap, onClose});
-  document.body.style.overflow = 'hidden';
+  document.documentElement.classList.add('modal-open');
   setTimeout(() => { if (wrap.contains(document.activeElement)) return; const f = wrap.querySelector('[autofocus]') || wrap.querySelector('input:not([type=hidden]),select,textarea'); f?.focus(); }, 30);
   return wrap;
 }
-function closeModal() { const m = modals.pop(); if (!m) return; m.el.remove(); m.onClose?.(); if (!modals.length) document.body.style.overflow = ''; }
+function closeModal() { const m = modals.pop(); if (!m) return; m.el.remove(); m.onClose?.(); if (!modals.length) document.documentElement.classList.remove('modal-open'); }
 const topModal = () => modals[modals.length - 1]?.el;
 
 function readForm(root) {
@@ -2548,6 +2631,53 @@ function syncRefresh() {
   if (state.pending) push(); else if (Date.now() - sync.lastPull > 10000) pull();
 }
 document.addEventListener('visibilitychange', syncRefresh);
+/* ===== điện thoại: nhãn cột cho bảng dạng thẻ, ẩn thanh tab khi gõ / lướt xuống, báo bản mới ===== */
+function labelTables(root = document) {
+  root.querySelectorAll('table.tbl').forEach(t => {
+    const ths = [...t.querySelectorAll('thead th')].map(th => th.classList.contains('c-check') ? '' : clean(th.textContent));
+    if (!ths.length) return;
+    t.querySelectorAll('tbody tr').forEach(tr => [...tr.children].forEach((td, i) => {
+      if (i === 0 || !ths[i] || td.dataset.label) return;
+      td.dataset.label = ths[i];
+      if (td.childNodes.length > 1) { const w = document.createElement('div'); w.className = 'cv'; w.append(...td.childNodes); td.append(w); }   // nhiều dòng trong 1 ô → xếp dọc
+    }));
+  });
+}
+let labelRaf = 0;
+new MutationObserver(() => { if (!labelRaf) labelRaf = requestAnimationFrame(() => { labelRaf = 0; labelTables(); }); }).observe(document.body, {childList:true, subtree:true});
+const isTyping = el => el && (el.matches?.('textarea, select, [contenteditable]') || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|file|range|color)$/.test(el.type)));
+document.addEventListener('focusin', e => { if (isTyping(e.target)) document.documentElement.classList.add('kb'); });
+document.addEventListener('focusout', () => setTimeout(() => { if (!isTyping(document.activeElement)) document.documentElement.classList.remove('kb'); }, 60));
+let lastY = scrollY;
+addEventListener('scroll', () => {
+  const y = scrollY, d = y - lastY, h = document.documentElement;
+  if (Math.abs(d) < 24) return;
+  const atEnd = innerHeight + y >= h.scrollHeight - 40;
+  h.classList.toggle('nav-hide', d > 0 && y > 80 && !atEnd); lastY = y;
+}, {passive:true});
+// rời app / chuyển app trên điện thoại: đẩy ngay thay đổi đang chờ đồng bộ
+function flushSync() { if (sync.user && sync.timer && state.pending) { clearTimeout(sync.timer); sync.timer = 0; push(); } }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
+addEventListener('pagehide', flushSync);
+// Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
+const APP_VER = '2026.11.22.1';
+let updShown = false;
+async function checkVersion() {
+  if (updShown || location.protocol === 'file:') return;
+  try {
+    const r = await fetch('ver.json?t=' + Date.now(), {cache:'no-store'}); if (!r.ok) return;
+    const v = String((await r.json()).v || '');
+    if (v && v > APP_VER) {
+      updShown = true; const el = document.createElement('div'); el.className = 'upd'; el.setAttribute('role', 'status');
+      el.innerHTML = `App có bản mới <button class="btn sm primary" type="button">Tải lại</button>`;
+      el.querySelector('button').onclick = () => { flushSync(); location.replace(location.pathname + '?v=' + encodeURIComponent(v) + location.hash); };
+      document.body.appendChild(el);
+    }
+  } catch (e) {}
+}
+setTimeout(checkVersion, 4000); setInterval(checkVersion, 15 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
+
 window.addEventListener('online', syncRefresh);
 window.addEventListener('focus', syncRefresh);
 

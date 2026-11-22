@@ -2,6 +2,15 @@
 
 App web một trang để làm hợp đồng Speaker Agreement và file Yêu cầu thanh toán HCP.
 
+
+## Giao diện điện thoại (22/11/2026)
+- Thanh tab dưới đáy (Tổng quan · Sự kiện · Thanh toán · Bác sĩ · Cài đặt), tự ẩn khi lướt xuống hoặc đang gõ; thanh trên cùng chỉ còn logo + tên trang.
+- Bảng chuyển thành thẻ (nhãn cột bên trái), không phải vuốt ngang; danh sách BS chỉ hiện khoa – bệnh viện, thù lao năm, tình trạng hồ sơ.
+- Hộp thoại dạng tấm trượt từ đáy, nền trang khoá khi mở, nút Lưu luôn ở đáy tấm.
+- Ô nhập chữ 16px (iPhone không tự phóng to), nút cao tối thiểu 40px.
+- Rời app / chuyển app: đẩy ngay thay đổi đang chờ đồng bộ.
+- Báo "App có bản mới · Tải lại" khi đã deploy bản mới. **Khi deploy: sửa `APP_VER` trong index.html và `ver.json` cùng số** (số mới phải lớn hơn, dạng YYYY.MM.DD.n).
+
 ## Tính năng
 - Danh bạ bác sĩ: lưu thông tin để điền hợp đồng và file thanh toán; nhập từ Excel YCTT cũ hoặc từ hợp đồng cũ.
 - Nhập từ hợp đồng cũ: nhận Word (.docx, .doc), PDF, PDF scan và ảnh chụp (nhiều ảnh chọn cùng lúc = các trang của 1 hợp đồng). Mẫu nào cũng đọc: tự tìm tên BS, CCCD, địa chỉ, khoa – bệnh viện, ngày sự kiện, vai trò, thù lao, chủ đề, số tài khoản, ngân hàng; hiện lại để sửa trước khi nhập. Bản scan / ảnh được đọc chữ ngay trên máy, không gửi đi đâu.

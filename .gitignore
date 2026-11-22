@@ -4,5 +4,6 @@
 *.xlsx
 *.xls
 *.json
+!ver.json
 *.zip
 .DS_Store
