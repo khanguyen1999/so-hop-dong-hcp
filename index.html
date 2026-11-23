@@ -334,7 +334,11 @@ details.panel:not([open])>summary.panel-h{border-bottom:0}
 .combo-opt[aria-selected="true"],.combo-opt:hover{background:var(--surface-2)}
 .combo-opt small{display:block;color:var(--muted);font-size:12.5px}
 .combo-opt.new{color:var(--accent);font-weight:600}
-.topic-in + .combo-list .combo-opt{line-height:1.4}
+.topic-in + .combo-list .combo-opt,.sugg-in + .combo-list .combo-opt{line-height:1.4}
+.combo-opt.cur{color:var(--accent);font-weight:600}
+.ag-row .combo{min-width:0}
+.ag-row .combo-list{right:auto;min-width:min(300px,70vw)}
+@media (max-width:640px){.ag-row .combo{grid-column:3/4;grid-row:1}}
 
 /* pay */
 .paybar{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;padding:12px 16px;box-shadow:var(--shadow);margin-top:14px;z-index:20}
@@ -2525,6 +2529,25 @@ function topicRender(input) {
   }).join('');
   list.hidden = !hits.length; input.setAttribute('aria-expanded', String(!list.hidden));
 }
+/* Gợi ý dạng danh sách thả xuống (thay datalist: iPhone chỉ hiện vài gợi ý cụt trên bàn phím) */
+function suggUpgrade(root = document) {
+  for (const inp of root.querySelectorAll('input[list]')) {
+    inp.dataset.dl = inp.getAttribute('list'); inp.removeAttribute('list'); inp.setAttribute('autocomplete', 'off'); inp.classList.add('sugg-in');
+    if (!inp.parentElement.classList.contains('combo')) { const box = document.createElement('div'); box.className = 'combo'; inp.before(box); box.append(inp); }
+    if (!inp.parentElement.querySelector('.combo-list')) inp.insertAdjacentHTML('afterend', '<div class="combo-list" hidden></div>');
+  }
+}
+suggUpgrade();
+new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) { if (n.matches?.('input[list]')) suggUpgrade(n.parentElement); else if (n.querySelector?.('input[list]')) suggUpgrade(n); } }).observe(document.body, {childList:true, subtree:true});
+function suggRender(input) {
+  const list = input.parentElement.querySelector('.combo-list'), dl = document.getElementById(input.dataset.dl); if (!list) return;
+  const opts = dl ? [...dl.options].map(o => ({v:o.value || o.textContent, l:o.label && o.label !== o.value ? o.label : ''})).filter(o => clean(o.v)) : [];
+  const q = norm(input.value).split(' ').filter(Boolean);
+  const exact = opts.some(o => norm(o.v) === norm(input.value));
+  const hits = (exact ? opts : opts.filter(o => q.every(w => norm(o.v + ' ' + o.l).includes(w)))).filter((o, i, a) => a.findIndex(x => norm(x.v) === norm(o.v)) === i).slice(0, 30);
+  list.innerHTML = hits.map(o => `<button type="button" class="combo-opt ${norm(o.v) === norm(input.value) ? 'cur' : ''}" data-act="sugg-pick" data-v="${esc(o.v)}" aria-selected="false">${esc(o.v)}${o.l ? `<small>${esc(o.l)}</small>` : ''}</button>`).join('');
+  list.hidden = !hits.length; input.setAttribute('aria-expanded', String(!list.hidden));
+}
 function saveEvent(dl, ag) {
   const w = topModal(); if (!edit || !w) return;
   syncRows();
@@ -2852,7 +2875,7 @@ function flushSync() { if (sync.user && sync.timer && state.pending) { clearTime
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
 addEventListener('pagehide', flushSync);
 // Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
-const APP_VER = '2026.11.23.6';
+const APP_VER = '2026.11.23.7';
 let updShown = false;
 async function checkVersion() {
   if (updShown || location.protocol === 'file:') return;
@@ -3768,6 +3791,8 @@ const ACT = {
   'add-row': () => { syncRows(); edit.rows.push(blankRow()); renderRows(); const last = edit.rows[edit.rows.length - 1]; topModal()?.querySelector(`[name="r.${last.rid}.hcpName"]`)?.focus(); },
   'del-row': t => { syncRows(); edit.rows = edit.rows.filter(r => r.rid !== t.dataset.rid); if (!edit.rows.length) edit.rows.push(blankRow()); renderRows(); },
   'combo-pick': t => pickHcpForRow(t.dataset.rid, hcpById(t.dataset.id)),
+  'sugg-pick': t => { const inp = t.closest('.combo').querySelector('.sugg-in'); inp.value = t.dataset.v; inp.classList.remove('is-auto'); if (edit?.auto) delete edit.auto[inp.name]; t.parentElement.hidden = true; inp.setAttribute('aria-expanded', 'false');
+    inp.dispatchEvent(new Event('input', {bubbles:true})); inp.dispatchEvent(new Event('change', {bubbles:true})); },
   'topic-pick': t => { const inp = t.closest('.combo').querySelector('.topic-in'); inp.value = t.dataset.t; t.parentElement.hidden = true; inp.setAttribute('aria-expanded', 'false'); syncRows(); },
   'combo-new': t => {
     const rid = t.dataset.rid; syncRows(); const r = edit.rows.find(x => x.rid === rid);
@@ -3846,9 +3871,9 @@ document.addEventListener('click', e => {
 document.addEventListener('mousedown', e => { if (e.target.closest('.combo-opt')) e.preventDefault(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { const open = document.querySelector('.combo-list:not([hidden])'); if (open) { open.hidden = true; return; } if (modals.length) closeModal(); }
-  const ci = e.target.closest?.('.combo-in, .topic-in'), isTopic = ci?.classList.contains('topic-in');
+  const ci = e.target.closest?.('.combo-in, .topic-in, .sugg-in'), isTopic = ci && !ci.classList.contains('combo-in');
   if (ci && ['ArrowDown','ArrowUp','Enter'].includes(e.key)) {
-    const list = ci.parentElement.querySelector('.combo-list'); if (list.hidden) { if (e.key !== 'Enter') (isTopic ? topicRender : comboRender)(ci); return; }
+    const list = ci.parentElement.querySelector('.combo-list'); if (list.hidden) { if (e.key !== 'Enter') (ci.classList.contains('sugg-in') ? suggRender : isTopic ? topicRender : comboRender)(ci); return; }
     const opts = $$('.combo-opt', list); let i = opts.findIndex(o => o.getAttribute('aria-selected') === 'true');
     if (e.key === 'Enter') { if (isTopic && i < 0) { list.hidden = true; return; } e.preventDefault(); opts[Math.max(i, 0)]?.click(); return; }
     e.preventDefault(); i = (i + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
@@ -3866,11 +3891,12 @@ document.addEventListener('input', e => {
     comboRender(t); return;
   }
   if (t.classList.contains('topic-in')) { topicRender(t); return; }
+  if (t.classList.contains('sugg-in') && e.isTrusted) suggRender(t);
   if (t.dataset.note) { const en = engById(t.dataset.note); if (en) { en.payNote = t.value; save(true); } return; }
 });
-document.addEventListener('focusin', e => { if (e.target.classList?.contains('combo-in')) comboRender(e.target); else if (e.target.classList?.contains('topic-in')) topicRender(e.target); });
-document.addEventListener('click', e => { const t = e.target; if (t.classList?.contains('topic-in') && t.parentElement.querySelector('.combo-list').hidden) topicRender(t); });
-document.addEventListener('focusout', e => { if (e.target.classList?.contains('combo-in') || e.target.classList?.contains('topic-in')) setTimeout(() => { if (document.activeElement === e.target) return; const l = e.target.parentElement?.querySelector('.combo-list'); if (l) l.hidden = true; }, 120); });
+document.addEventListener('focusin', e => { const c = e.target.classList; if (c?.contains('combo-in')) comboRender(e.target); else if (c?.contains('topic-in')) topicRender(e.target); else if (c?.contains('sugg-in')) suggRender(e.target); });
+document.addEventListener('click', e => { const t = e.target; if ((t.classList?.contains('topic-in') || t.classList?.contains('sugg-in')) && t.parentElement.querySelector('.combo-list')?.hidden) (t.classList.contains('sugg-in') ? suggRender : topicRender)(t); });
+document.addEventListener('focusout', e => { if (e.target.classList?.contains('combo-in') || e.target.classList?.contains('topic-in') || e.target.classList?.contains('sugg-in')) setTimeout(() => { if (document.activeElement === e.target) return; const l = e.target.parentElement?.querySelector('.combo-list'); if (l) l.hidden = true; }, 120); });
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.matches('[data-money]')) { const v = money(t.value); t.value = v ? fmtVND(v) : ''; }
