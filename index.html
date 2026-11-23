@@ -175,6 +175,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .ag-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:14px 0 8px}.ag-h .grow{flex:1}
 .ag-list{display:grid;gap:6px}
 .ag-row{display:grid;grid-template-columns:96px 56px minmax(0,1.4fr) minmax(0,1fr) auto;gap:6px;align-items:start}
+.rp-qa{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:6px;align-items:start;margin-bottom:8px}
+.rp-qa textarea{resize:vertical;font-size:13px;line-height:1.4}
+@media (max-width:640px){.rp-qa{grid-template-columns:minmax(0,1fr) auto;padding-bottom:10px;border-bottom:1px solid var(--line)}.rp-qa [data-rk="a"]{grid-column:1/-1}.rp-qa [data-act="rp-del"]{grid-column:2;grid-row:1}}
 .ag-row .ag-time{padding-top:10px;font-size:13px;color:var(--muted)}
 .ag-row textarea{resize:vertical;min-height:40px;font-size:13px;line-height:1.35}
 .ag-fmv{display:grid;gap:6px}
@@ -1778,6 +1781,11 @@ function buildTodos() {
     if (noC.length) out.push({sev:d <= 7 ? 'crit' : d <= 14 ? 'warn' : 'info', sevL:'HĐ', title:`Chưa xuất hợp đồng cho ${noC.length} BS`, sub, btn:`<button class="btn sm" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất</button>`, o:1});
     if (noV.length && d <= 14) out.push({sev:d <= 7 ? 'crit' : 'warn', sevL:'Veeva', title:`Chưa raise Veeva: ${noV.map(e => esc(hcpById(e.hcpId)?.name)).join(', ')}`, sub, btn, o:2});
   }
+  for (const ev of state.events.filter(needsReport).sort((a, b) => a.date.localeCompare(b.date))) {
+    const n = daysFrom(ev.date, t);
+    out.push({sev:n > 7 ? 'warn' : 'info', sevL:'Report', title:'Sự kiện đã xong, chưa có GM report', sub:`${esc(ev.name)} · ${fmtDate(ev.date)} (${relDays(ev.date)})`,
+      btn:`<button class="btn sm primary" data-act="open-report" data-id="${ev.id}">Làm report</button><button class="btn sm ghost" data-act="rp-skip" data-id="${ev.id}" title="Sự kiện này không cần GM report">Bỏ qua</button>`, o:2.5});
+  }
   const held = state.engs.filter(e => stageOf(e) === 'held');
   if (held.length) {
     const {y, m} = isoParts(t); const eom = new Date(Date.UTC(y, m, 0)).getUTCDate(); const left = eom - isoParts(t).d;
@@ -1892,6 +1900,7 @@ function viewEventDetail(ev) {
           ${e.sentAt ? '' : `<button class="btn sm ghost" data-act="toggle-cancel" data-id="${e.id}">${e.cancelled ? 'Khôi phục' : 'Huỷ'}</button>`}</td></tr>`; }).join('')}
     </tbody></table></div>` : `<div class="empty"><b>Chưa có bác sĩ</b><button class="btn sm" data-act="edit-event" data-id="${ev.id}">Thêm bác sĩ</button></div>`}
   </section>
+  ${reportPanelHtml(ev)}
   ${ev.note ? `<p class="muted" style="margin-top:14px">Ghi chú: ${esc(ev.note)}</p>` : ''}
   <div class="actions" style="margin-top:18px"><button class="btn danger sm" data-act="del-event" data-id="${ev.id}" data-confirm="Bấm lần nữa để xoá sự kiện" ${anySent ? 'disabled title="Đã có BS gửi thanh toán, không xoá được"' : ''}>Xoá sự kiện</button></div>`;
 }
@@ -2678,7 +2687,7 @@ function flushSync() { if (sync.user && sync.timer && state.pending) { clearTime
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
 addEventListener('pagehide', flushSync);
 // Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
-const APP_VER = '2026.11.23.1';
+const APP_VER = '2026.11.23.2';
 let updShown = false;
 async function checkVersion() {
   if (updShown || location.protocol === 'file:') return;
@@ -2772,9 +2781,22 @@ function xlOpen(zip) {
     const target = rel.match(/Target="([^"]+)"/)[1].replace(/^\/?xl\//, '');
     return {name, index:i, path:'xl/' + target};
   });
-  return {zip, sheets, xml:{}, get(name) { const s = sheets.find(x => x.name === name); if (!s) throw new Error(`File mẫu thiếu sheet “${name}”.`); return s; },
+  let ss = null;
+  const sst = () => ss ??= (zip.file('xl/sharedStrings.xml')?.asText().match(/<si>[\s\S]*?<\/si>/g) || []).map(si => [...si.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(m => m[1]).join(''));
+  const unx = t => t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+  return {zip, sheets, xml:{}, get(name) { const s = sheets.find(x => x.name === name) || sheets.find(x => x.name.trim() === name.trim()); if (!s) throw new Error(`File mẫu thiếu sheet “${name}”.`); return s; },
+    find(re) { const s = sheets.find(x => re.test(x.name.trim())); if (!s) throw new Error('File mẫu thiếu sheet ' + re.source.replace(/\\|\^/g, '') + '.'); return s.name; },
     read(name) { const s = this.get(name); return this.xml[s.path] ??= zip.file(s.path).asText(); },
-    write(name, x) { this.xml[this.get(name).path] = x; } };
+    write(name, x) { this.xml[this.get(name).path] = x; },
+    text(name, ref) { // chữ trong 1 ô (chuỗi dùng chung, inline hoặc số)
+      const c = this.read(name).match(new RegExp(`<c\\b[^>]*\\br="${ref}"[^>]*?(?:/>|>[\\s\\S]*?</c>)`))?.[0]; if (!c || c.endsWith('/>')) return '';
+      if (/\bt="s"/.test(c)) return unx(sst()[+c.match(/<v>(\d+)<\/v>/)?.[1]] || '');
+      return unx([...c.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(m => m[1]).join('') || c.match(/<v>([^<]*)<\/v>/)?.[1] || '');
+    },
+    rowOfLabel(name, re) { // tìm hàng theo nhãn ở cột A → chạy được với nhiều phiên bản mẫu
+      for (const m of this.read(name).matchAll(/<c\b[^>]*\br="A(\d+)"/g)) if (re.test(this.text(name, 'A' + m[1]).trim())) return +m[1];
+      return 0;
+    } };
 }
 // Ghi 1 ô: giữ style (s) của ô; chuỗi → inlineStr, số → <v>; null/'' → xoá nội dung (cả công thức)
 function xlSet(x, ref, val, {keepFormula} = {}) {
@@ -2823,8 +2845,10 @@ function xlCloneRow(x, fromR, toR) {
   const exist = x.match(new RegExp(`<row\\b[^>]*\\br="${toR}"[^>]*?(?:/>|>[\\s\\S]*?</row>)`));
   if (exist) x = x.replace(exist[0], neu);
   else { const rows = [...x.matchAll(/<row\b[^>]*\br="(\d+)"/g)]; const after = rows.find(m => +m[1] > toR); x = after ? x.slice(0, after.index) + neu + x.slice(after.index) : x.replace('</sheetData>', neu + '</sheetData>'); }
-  if (/<mergeCell ref="A\d+:B\d+"\/>/.test(x) && new RegExp(`<mergeCell ref="A${fromR}:B${fromR}"/>`).test(x) && !new RegExp(`<mergeCell ref="A${toR}:B${toR}"/>`).test(x)) {
-    x = x.replace(/<mergeCells count="(\d+)">/, (m, n) => `<mergeCells count="${+n + 1}"><mergeCell ref="A${toR}:B${toR}"/>`);
+  // chép các ô gộp trên cùng 1 hàng (A:B, A:C, D:E…) sang hàng mới
+  for (const [, c1, c2] of [...x.matchAll(new RegExp(`<mergeCell ref="([A-Z]+)${fromR}:([A-Z]+)${fromR}"/>`, 'g'))]) {
+    if (new RegExp(`<mergeCell ref="${c1}${toR}:[A-Z]+\\d+"/>`).test(x)) continue;
+    x = x.replace(/<mergeCells count="(\d+)">/, (m, n) => `<mergeCells count="${+n + 1}"><mergeCell ref="${c1}${toR}:${c2}${toR}"/>`);
   }
   return x;
 }
@@ -2834,6 +2858,7 @@ function xlUnmergeAB(x, r) {
 }
 // Hiện đúng các sheet cần, chọn sheet mở đầu, buộc Excel tính lại công thức khi mở
 function xlShowSheets(book, visible, active) {
+  visible = visible.map(v => book.get(v).name); active = book.get(active).name;
   let wb = book.zip.file('xl/workbook.xml').asText();
   for (const s of book.sheets) {
     const want = visible.includes(s.name);
@@ -2982,7 +3007,7 @@ async function uploadAgTpl(kind, file) {
   await needZip();
   const book = xlOpen(new PizZip(buf));
   const need = kind === 'fmv' ? ['Agenda with moderator', 'Vietnam FMV Rate as of June2025'] : ['Agenda with moderator', 'GM Report_w Moderator', 'Agenda (with pre-IST)', 'GM Report (with pre-IST)', 'Agenda (w.o pre)', 'GM Report (w.o pre)'];
-  const miss = need.filter(n => !book.sheets.some(s => s.name === n || (n.startsWith('Vietnam FMV') && /fmv/i.test(s.name))));
+  const miss = need.filter(n => !book.sheets.some(s => s.name.trim() === n || (n.startsWith('Vietnam FMV') && /fmv/i.test(s.name))));
   if (miss.length) throw new Error('File thiếu sheet: ' + miss.join(', '));
   agTpl = {...(agTpl || {}), [kind]:{name:file.name, b64, uploadedAt:Date.now()}, checkedAt:Date.now()}; saveAgTplLocal(); fmvMasters = null;
   if (sync.user && sync.client && isAdmin()) {
@@ -3049,31 +3074,26 @@ async function exportAgenda(evId) {
     }
     if (agTpl?.gm && (f !== 'mod' || !fmvRows.length)) { // không hono, hoặc TDV báo bài / không trình bày → file Agenda GM (.xlsx)
       const book = xlOpen(new PizZip(bufFromB64(agTpl.gm.b64))); book.start = ev.agStart;
-      const brand = brandOf(ev), topic = clean(ev.agTopic) || items.find((it, i) => i > 0)?.desc || '';
-      const rep = {C4:viDateText(ev.date), C5:brand, C6:topic, C7:clean(s.staffName)};
+      const topic = clean(ev.agTopic) || items.find((it, i) => i > 0)?.desc || '';
       let show, active;
       if (f === 'mod') {
-        const A = 'Agenda with moderator', R = 'GM Report_w Moderator';
+        const A = 'Agenda with moderator';
         fillHeader(book, A, {C5:viDateText(ev.date), C6:ev.venue, C7:clean(ev.agRestaurant) || '-', C8:clean(s.staffName), C9:attend, C10:staffN});
         fillAgendaRows(book, A, items, 15, 20, {maxRow:29});
-        const chair = rows.find(r => /chủ tọa|chủ toạ|điều phối/i.test(r.role)) || rows[0];
-        fillHeader(book, R, {...rep, C6:items[1]?.desc || topic, C8:chair ? `Dr. ${hcpById(chair.hcpId)?.name || ''}` : '', C9:attend, C10:staffN, C36:XL.serial(ev.date), C37:clean(s.staffName)});
-        show = [A, R]; active = A;
+        show = [A]; active = A;
       } else if (f === 'pres') {
-        const A = 'Agenda (with pre-IST)', R = 'GM Report (with pre-IST)';
+        const A = 'Agenda (with pre-IST)';
         fillHeader(book, A, {C5:viDateText(ev.date), C6:ev.venue, C7:clean(ev.agRestaurant) || '-', C8:clean(s.staffName), C9:attend, C10:staffN});
         fillAgendaRows(book, A, items, 15, 19, {maxRow:28});
-        fillHeader(book, R, {...rep, C8:attend, C9:staffN, C17:XL.serial(ev.date), C18:clean(s.staffName)});
-        show = [A, R]; active = A;
+        show = [A]; active = A;
       } else {
-        const A = 'Agenda (w.o pre)', R = 'GM Report (w.o pre)';
+        const A = 'Agenda (w.o pre)';
         const t0 = toMin(ev.agStart), t1 = t0 + (+ev.agLength || 60);
         fillHeader(book, A, {C5:viDateText(ev.date), C6:`${hhmm(t0)} - ${hhmm(t1)}`, C7:ev.venue, C8:clean(ev.agRestaurant) || ev.venue, C9:clean(s.staffName), C10:attend, C11:staffN, C12:topic});
-        fillHeader(book, R, {...rep, C8:attend, C9:staffN, C17:XL.serial(ev.date), C18:clean(s.staffName)});
-        show = [A, R]; active = A;
+        show = [A]; active = A;
       }
       xlShowSheets(book, show, active);
-      files.push({name:safeFile(`${base}Agenda ${f === 'nopres' ? 'GM' : 'GM'} - ${tail}`) + '.xlsx', blob:xlSave(book, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')});
+      files.push({name:safeFile(`${base}Agenda GM - ${tail}`) + '.xlsx', blob:xlSave(book, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')});
     }
     if (!files.length) throw new Error(agTpl?.fmv || agTpl?.gm ? 'Chưa có file mẫu phù hợp cho hình thức này.' : 'Chưa có file mẫu Agenda / FMV. Admin tải mẫu lên ở Cài đặt.');
     busy(false);
@@ -3220,16 +3240,17 @@ const AG_ASK = {
   agTopic:['Chủ đề TDV trình bày / thảo luận', ev => `<input class="input" name="agTopic" value="${esc(ev.agTopic || '')}">`],
   agRestaurant:['Nhà hàng / Nơi mua hàng', ev => `<input class="input" name="agRestaurant" value="${esc(ev.agRestaurant || '')}" placeholder="Tên nhà hàng">`],
 };
-function openAgendaAsk(ev, keys) {
-  const w = openModal(`<div class="modal-h"><div><h2>Bổ sung để tạo Agenda</h2><p>${esc(ev.name)}</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
+function openAgendaAsk(ev, keys, then, what = 'Agenda') {
+  const w = openModal(`<div class="modal-h"><div><h2>Bổ sung để tạo ${what}</h2><p>${esc(ev.name)}</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
     <form class="modal-b stack" id="ag-ask">${keys.map(k => `<label class="field"><span>${AG_ASK[k][0]}</span>${AG_ASK[k][1](ev)}</label>`).join('')}
       <p class="hint" style="margin:0">App không tự đoán được các mục này. Lưu một lần, lần sau xuất không hỏi lại.</p></form>
     <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" id="ag-ask-go">${I.down} Lưu & xuất</button></div>`, {size:'narrow'});
   $('#ag-ask-go', w).onclick = () => {
     const f = readForm($('#ag-ask', w));
-    for (const k of keys) if (!clean(f[k])) { toast('Điền đủ các ô rồi xuất lại.', {kind:'err'}); return; }
-    Object.assign(ev, Object.fromEntries(keys.map(k => [k, clean(f[k])]))); if (!ev.agStaffCount) ev.agStaffCount = 1;
-    save(); closeModal(); exportAgenda(ev.id);
+    const skip = k => ['agTopic', 'agRestaurant'].includes(k) && (f.agFormat || ev.agFormat) === 'mod'; // BS báo bài thì không cần
+    for (const k of keys) if (!clean(f[k]) && !skip(k)) { toast('Điền đủ các ô rồi xuất lại.', {kind:'err'}); return; }
+    Object.assign(ev, Object.fromEntries(keys.filter(k => clean(f[k])).map(k => [k, clean(f[k])]))); if (!ev.agStaffCount) ev.agStaffCount = 1;
+    save(); closeModal(); (then || (() => exportAgenda(ev.id)))();
   };
 }
 function agTplHtml() {
@@ -3242,6 +3263,256 @@ function agTplHtml() {
     <div class="fgrid"><label class="field"><span>BU/Department trên FMV</span><input class="input" data-set="buDept" value="${esc(state.settings.buDept || 'GF CVRM HCM')}"></label>
       <label class="field"><span>Danh xưng của bạn trên agenda</span><input class="input" data-set="staffTitle" value="${esc(state.settings.staffTitle || 'DS.')}"></label></div>
   </div></section>`;
+}
+
+/* ================= GM report: ngân hàng câu hỏi theo sản phẩm (sửa / thêm tại đây) =================
+   who: 'mod' = câu điều phối viên đặt ra; 'hcp' = câu NVYT hỏi. tags: từ khoá để chọn câu hợp chủ đề sự kiện. */
+const REPORT_BANK = {
+  adalat: [
+    {id:'ad-ckd-target', who:'mod', tags:'than ckd muc tieu huyet ap guideline kdigo', q:'Hiện nay các guideline có thống nhất về mục tiêu huyết áp trên bệnh nhân bệnh thận mạn (CKD) hay không?',
+     a:'Các guideline đều đồng thuận cần kiểm soát huyết áp chặt chẽ hơn trên bệnh nhân CKD, target cụ thể khác nhau đôi chút. KDIGO 2021 ưu tiên HA tâm thu <120 mmHg nếu bệnh nhân dung nạp được; ESH 2023 và ESC 2024 hướng đến <130/80 mmHg hoặc HA tâm thu 120–129 mmHg ở nhóm phù hợp. Điểm chung là kiểm soát huyết áp tích cực để giảm tiến triển bệnh thận và biến cố tim mạch.'},
+    {id:'ad-combo-raas', who:'mod', tags:'phoi hop ucmc uctt raas than albumin guideline', q:'Vai trò của phối hợp chẹn kênh canxi với thuốc ức chế hệ renin–angiotensin trong điều trị tăng huyết áp hiện nay?',
+     a:'ESH 2023 và ESC 2024 khuyến cáo khởi trị phần lớn bệnh nhân tăng huyết áp bằng phối hợp 2 thuốc, ưu tiên ức chế men chuyển/ức chế thụ thể angiotensin kết hợp chẹn kênh canxi hoặc lợi tiểu. Trên bệnh nhân CKD có albumin niệu, ức chế hệ RAA là nền tảng; nifedipine GITS phối hợp thêm giúp đạt mục tiêu huyết áp mà không cần chỉnh liều theo chức năng thận.'},
+    {id:'ad-dm-target', who:'mod', tags:'dai thao duong noi tiet chuyen hoa muc tieu', q:'Bệnh nhân đái tháo đường kèm tăng huyết áp nên đặt mục tiêu huyết áp như thế nào và chọn thuốc ra sao?',
+     a:'Các guideline (ADA, ESH 2023, ESC 2024) khuyến cáo mục tiêu <130/80 mmHg nếu bệnh nhân dung nạp. Ức chế hệ RAA được ưu tiên khi có albumin niệu; chẹn kênh canxi như nifedipine GITS trung tính về chuyển hóa (không ảnh hưởng glucose, lipid máu), thường được phối hợp để đạt mục tiêu.'},
+    {id:'ad-gits', who:'hcp', tags:'gits cong nghe the he nifedipine', q:'Điểm khác biệt của Nifedipine GITS so với nifedipine thế hệ cũ là gì?',
+     a:'Nifedipine GITS dùng công nghệ “hút–đẩy thẩm thấu”, giải phóng thuốc ổn định suốt 24 giờ nên kiểm soát huyết áp bền vững, ít dao động nồng độ. So với nifedipine tác dụng ngắn hoặc dạng retard, GITS hạn chế tăng nhịp tim phản xạ và dung nạp tốt hơn. Trên bệnh nhân CKD, nifedipine GITS không cần chỉnh liều theo chức năng thận.'},
+    {id:'ad-dose', who:'hcp', tags:'lieu cao tuoi suy than toi da', q:'Có cần chỉnh liều trên bệnh nhân cao tuổi và suy thận không? Liều tối đa mỗi ngày?',
+     a:'Không có khác biệt có ý nghĩa về dược động học của nifedipine giữa bệnh nhân cao tuổi và suy thận nên không cần chỉnh liều theo chức năng thận. Tùy mức độ bệnh, có thể tăng liều từng bước, tối đa 90 mg uống một lần mỗi ngày.'},
+    {id:'ad-halflife', who:'hcp', tags:'ban thai duoc dong hoc 24 gio', q:'Thời gian bán thải của Nifedipine GITS là bao lâu?',
+     a:'Với Nifedipine GITS, thời gian bán thải không phải tham số có ý nghĩa vì nồng độ thuốc trong huyết tương được duy trì ổn định suốt thời gian thuốc phóng thích từ viên và hấp thu, cho phép dùng một lần mỗi ngày.'},
+    {id:'ad-edema', who:'hcp', tags:'phu chan tac dung phu', q:'Bệnh nhân bị phù chân khi dùng nifedipine thì xử trí thế nào?',
+     a:'Phù ngoại biên là tác dụng phụ thường gặp của chẹn kênh canxi nhóm dihydropyridine, do giãn tiểu động mạch, phụ thuộc liều. Dạng GITS giải phóng từ từ nên ít gặp hơn dạng tác dụng ngắn. Có thể phối hợp ức chế men chuyển/ức chế thụ thể angiotensin để giảm phù thay vì tăng liều nifedipine.'},
+    {id:'ad-tablet', who:'hcp', tags:'cach dung nuot vien phan', q:'Có được bẻ hoặc nhai viên Nifedipine GITS không? Bệnh nhân thấy vỏ viên trong phân có sao không?',
+     a:'Không được bẻ hay nhai, phải nuốt nguyên viên với nước. Vỏ viên không tan và được thải ra ngoài theo phân, đây là bình thường và không ảnh hưởng hiệu quả điều trị.'},
+    {id:'ad-grapefruit', who:'hcp', tags:'tuong tac buoi cyp3a4', q:'Nifedipine có tương tác với nước bưởi hay thuốc nào cần lưu ý?',
+     a:'Nước bưởi ức chế CYP3A4 làm tăng nồng độ nifedipine, nên tránh dùng chung. Cần thận trọng với thuốc ức chế mạnh CYP3A4 (một số kháng nấm azole, kháng sinh macrolid) và thuốc cảm ứng CYP3A4 như rifampicin (không dùng chung vì làm giảm mạnh hiệu quả).'},
+    {id:'ad-morning', who:'hcp', tags:'buoi sang som dem 24 gio dot quy', q:'Nifedipine GITS có kiểm soát được huyết áp vào sáng sớm không?',
+     a:'Có. Nhờ nồng độ thuốc ổn định 24 giờ, nifedipine GITS uống một lần mỗi ngày kiểm soát huyết áp cả giai đoạn sáng sớm, thời điểm nguy cơ biến cố tim mạch và đột quỵ cao nhất.'},
+  ],
+  xarelto: [
+    {id:'xa-af-renal', who:'mod', tags:'rung nhi suy than lieu crcl than', q:'Lựa chọn và chỉnh liều thuốc chống đông đường uống trên bệnh nhân rung nhĩ kèm suy giảm chức năng thận như thế nào?',
+     a:'Cần đánh giá độ thanh thải creatinin (công thức Cockcroft–Gault) trước khi dùng và định kỳ. Với rivaroxaban trên rung nhĩ không do bệnh van tim: 20 mg/ngày khi CrCl >50 mL/phút, 15 mg/ngày khi CrCl 15–49 mL/phút, không khuyến cáo khi CrCl <15 mL/phút. Uống cùng bữa ăn.'},
+    {id:'xa-compass', who:'mod', tags:'mach vanh ngoai bien cad pad compass 2.5 aspirin', q:'Vai trò của rivaroxaban liều thấp trên bệnh nhân bệnh mạch vành hoặc bệnh động mạch ngoại biên ổn định?',
+     a:'Nghiên cứu COMPASS cho thấy rivaroxaban 2,5 mg x 2 lần/ngày phối hợp aspirin giảm 24% nguy cơ biến cố tim mạch chính (tử vong tim mạch, đột quỵ, nhồi máu cơ tim) so với aspirin đơn thuần ở bệnh nhân CAD/PAD ổn định. ESC khuyến cáo cân nhắc phối hợp này cho bệnh nhân nguy cơ huyết khối cao, nguy cơ chảy máu không cao.'},
+    {id:'xa-elderly', who:'hcp', tags:'cao tuoi lieu rung nhi', q:'Bệnh nhân rung nhĩ cao tuổi có cần giảm liều rivaroxaban không?',
+     a:'Tuổi không phải tiêu chí giảm liều rivaroxaban. Liều được quyết định theo độ thanh thải creatinin: 20 mg/ngày nếu CrCl >50 mL/phút, 15 mg/ngày nếu CrCl 15–49 mL/phút. Ở người cao tuổi nên theo dõi chức năng thận thường xuyên hơn.'},
+    {id:'xa-food', who:'hcp', tags:'cach dung bua an', q:'Vì sao rivaroxaban 15 mg và 20 mg phải uống cùng bữa ăn?',
+     a:'Uống cùng thức ăn làm tăng hấp thu và sinh khả dụng của liều 15 mg, 20 mg, đảm bảo nồng độ thuốc đủ để dự phòng huyết khối. Liều 2,5 mg và 10 mg có thể uống không phụ thuộc bữa ăn.'},
+    {id:'xa-missed', who:'hcp', tags:'quen lieu tuan thu', q:'Bệnh nhân quên uống một liều rivaroxaban thì xử trí thế nào?',
+     a:'Với phác đồ 1 lần/ngày: uống ngay khi nhớ ra trong cùng ngày, ngày hôm sau tiếp tục uống như bình thường, không uống gấp đôi liều để bù.'},
+    {id:'xa-vka', who:'hcp', tags:'chuyen doi vka warfarin sintrom inr', q:'Chuyển bệnh nhân từ thuốc kháng vitamin K sang rivaroxaban như thế nào?',
+     a:'Ngưng thuốc kháng vitamin K, bắt đầu rivaroxaban khi INR ≤3,0 với bệnh nhân rung nhĩ, hoặc INR ≤2,5 với điều trị huyết khối tĩnh mạch sâu/thuyên tắc phổi.'},
+    {id:'xa-surgery', who:'hcp', tags:'phau thuat thu thuat ngung thuoc', q:'Trước phẫu thuật hoặc thủ thuật cần ngưng rivaroxaban bao lâu?',
+     a:'Ngưng ít nhất 24 giờ trước thủ thuật; kéo dài hơn với thủ thuật nguy cơ chảy máu cao hoặc bệnh nhân suy giảm chức năng thận. Dùng lại sau thủ thuật khi đã cầm máu ổn định.'},
+    {id:'xa-dm', who:'hcp', tags:'dai thao duong rung nhi', q:'Hiệu quả của rivaroxaban trên bệnh nhân rung nhĩ có đái tháo đường?',
+     a:'Trong phân tích dưới nhóm của ROCKET AF, hiệu quả dự phòng đột quỵ và độ an toàn của rivaroxaban so với warfarin nhất quán ở bệnh nhân có đái tháo đường, nhóm có nguy cơ huyết khối cao hơn.'},
+  ],
+  firialta: [
+    {id:'fi-ckd-t2d', who:'mod', tags:'than ckd dai thao duong albumin dieu tri', q:'Bệnh nhân bệnh thận mạn kèm đái tháo đường típ 2 hiện nay được tiếp cận điều trị theo những trụ cột nào?',
+     a:'KDIGO 2022 và ADA khuyến cáo tiếp cận nhiều trụ cột: kiểm soát lối sống, đường huyết, huyết áp; ức chế hệ RAA liều tối đa dung nạp; SGLT2i khi eGFR ≥20; thêm finerenone (kháng thụ thể mineralocorticoid không steroid) cho bệnh nhân còn albumin niệu (UACR ≥30 mg/g) với kali máu bình thường để giảm nguy cơ tiến triển bệnh thận và biến cố tim mạch.'},
+    {id:'fi-fidelity', who:'mod', tags:'bang chung fidelio figaro fidelity', q:'Bằng chứng nào cho thấy finerenone bảo vệ tim – thận?',
+     a:'Phân tích gộp FIDELITY (FIDELIO-DKD và FIGARO-DKD, hơn 13.000 bệnh nhân CKD kèm ĐTĐ típ 2) cho thấy finerenone giảm 14% biến cố tim mạch tổng hợp và giảm 23% biến cố thận (suy giảm eGFR ≥57% kéo dài, suy thận, tử vong do thận) so với giả dược, trên nền ức chế hệ RAA tối ưu.'},
+    {id:'fi-vs-mra', who:'hcp', tags:'spironolactone eplerenone khac biet mra', q:'Finerenone khác gì so với spironolactone hay eplerenone?',
+     a:'Finerenone là kháng thụ thể mineralocorticoid không có cấu trúc steroid, chọn lọc cao nên hầu như không gây tác dụng phụ nội tiết như vú to ở nam. Trên bệnh nhân CKD kèm ĐTĐ típ 2, finerenone đã có bằng chứng giảm biến cố thận và tim mạch trong các nghiên cứu lớn.'},
+    {id:'fi-dose', who:'hcp', tags:'lieu khoi dau egfr', q:'Liều khởi đầu finerenone được chọn như thế nào?',
+     a:'Theo eGFR: eGFR ≥60 mL/phút/1,73m² khởi đầu 20 mg/ngày; eGFR 25–<60 khởi đầu 10 mg/ngày; không khuyến cáo khởi trị khi eGFR <25. Sau 4 tuần, tăng lên 20 mg nếu kali ≤4,8 mmol/L và eGFR ổn định.'},
+    {id:'fi-k', who:'hcp', tags:'kali tang kali theo doi', q:'Theo dõi kali máu khi dùng finerenone ra sao?',
+     a:'Đo kali trước khi bắt đầu (chỉ khởi trị khi kali ≤5,0 mmol/L), sau 4 tuần và định kỳ sau đó. Kali 4,8–5,5: giữ liều; kali >5,5: tạm ngưng, dùng lại liều 10 mg khi kali ≤5,0. Tần suất tăng kali phải ngưng thuốc trong nghiên cứu thấp.'},
+    {id:'fi-sglt2', who:'hcp', tags:'sglt2 phoi hop confidence', q:'Có thể dùng finerenone cùng SGLT2i không?',
+     a:'Có. Hai thuốc tác động trên các cơ chế khác nhau. Lợi ích của finerenone nhất quán ở bệnh nhân đang dùng SGLT2i trong FIDELIO/FIGARO; nghiên cứu CONFIDENCE cho thấy phối hợp finerenone với empagliflozin giảm albumin niệu nhiều hơn mỗi thuốc đơn trị.'},
+    {id:'fi-uacr', who:'hcp', tags:'xet nghiem uacr albumin tam soat', q:'Tại sao cần xét nghiệm UACR định kỳ cho bệnh nhân đái tháo đường?',
+     a:'Albumin niệu là dấu hiệu sớm của tổn thương thận và là yếu tố nguy cơ tim mạch độc lập, có thể xuất hiện khi eGFR còn bình thường. ADA và KDIGO khuyến cáo xét nghiệm UACR ít nhất mỗi năm để phát hiện sớm và tối ưu điều trị bảo vệ thận.'},
+  ],
+};
+const REPORT_EVALS = [
+  ['Thảo luận rất tốt', 'Buổi thuyết trình cung cấp nhiều thông tin bổ ích', 'Cần tổ chức thêm những buổi như thế này'],
+  ['Thảo luận rất tốt', 'Buổi chia sẻ cung cấp nhiều thông tin bổ ích', 'Cần tổ chức thêm những buổi như thế này'],
+];
+const brandKey = ev => { const b = norm(brandOf(ev) + ' ' + (productFor(ev)?.brand || '')); return /adalat|nifedipin/.test(b) ? 'adalat' : /xarelto|rivaroxaban/.test(b) ? 'xarelto' : /firialta|kerendia|finerenon/.test(b) ? 'firialta' : ''; };
+function reportTopic(ev) {
+  const f = ev.agFormat || agFormat(ev);
+  if (f !== 'mod') return clean(ev.agTopic);
+  const es = engsOf(ev.id).filter(e => !e.cancelled && clean(e.topic));
+  const sp = es.filter(e => !/chủ tọa|chủ toạ|điều phối/i.test(e.role));
+  return [...new Set((sp.length ? sp : es).map(e => clean(e.topic)))].join('\n') || clean(ev.agTitle) || clean(ev.agTopic);
+}
+// Chọn câu hỏi hợp chủ đề, tránh lặp câu đã dùng ở các report gần nhất cùng sản phẩm
+function pickQA(ev, n = {mod:1, hcp:2}, seed = 0) {
+  const bank = REPORT_BANK[brandKey(ev)] || [];
+  const ctx = ' ' + norm([reportTopic(ev), ev.name, ev.agAttend, ...engsOf(ev.id).map(e => e.topic)].join(' ')).replace(/[^a-z0-9.]+/g, ' ') + ' ';
+  const recent = new Set(state.events.filter(e => e.id !== ev.id && e.rep && brandKey(e) === brandKey(ev)).sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 3)
+    .flatMap(e => [...(e.rep.mod || []), ...(e.rep.hcp || [])].map(x => x.id)));
+  const score = it => it.tags.split(' ').reduce((a, t) => a + (ctx.includes(` ${t} `) ? 1 : 0), 0) - (recent.has(it.id) ? 3 : 0);
+  // xếp theo độ hợp chủ đề; mỗi lần "Đổi bộ câu" trượt cửa sổ sang câu kế tiếp
+  const take = (who, k) => { const c = bank.filter(x => x.who === who).map((x, i) => ({x, s:score(x) - i * 0.001})).sort((a, b) => b.s - a.s).map(v => v.x);
+    if (!c.length) return []; const st = (seed * k) % c.length; return [...c.slice(st), ...c.slice(0, st)].slice(0, k).map(x => ({id:x.id, q:x.q, a:x.a})); };
+  const mod = (ev.agFormat || agFormat(ev)) === 'mod';
+  return {mod:mod ? take('mod', n.mod) : [], hcp:mod ? take('hcp', n.hcp) : []};
+}
+function ensureReport(ev) {
+  const f = ev.agFormat || agFormat(ev);
+  if (!ev.rep) ev.rep = {...pickQA(ev), evals:[...REPORT_EVALS[f === 'mod' ? 0 : 1]], hcpCount:+ev.agHcpCount || '', auto:true, seed:0};
+  else if (f === 'mod' && ev.rep.auto && !ev.rep.mod?.length && !ev.rep.hcp?.length) Object.assign(ev.rep, pickQA(ev, undefined, ev.rep.seed || 0), {evals:[...REPORT_EVALS[0]]}); // đổi hình thức sau khi tạo
+  ev.rep.mod ||= []; ev.rep.hcp ||= []; ev.rep.evals ||= [...REPORT_EVALS[0]];
+  return ev.rep;
+}
+function reportMissing(ev) {
+  const f = ev.agFormat || agFormat(ev), m = [];
+  if (!ev.agFormat) m.push('agFormat');
+  if (!+ev.agHcpCount && !+ev.rep?.hcpCount) m.push('agHcpCount');
+  if (!clean(ev.agAttend)) m.push('agAttend');
+  if (f !== 'mod' && !clean(ev.agTopic)) m.push('agTopic');
+  return m;
+}
+const isHeld = ev => ev.date && ev.date <= today();
+const needsReport = ev => isHeld(ev) && !ev.reportAt && !ev.reportSkip && !ev.imported && daysFrom(ev.date, today()) <= 60;
+
+/* --- AI: tạo câu hỏi riêng cho sự kiện (mở Claude với lời nhắc soạn sẵn, dán kết quả lại) --- */
+function reportPrompt(ev) {
+  const p = productFor(ev); const hs = engsOf(ev.id).filter(e => !e.cancelled).map(e => hcpById(e.hcpId)).filter(Boolean);
+  return `Soạn nội dung phần hỏi – đáp cho GM report (báo cáo thảo luận nhóm có điều phối viên) của Bayer Việt Nam.
+Sản phẩm: ${p?.brand || brandOf(ev)}
+Chủ đề trình bày: ${reportTopic(ev) || '(chưa có)'}
+Đối tượng tham dự: ${clean(ev.agAttend) || hs.map(h => [h.khoa, h.hospital].filter(Boolean).join(' - ')).join('; ')}
+Điều phối viên / báo cáo viên: ${hs.map(h => `${normTitle(h.title)} ${h.name}`.trim()).join(', ') || '(không có)'}
+
+Yêu cầu:
+- 1 câu hỏi do điều phối viên đặt ra và 2 câu hỏi do nhân viên y tế tham dự hỏi, kèm câu trả lời.
+- Câu hỏi sát chủ đề và đối tượng; câu trả lời 2–4 câu, chính xác theo tờ hướng dẫn sử dụng và guideline hiện hành (ghi tên guideline khi trích), không quảng cáo quá mức, không so sánh hạ thấp sản phẩm khác.
+- Văn phong báo cáo y khoa tiếng Việt, ngắn gọn.
+- Trả về đúng định dạng, không thêm gì khác:
+ĐPV: <câu hỏi của điều phối viên>
+TL: <câu trả lời>
+NVYT: <câu hỏi 1>
+TL: <câu trả lời>
+NVYT: <câu hỏi 2>
+TL: <câu trả lời>`;
+}
+function parseAiQA(text) {
+  const out = {mod:[], hcp:[]}; let cur = null;
+  for (const raw of String(text).split(/\r?\n/)) {
+    const l = raw.replace(/\*\*|__/g, '').replace(/^\s*(?:[-*•]|\d+[.)])\s*/, '').trim(); if (!l) continue;
+    let m;
+    if ((m = l.match(/^(ĐPV|DPV|Điều phối viên)\s*[:：]\s*(.+)$/i))) { cur = {id:'ai', q:m[2], a:''}; out.mod.push(cur); }
+    else if ((m = l.match(/^(NVYT|Nhân viên y tế|HCP)\s*\d*\s*[:：]\s*(.+)$/i))) { cur = {id:'ai', q:m[2], a:''}; out.hcp.push(cur); }
+    else if ((m = l.match(/^(TL|Trả lời|Đáp)\s*[:：]\s*(.+)$/i)) && cur) cur.a = (cur.a ? cur.a + ' ' : '') + m[2];
+    else if (cur && cur.a) cur.a += ' ' + l;
+  }
+  return out;
+}
+
+/* --- Panel GM report trên trang sự kiện --- */
+function reportPanelHtml(ev) {
+  if (!isHeld(ev)) return '';
+  const rep = ensureReport(ev); const f = ev.agFormat || agFormat(ev); const bk = brandKey(ev);
+  const qaRow = (sec, it, i) => `<div class="rp-qa" data-sec="${sec}" data-i="${i}">
+      <textarea class="input" data-rk="q" rows="${Math.min(6, Math.ceil((it.q || '').length / 60) + 1)}" placeholder="Câu hỏi">${esc(it.q)}</textarea>
+      <textarea class="input" data-rk="a" rows="${Math.min(9, Math.ceil((it.a || '').length / 75) + 1)}" placeholder="Câu trả lời">${esc(it.a)}</textarea>
+      <button class="btn sm ghost" data-act="rp-del" data-sec="${sec}" data-i="${i}" aria-label="Bỏ câu này">${I.x}</button></div>`;
+  return `<section class="panel" id="rp-panel" data-ev="${ev.id}" data-f="${f}" style="margin-top:16px">
+    <div class="panel-h"><h2>GM report</h2>${ev.reportAt ? `<span class="tag ok">Đã xuất ${new Date(ev.reportAt).toLocaleDateString('vi-VN')}</span>` : '<span class="tag warn">Chưa xuất</span>'}</div>
+    <div class="panel-b stack">
+      <div class="fgrid"><label class="field"><span>Số NVYT tham dự thực tế</span><input class="input" data-rp="hcpCount" inputmode="numeric" value="${esc(rep.hcpCount || '')}"></label>
+        <label class="field span2"><span>Chủ đề trình bày (trên report)</span><input class="input" value="${esc(reportTopic(ev).replace(/\n/g, ' · '))}" disabled></label></div>
+      ${f === 'mod' ? `
+      <div class="ag-h"><b class="small">Câu hỏi của điều phối viên</b><span class="grow"></span><button class="btn sm ghost" data-act="rp-add" data-sec="mod">${I.plus} Thêm</button></div>
+      ${rep.mod.map((it, i) => qaRow('mod', it, i)).join('') || '<p class="hint" style="margin:0">Chưa có câu nào.</p>'}
+      <div class="ag-h"><b class="small">Câu hỏi của NVYT tham dự</b><span class="grow"></span><button class="btn sm ghost" data-act="rp-add" data-sec="hcp">${I.plus} Thêm</button></div>
+      ${rep.hcp.map((it, i) => qaRow('hcp', it, i)).join('') || '<p class="hint" style="margin:0">Chưa có câu nào.</p>'}
+      <div class="actions"><button class="btn sm" data-act="rp-reroll" ${bk ? '' : 'disabled title="Chưa có bộ câu hỏi cho sản phẩm này, dùng AI"'}>Đổi bộ câu khác</button>
+        <button class="btn sm" data-act="rp-ai">Tạo câu hỏi riêng bằng AI</button><button class="btn sm ghost" data-act="rp-paste">Dán kết quả AI</button></div>
+      <p class="hint" style="margin:0">${bk ? `Lấy từ bộ câu hỏi ${esc(brandOf(ev))} hợp chủ đề, tránh trùng các report gần nhất.` : 'Sản phẩm này chưa có bộ câu hỏi sẵn: bấm “Tạo câu hỏi riêng bằng AI”.'} Đọc lại nội dung y khoa trước khi nộp.</p>` : ''}
+      <div class="ag-h"><b class="small">Đánh giá / ý kiến từ NVYT</b></div>
+      ${rep.evals.map((t, i) => `<input class="input" data-rp="eval" data-i="${i}" value="${esc(t)}">`).join('')}
+      <div class="actions"><button class="btn primary" data-act="dl-report" data-id="${ev.id}">${I.down} Xuất GM report & đóng event</button></div>
+    </div></section>`;
+}
+function readReportPanel(ev) {
+  const p = document.getElementById('rp-panel'); if (!p || !ev.rep) return;
+  const rep = ev.rep;
+  if (p.dataset.f === 'mod') for (const sec of ['mod', 'hcp']) rep[sec] = [...p.querySelectorAll(`.rp-qa[data-sec="${sec}"]`)].map(r => ({id:rep[sec][+r.dataset.i]?.id || 'edit', q:r.querySelector('[data-rk="q"]').value.trim(), a:r.querySelector('[data-rk="a"]').value.trim()}));
+  rep.evals = [...p.querySelectorAll('[data-rp="eval"]')].map(i => clean(i.value));
+  rep.hcpCount = +digits(p.querySelector('[data-rp="hcpCount"]')?.value || '') || rep.hcpCount;
+}
+function rpEdit(fn) {
+  const ev = evById($('#rp-panel')?.dataset.ev); if (!ev) return;
+  readReportPanel(ev); fn(ev.rep, ev); save(true);
+  const y = scrollY; render(); scrollTo(0, y);
+}
+function openRpPaste() {
+  const ev = evById($('#rp-panel')?.dataset.ev); if (!ev) return;
+  const w = openModal(`<div class="modal-h"><div><h2>Dán kết quả AI</h2><p>Dán nguyên văn câu trả lời có các dòng ĐPV: / NVYT: / TL:</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
+    <div class="modal-b stack"><textarea class="input" id="rp-ai-in" rows="12" placeholder="ĐPV: …&#10;TL: …&#10;NVYT: …&#10;TL: …"></textarea></div>
+    <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" id="rp-ai-go">Dùng nội dung này</button></div>`, {size:'narrow'});
+  $('#rp-ai-go', w).onclick = () => {
+    const r = parseAiQA($('#rp-ai-in', w).value);
+    if (!r.mod.length && !r.hcp.length) { toast('Không thấy dòng ĐPV: / NVYT: nào. Kiểm tra lại nội dung dán.', {kind:'err'}); return; }
+    closeModal(); rpEdit(rep => { if (r.mod.length) rep.mod = r.mod; if (r.hcp.length) rep.hcp = r.hcp; rep.auto = false; });
+    toast(`Đã thay ${r.mod.length + r.hcp.length} câu hỏi. Đọc lại trước khi xuất.`);
+  };
+}
+// ô có bật "Wrap text" không (để xuống dòng giữa các tên)
+function xlWraps(book, x, ref) {
+  const s = x.match(new RegExp(`<c\\b[^>]*\\br="${ref}"[^>]*\\ss="(\\d+)"`))?.[1]; if (s === undefined) return false;
+  const xfs = book.zip.file('xl/styles.xml').asText().match(/<cellXfs\b[\s\S]*?<\/cellXfs>/)?.[0].match(/<xf\b[^>]*?(?:\/>|>[\s\S]*?<\/xf>)/g) || [];
+  return /wrapText="(1|true)"/.test(xfs[+s] || '');
+}
+async function exportReport(evId) {
+  const ev = evById(evId); if (!ev) return;
+  readReportPanel(ev); ensureReport(ev);
+  const rows = engsOf(ev.id).filter(e => !e.cancelled);
+  const ask = reportMissing(ev);
+  if (ask.length) { openAgendaAsk(ev, ask, () => exportReport(evId), 'GM report'); return; }
+  busy('Đang tạo GM report…');
+  try {
+    await needZip(); await needAgTpl();
+    if (!agTpl?.gm) throw new Error('Chưa có file mẫu Agenda GM. Admin tải mẫu lên ở Cài đặt.');
+    const s = state.settings, f = ev.agFormat || agFormat(ev), rep = ev.rep;
+    const book = xlOpen(new PizZip(bufFromB64(agTpl.gm.b64)));
+    const R = book.find(f === 'mod' ? /^GM Report_w Moderator/i : f === 'pres' ? /^GM Report \(with pre/i : /^GM Report \(w\.o pre/i);
+    let x = book.read(R);
+    const rowOf = re => book.rowOfLabel(R, re);
+    const set = (re, v, col = 'C') => { const r = rowOf(re); if (r) x = xlSet(x, col + r, v); return r; };
+    const attend = `${rep.hcpCount || ev.agHcpCount} nhân viên y tế - ${clean(ev.agAttend)}`;
+    // độ rộng cột (ký tự) để ước chiều cao hàng
+    const cw = {}; for (const m of x.matchAll(/<col\b[^>]*min="(\d+)"[^>]*max="(\d+)"[^>]*width="([\d.]+)"/g)) for (let i = +m[1]; i <= +m[2] && i < 20; i++) cw[i] = +m[3];
+    const W = (a, b) => { let t = 0; for (let i = a; i <= b; i++) t += cw[i] || 8.43; return t * 0.95; };
+    const lineH = (t, w) => String(t || '').split('\n').reduce((a, l) => a + Math.max(1, Math.ceil(l.length / w)), 0);
+    const fitRow = (r, ...pairs) => { const n = Math.max(...pairs.map(([t, w]) => lineH(t, w))); if (n > 1) x = xlRowAttr(x, r, {ht:Math.round(n * 15.5 + 8), customHeight:1}); };
+    set(/^Date of Group Meeting/i, viDateText(ev.date)); set(/^Product/i, brandOf(ev)); set(/^Topic/i, reportTopic(ev)); set(/^Organizer/i, clean(s.staffName));
+    const hs = rows.sort((a, b) => (/chủ tọa|chủ toạ|điều phối/i.test(b.role) ? 1 : 0) - (/chủ tọa|chủ toạ|điều phối/i.test(a.role) ? 1 : 0)).map(e => hcpById(e.hcpId)).filter(Boolean);
+    const mr0 = rowOf(/^Moderator name/i);
+    const mods = hs.map(h => `${normTitle(h.title)} ${h.name}`.trim()).join(mr0 && xlWraps(book, x, 'C' + mr0) ? '\n' : ', ');
+    const mr = set(/^Moderator name/i, mods); if (mr) fitRow(mr, [mods, W(3, 5)]);
+    const tr = rowOf(/^Topic/i); if (tr) fitRow(tr, [reportTopic(ev), W(3, 5)]);
+    const ar = set(/^Attendance/i, attend); if (ar) x = xlSet(x, 'C' + (ar + 1), `${+ev.agStaffCount || 1} nhân viên Bayer`);
+    const rd = rowOf(/^Date\/\s*Ngày báo cáo/i); if (rd) x = xlSet(x, 'C' + rd, XL.serial(ev.date));
+    set(/^Reporter/i, clean(s.staffName));
+    const fillQA = (hdr, nextHdr, list) => {
+      const h = rowOf(hdr), nx = rowOf(nextHdr); if (!h || !nx) return;
+      const slots = nx - h - 1; const items = list.filter(i => i.q || i.a); if (!items.length || slots < 1) return;
+      // ít ô hơn số câu → các câu dư gộp vào ô cuối, đánh số
+      const cells = slots >= items.length ? items.map(i => [i.q, i.a]) : [...items.slice(0, slots - 1).map(i => [i.q, i.a]), [items.slice(slots - 1).map((i, k) => `${k + 1}. ${i.q}`).join('\n'), items.slice(slots - 1).map((i, k) => `${k + 1}. ${i.a}`).join('\n')]];
+      cells.forEach(([q, a], k) => {
+        const r = h + 1 + k; if (k > 0 && !new RegExp(`<c r="A${r}"[^>]*\\ss=`).test(x)) x = xlCloneRow(x, h + 1, r);
+        x = xlSet(x, 'A' + r, q); x = xlSet(x, 'D' + r, a);
+        x = xlRowAttr(x, r, {ht:Math.max(30, Math.max(lineH(q, W(1, 3)), lineH(a, W(4, 5))) * 15.5 + 10), customHeight:1});
+      });
+      // mẫu cũ có nhiều dòng trống sẵn → ẩn dòng thừa, chừa 1 dòng trước mục sau
+      if (slots > 3) for (let r = h + 1 + cells.length; r < nx - 1; r++) x = xlRowAttr(x, r, {hidden:1});
+    };
+    if (f === 'mod') {
+      fillQA(/^Questions\/ Issues raised\/ discussed by Moderator/i, /^Questions\/ Issues raised\/ discussed by participating/i, rep.mod);
+      fillQA(/^Questions\/ Issues raised\/ discussed by participating/i, /^Evaluation/i, rep.hcp);
+    }
+    const ev0 = rowOf(/^Evaluation/i); if (ev0) rep.evals.forEach((t, i) => { x = xlSet(x, 'B' + (ev0 + 1 + i), t || null); });
+    book.write(R, x);
+    xlShowSheets(book, [R], R);
+    const name = safeFile(`${yymmdd(ev.date)} - GM Report ${ev.name.replace(/^\d{6,8}\s*-\s*/, '')}`) + '.xlsx';
+    busy(false);
+    if (await saveFile(name, xlSave(book, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'))) { ev.reportAt = Date.now(); save(); render(); toast('Đã xuất GM report, event đã đóng.'); }
+  } catch (err) { busy(false); toast(err.message || String(err), {kind:'err'}); }
 }
 
 /* ================= toast & busy ================= */
@@ -3288,6 +3559,15 @@ const ACT = {
   'ag-add': () => { const w = topModal(); edit.agItems = agReadItems(w); edit.agItems.splice(Math.max(0, edit.agItems.length - 1), 0, {min:10, desc:'', who:''}); agRefresh(); },
   'ag-del': t => { const w = topModal(); edit.agItems = agReadItems(w); edit.agItems.splice(+t.dataset.i, 1); agRefresh(); },
   'dl-agenda': t => exportAgenda(t.dataset.id),
+  'dl-report': t => exportReport(t.dataset.id),
+  'open-report': t => { while (modals.length) closeModal(); go('events', {eventId:t.dataset.id}); requestAnimationFrame(() => document.getElementById('rp-panel')?.scrollIntoView({behavior:'smooth', block:'start'})); },
+  'rp-skip': t => { const ev = evById(t.dataset.id); if (!ev) return; ev.reportSkip = true; save(); render(); toast('Đã bỏ qua GM report cho sự kiện này.'); },
+  'rp-add': t => rpEdit(rep => rep[t.dataset.sec].push({id:'edit', q:'', a:''})),
+  'rp-del': t => rpEdit(rep => rep[t.dataset.sec].splice(+t.dataset.i, 1)),
+  'rp-reroll': () => rpEdit((rep, ev) => { rep.seed = (rep.seed || 0) + 1; Object.assign(rep, pickQA(ev, {mod:Math.max(1, rep.mod.length), hcp:Math.max(1, rep.hcp.length)}, rep.seed)); }),
+  'rp-ai': () => { const ev = evById($('#rp-panel')?.dataset.ev); if (!ev) return; const p = reportPrompt(ev);
+    window.open('https://claude.ai/new?q=' + encodeURIComponent(p), '_blank', 'noopener'); copyText(p, 'Đã mở Claude và copy sẵn lời nhắc. Có kết quả thì bấm “Dán kết quả AI”.'); },
+  'rp-paste': () => openRpPaste(),
   'add-row': () => { syncRows(); edit.rows.push(blankRow()); renderRows(); const last = edit.rows[edit.rows.length - 1]; topModal()?.querySelector(`[name="r.${last.rid}.hcpName"]`)?.focus(); },
   'del-row': t => { syncRows(); edit.rows = edit.rows.filter(r => r.rid !== t.dataset.rid); if (!edit.rows.length) edit.rows.push(blankRow()); renderRows(); },
   'combo-pick': t => pickHcpForRow(t.dataset.rid, hcpById(t.dataset.id)),
@@ -3378,8 +3658,10 @@ document.addEventListener('keydown', e => {
     opts.forEach((o, k) => o.setAttribute('aria-selected', String(k === i))); opts[i]?.scrollIntoView({block:'nearest'});
   }
 });
+let rpT;
 document.addEventListener('input', e => {
   const t = e.target;
+  if (t.closest?.('#rp-panel')) { const ev = evById($('#rp-panel').dataset.ev); if (ev) { readReportPanel(ev); if (t.dataset.rk) ev.rep.auto = false; clearTimeout(rpT); rpT = setTimeout(() => save(true), 500); } return; }
   if (t.id === 'hcp-q') { ui.hcpQ = t.value; $('#hcp-table').innerHTML = hcpTable(); return; }
   if (t.id === 'ev-q') { ui.evQ = t.value; const pos = t.selectionStart; render(); const n = $('#ev-q'); n.focus(); n.setSelectionRange(pos, pos); return; }
   if (t.classList.contains('combo-in')) {

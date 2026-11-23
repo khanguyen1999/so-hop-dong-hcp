@@ -3,10 +3,17 @@
 App web một trang để làm hợp đồng Speaker Agreement và file Yêu cầu thanh toán HCP.
 
 
+## GM report (23/11/2026)
+- Sự kiện qua ngày → trang sự kiện có khung **GM report**, Tổng quan nhắc "chưa có GM report" (60 ngày gần nhất, có nút Bỏ qua).
+- GM with moderator: tự chọn 1 câu hỏi điều phối viên + 2 câu hỏi NVYT từ bộ câu hỏi theo sản phẩm (Adalat, Xarelto, Firialta), hợp chủ đề, tránh trùng 3 report gần nhất. Sửa tay, "Đổi bộ câu khác", hoặc "Tạo câu hỏi riêng bằng AI" (mở Claude với lời nhắc soạn sẵn) rồi "Dán kết quả AI".
+- With / without presentation: điền thông tin + 3 dòng đánh giá.
+- Xuất file `yymmdd - GM Report ….xlsx` từ mẫu Agenda GM, chỉ hiện sheet report; tìm ô theo nhãn cột A nên chạy được cả mẫu cũ và mẫu gọn. Xuất xong event được đánh dấu đã đóng.
+- Bộ câu hỏi: `REPORT_BANK` trong index.html.
+
 ## Agenda & FMV (23/11/2026)
 - Tạo sự kiện → phần **Agenda & FMV** trong form: chọn hình thức (GM with moderator · with presentation · without presentation), giờ bắt đầu, số NVYT, thành phần tham dự. Agenda tự tạo theo danh sách BS (khai mạc, từng bài, thảo luận, tổng kết), sửa tay được.
 - Có BS nhận phí → xuất **Agenda & FMV Checklist V9.1 (.xlsm)**: điền agenda + FMV (requestor, brand, loại hoạt động RTM / Hospital meeting, BS, vai trò, phân loại, tier, số lần trong năm, phí). Giữ nguyên macro, công thức FMV, danh sách chọn.
-- Không có phí / TDV báo bài / không trình bày → xuất **Agenda GM (.xlsx)**: hiện đúng sheet agenda + GM report của hình thức đó.
+- Không có phí / TDV báo bài / không trình bày → xuất **Agenda GM (.xlsx)**: chỉ hiện sheet agenda của hình thức đó.
 - Thông tin không tự đoán được thì hỏi trước khi xuất. Gợi ý các giá trị đã dùng và nút "Điền nhanh giống sự kiện trước".
 - File mẫu lưu ở Supabase (bảng `shared_config`, id `tpl-agenda`), chỉ người đăng nhập đọc được; admin tải lên ở Cài đặt. Không đưa file mẫu lên GitHub.
 
