@@ -214,7 +214,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .step:not(:disabled):hover .dot{box-shadow:0 0 0 4px var(--accent-soft)}
 
 /* tiến trình sự kiện */
-.evflow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.evflow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:16px}
 .ef{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:4px;align-content:start}
 .ef-h{display:flex;gap:7px;align-items:center;font-size:13.5px}
 .ef-dot{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--surface-2);color:var(--muted)}
@@ -235,7 +235,21 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .ev-tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 .ev-tabs .tab-n:empty{display:none}.ev-tabs .tab-n{font-size:11.5px;min-width:18px;padding:0 5px;border-radius:9px;background:var(--surface-2);color:var(--muted);text-align:center}
 .ev-tabs .tab-n.warn{background:var(--warn-soft);color:var(--warn)}
-.ev-pane:not(.on){display:none}.show-m{display:none}
+.ev-pane:not(.on){display:none}
+.auto-legend{display:flex;gap:8px;align-items:center;margin:4px 0 0}.auto-legend .input{width:22px;min-height:14px!important;height:14px;padding:0;flex:none}
+.input.is-auto{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,var(--line-strong))}
+.ev-fmt{flex:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 22px 0}
+.ev-fmt button{display:grid;gap:2px;text-align:left;border:1px solid var(--line-strong);background:var(--surface);border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit;color:var(--ink)}
+.ev-fmt button b{font-size:14px}.ev-fmt button small{font-size:12px;color:var(--muted);line-height:1.3}
+.ev-fmt button[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent) inset}
+.ev-fmt button[aria-checked="true"] b{color:var(--accent)}
+.modal[data-f="mod"] .ev-fmt{padding-bottom:0}
+.modal:not([data-f="mod"]) .ev-tabs,.modal:not([data-f="mod"]) .only-mod,.modal:not([data-f="mod"]) #ev-sum,.modal:not([data-f="mod"]) [data-only="mod"]{display:none!important}
+.modal:not([data-f="mod"]) .ev-fmt{padding-bottom:12px;border-bottom:1px solid var(--line)}
+.ev-empty{display:none;padding:8px 0;color:var(--muted)}.ev-empty ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px}.ev-empty b{color:var(--ink)}
+.modal[data-f=""] .ev-empty{display:block}.modal[data-f=""] .ev-pane,.modal[data-f=""] .modal-f .btn:not([data-act="close"]){display:none!important}
+.ev-pane .fsec:first-of-type{border-top:0}
+.ev-pane #ev-drop:empty,.ev-pane #ag-sugg:empty{display:none}.show-m{display:none}
 .ev-pane .ag-sec>summary{display:none}.ev-pane .ag-sec #ag-sugg:empty+.fgrid{margin-top:0!important}
 .set-toc{position:sticky;top:0;z-index:15;display:flex;gap:6px;overflow-x:auto;padding:8px 0 10px;margin:-8px 0 6px;background:var(--bg);scrollbar-width:none}
 .set-toc a{flex:none;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:99px;background:var(--surface)}
@@ -438,6 +452,8 @@ html.modal-open,html.modal-open body{overflow:hidden}
   .todo-i{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;padding:12px 14px}
   .todo-i .t-act{grid-column:2;flex-wrap:wrap}
   .ev-foot #ev-sum{display:none}
+  .modal[data-f] .modal-h p{display:none}.modal[data-f="mod"] .ev-fmt small,.modal[data-f="pres"] .ev-fmt small,.modal[data-f="nopres"] .ev-fmt small{display:none}
+  .ev-fmt{padding:8px 12px 0;gap:6px}.modal:not([data-f="mod"]) .ev-fmt{padding-bottom:10px}.ev-fmt button{padding:7px 8px}.ev-fmt button b{font-size:13px}.ev-fmt button small{font-size:11px}
   .ev-tabs{padding:4px 10px 0}.ev-tabs button{flex:1 1 auto;justify-content:center;padding:8px 6px 10px;font-size:13.5px}
 }
 @media (hover:none){.nav a:hover{background:none}.btn:hover{background:var(--surface)}.btn.primary:hover{background:var(--accent);border-color:var(--accent)}.btn.ghost:hover{background:transparent}.tbl tbody tr.clickable:hover td{background:none}.acct:hover{background:var(--surface)}.btn:active{background:var(--surface-2)}.btn.primary:active{background:var(--accent-hover)}}
@@ -1938,11 +1954,11 @@ function viewEventDetail(ev) {
       <div class="big-date">${ev.date ? `<b>${pad(d)}/${pad(m)}</b><span>${weekday(ev.date)} · ${y}</span>` : '<b>—</b>'}</div>
       <div><h1>${esc(ev.name)}</h1>
         <div class="ev-meta"><span>${esc(ev.venue || 'Chưa có địa điểm')}</span><span>${esc(ev.city)}${ev.country && ev.country !== 'Việt Nam' ? ', ' + esc(ev.country) : ''}</span><span class="tag ${isOnlineEvent(ev) ? 'acc' : ''}">${isOnlineEvent(ev) ? 'Trực tuyến' : 'Trực tiếp'}</span>${ev.date ? `<span>${relDays(ev.date)}</span>` : ''}${p ? `<span class="tag acc">${esc(prodLabel(p))}</span><span class="mono">${esc(p.costCenter)} · SIO ${esc(p.sio)}</span>` : `<span class="tag crit">Chưa chọn sản phẩm</span>`}</div>
-        <div class="ev-meta"><span>Bayer ký: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || '—')}</span><span class="mono">${live.length} BS · ${fmtVND(sum)} VND</span></div></div></div>
+        <div class="ev-meta"><span class="tag">${esc(AG_FORMATS.find(x => x[0] === (ev.agFormat || agFormat(ev)))?.[1] || '')}</span>${(ev.agFormat || agFormat(ev)) === 'mod' || live.length ? `<span>Bayer ký: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || '—')}</span><span class="mono">${live.length} BS · ${fmtVND(sum)} VND</span>` : clean(ev.agTopic) ? `<span>Chủ đề: ${esc(ev.agTopic)}</span>` : ''}</div></div></div>
     <div class="actions"><button class="btn" data-act="edit-event" data-id="${ev.id}">Sửa</button><button class="btn" data-act="clone-event" data-id="${ev.id}">Nhân bản</button></div>
   </div>
   ${eventFlowHtml(ev)}
-  <section class="panel">
+  ${!es.length && (ev.agFormat || agFormat(ev)) !== 'mod' ? '' : `<section class="panel">
     ${es.length ? `<div class="tbl-wrap"><table class="tbl tbl-ev"><thead><tr><th>Bác sĩ</th><th>Vai trò · Chủ đề</th><th class="num">Phí</th><th>Tiến độ</th><th></th></tr></thead><tbody>
     ${es.map(e => { const h = hcpById(e.hcpId); const miss = hcpMissing(h); const st = stageOf(e);
       return `<tr>
@@ -1953,8 +1969,8 @@ function viewEventDetail(ev) {
         <td class="nowrap"><button class="btn sm" data-act="dl-one" data-id="${e.id}" ${e.cancelled ? 'disabled' : ''} title="Tải hợp đồng .docx">${I.down} HĐ</button>
           <button class="btn sm ghost" data-act="copy-veeva" data-id="${e.id}" title="Copy thông tin để nhập Veeva">${I.copy}</button>
           ${e.sentAt ? '' : `<button class="btn sm ghost" data-act="toggle-cancel" data-id="${e.id}">${e.cancelled ? 'Khôi phục' : 'Huỷ'}</button>`}</td></tr>`; }).join('')}
-    </tbody></table></div>` : `<div class="empty"><b>Chưa có bác sĩ</b><button class="btn sm" data-act="edit-event" data-id="${ev.id}">Thêm bác sĩ</button></div>`}
-  </section>
+    </tbody></table></div>` : `<div class="empty"><b>Chưa có bác sĩ</b>GM with moderator cần ít nhất 1 BS báo bài.<button class="btn sm" data-act="edit-event" data-id="${ev.id}" data-tab="hcp">Thêm bác sĩ</button></div>`}
+  </section>`}
   ${reportPanelHtml(ev)}
   ${ev.note ? `<p class="muted" style="margin-top:14px">Ghi chú: ${esc(ev.note)}</p>` : ''}
   <div class="actions" style="margin-top:18px"><button class="btn danger sm" data-act="del-event" data-id="${ev.id}" data-confirm="Bấm lần nữa để xoá sự kiện" ${anySent ? 'disabled title="Đã có BS gửi thanh toán, không xoá được"' : ''}>Xoá sự kiện</button></div>`;
@@ -1974,6 +1990,7 @@ function eventFlowHtml(ev) {
     {k:'Thanh toán', na:!fee, done:fee && paidN.every(e => e.paidAt), st:!fee ? 'Không có phí' : paidN.every(e => e.paidAt) ? 'Đã chi' : cnt('sentAt') ? `${paidN.filter(e => e.sentAt).length}/${paidN.length} đã gửi admin` : held ? 'Chờ gửi admin' : 'Sau sự kiện',
       btn:held && fee && paidN.some(e => !e.sentAt) ? `<button class="btn sm" data-act="nav" data-v="pay">Tạo YCTT</button>` : ''},
   ];
+  if ((ev.agFormat || agFormat(ev)) !== 'mod' && !n) steps.splice(0, steps.length, ...steps.filter(x => !['HĐ', 'Veeva', 'Thanh toán'].includes(x.k)));
   const cur = steps.findIndex(x => !x.done && !x.na && (x.btn || x.k === 'Diễn ra'));
   return `<section class="evflow">${steps.map((x, i) => `<div class="ef ${x.done ? 'done' : ''} ${x.na ? 'na' : ''} ${i === cur ? 'cur' : ''}">
     <div class="ef-h"><span class="ef-dot">${x.done ? '✓' : i + 1}</span><b>${x.k}</b></div><div class="ef-s">${x.st}</div>${x.btn && !x.na ? `<div class="ef-b">${i === cur ? x.btn.replace('class="btn sm"', 'class="btn sm primary"') : x.btn}</div>` : ''}</div>`).join('')}</section>`;
@@ -2319,37 +2336,23 @@ function openEventEditor(evId, {clone, tab} = {}) {
   edit = {evId:clone ? null : evId, ev, rows, agItems:src?.agItems?.length ? src.agItems.map(x => ({...x})) : null, attAuto:''};
   const venues = [...new Set([state.settings.venue, ...state.events.map(x => x.venue)].filter(Boolean))];
   const s = state.settings;
+  const fmt0 = ev.agFormat || (src && engsOf(src.id).some(e => !e.cancelled) ? 'mod' : '');
   const w = openModal(`
-    <div class="modal-h"><div><h2>${clone ? 'Nhân bản sự kiện' : evId ? 'Sửa sự kiện' : 'Sự kiện mới'}</h2><p>Thông tin chung điền một lần cho mọi hợp đồng trong sự kiện.</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
-    <div class="ev-tabs" role="tablist">${[['info', 'Sự kiện'], ['hcp', 'Bác sĩ <span class="tab-n" id="tab-hcp-n"></span>'], ['ag', 'Agenda & FMV <span class="tab-n" id="tab-ag-n"></span>']].map(([k, l]) => `<button type="button" role="tab" data-act="ev-tab" data-t="${k}">${l}</button>`).join('')}</div>
+    <div class="modal-h"><div><h2>${clone ? 'Nhân bản sự kiện' : evId ? 'Sửa sự kiện' : 'Sự kiện mới'}</h2><p id="ev-fmt-p">Chọn hình thức trước, app hiện đúng các thông tin cần điền.</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
+    <div class="ev-fmt" role="radiogroup" aria-label="Hình thức sự kiện">${AG_FORMATS.map(([v, l, d]) => `<button type="button" role="radio" data-act="ev-fmt" data-f="${v}" aria-checked="false"><b>${l.replace(/^GM /, '')}</b><small>${esc(d.replace(/:.*$/, ''))}</small></button>`).join('')}</div>
+    <div class="ev-tabs" role="tablist">${[['hcp', '1 · Bác sĩ <span class="tab-n" id="tab-hcp-n"></span>'], ['info', '2 · Sự kiện & Agenda <span class="tab-n" id="tab-ag-n"></span>']].map(([k, l]) => `<button type="button" role="tab" data-act="ev-tab" data-t="${k}">${l}</button>`).join('')}</div>
     <form class="modal-b" id="ev-form" autocomplete="off">
-      <div class="ev-pane" data-pane="info">
-      <div class="fsec"><div class="fgrid">
-        <label class="field span2"><span>Sản phẩm / hoạt động <em>*</em></span><select class="input" name="productId" ${evId && !clone ? '' : 'autofocus'}>
-          <option value="">Chọn sản phẩm…</option>${productOptions(ev.productId)}</select></label>
-        <div class="field span2" style="justify-content:flex-end"><span class="hint" id="prod-hint">${prodHint(productFor(ev))}</span></div>
-        <label class="field spanall"><span>Tên sự kiện <em>*</em></span><input class="input" name="name" value="${esc(ev.name)}" placeholder="${esc((ev.date || today()).replace(/-/g, ''))} - HCM Hospital - XMeeting BV …" ${evId && !clone ? 'autofocus' : ''}></label>
-        <label class="field"><span>Ngày thuyết trình <em>*</em></span><input class="input" type="date" name="date" value="${esc(ev.date)}"></label>
-        <label class="field spanall"><span>Địa điểm tổ chức <em>*</em></span><input class="input" name="venue" list="dl-venue" value="${esc(ev.venue)}" placeholder="Trực tiếp qua phần mềm Zoom · Khoa Nội Tim Mạch - Bệnh viện… · Nhà hàng…"><span class="hint" id="gm-hint">${gmHint(ev.venue)}</span></label>
-        <label class="field"><span>Thành phố tổ chức</span><input class="input" name="city" value="${esc(ev.city)}"></label>
-        <label class="field"><span>Quốc gia</span><input class="input" name="country" value="${esc(ev.country)}"></label>
-      </div></div>
-      <details class="fsec"><summary class="small" style="cursor:pointer;font-weight:600" id="sign-sum">Người ký phía Bayer: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || 'chưa có')}</summary>
-        <div class="fgrid" style="margin-top:12px">
-          <label class="field"><span>Người ký 1 (Sales)</span><input class="input" name="signer1Name" value="${esc(ev.signer1Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer1Title" value="${esc(ev.signer1Title)}"></label>
-          <label class="field"><span>Người ký 2 (Marketing, theo sản phẩm)</span><input class="input" name="signer2Name" value="${esc(ev.signer2Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer2Title" value="${esc(ev.signer2Title)}"></label>
-        </div></details>
-      <label class="field fsec"><span>Ghi chú nội bộ</span><input class="input" name="note" value="${esc(ev.note)}"></label>
-      </div>
-      <div class="ev-pane" data-pane="hcp"><div class="fsec"><div class="eng-rows" id="eng-rows"></div>
-        <div><button type="button" class="btn sm" data-act="add-row">${I.plus} Thêm bác sĩ</button></div>
-        <p class="hint" style="margin:0">Không có BS (TDV báo bài, gặp ở nhà hàng) thì bỏ trống, qua tab Agenda & FMV.</p></div></div>
-      <div class="ev-pane" data-pane="ag">${agSectionHtml(ev)}</div>
+      <input type="hidden" name="agFormat" value="${esc(fmt0)}">
+      <div class="ev-empty"><b>Sự kiện này theo hình thức nào?</b>
+        <ul><li><b>with moderator</b>: BS báo bài, có hợp đồng, Veeva, FMV (GM thường, Xmeeting, Hospital Meeting).</li><li><b>with presentation</b>: TDV báo bài, không có BS.</li><li><b>without presentation</b>: trao đổi ở nhà hàng, không trình bày.</li></ul></div>
+      <div class="ev-pane" data-pane="hcp"><div class="fsec" style="border-top:0;padding-top:4px"><div class="eng-rows" id="eng-rows"></div>
+        <div class="actions"><button type="button" class="btn sm" data-act="add-row">${I.plus} Thêm bác sĩ</button><span class="grow"></span><button type="button" class="btn sm primary" data-act="ev-tab" data-t="info">Tiếp: Sự kiện & Agenda →</button></div></div></div>
+      <div class="ev-pane" data-pane="info">${evInfoHtml(ev, venues)}</div>
       <datalist id="dl-venue">${venues.map(v => `<option>${esc(v)}</option>`).join('')}</datalist>
       <datalist id="dl-role">${ROLES.map(r => `<option>${r}</option>`).join('')}</datalist>
       <datalist id="dl-spec2">${[...new Set(['Tim Mạch','Nội thận','Nội tiết', ...state.hcps.map(x => x.specialty).filter(Boolean)])].map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
     </form>
-    <div class="modal-f ev-foot"><span class="muted small left" id="ev-sum"></span><button class="btn hide-m" data-act="close">Huỷ</button><button class="btn" data-act="save-event">Lưu</button><button class="btn" data-act="save-event" data-ag="1">${I.down} <span class="hide-m">Lưu & xuất Agenda</span><span class="show-m">Agenda</span></button><button class="btn primary" data-act="save-event" data-dl="1">${I.down} <span class="hide-m">Lưu & xuất HĐ</span><span class="show-m">Xuất HĐ</span></button></div>`, {size:'wide', onClose:() => { edit = null; }});
+    <div class="modal-f ev-foot"><span class="muted small left" id="ev-sum"></span><button class="btn hide-m" data-act="close">Huỷ</button><button class="btn" data-act="save-event">Lưu</button><button class="btn" id="ev-ag-btn" data-act="save-event" data-ag="1">${I.down} <span class="hide-m">Lưu & xuất Agenda</span><span class="show-m">Agenda</span></button><button class="btn primary only-mod" data-act="save-event" data-dl="1">${I.down} <span class="hide-m">Lưu & xuất HĐ</span><span class="show-m">Xuất HĐ</span></button></div>`, {size:'wide', onClose:() => { edit = null; }});
   const form = $('#ev-form', w);
   form.addEventListener('submit', e => e.preventDefault());
   let prevProd = productFor(ev);
@@ -2364,18 +2367,84 @@ function openEventEditor(evId, {clone, tab} = {}) {
     prevProd = p;
   });
   form.elements.venue.addEventListener('input', () => { $('#gm-hint', w).innerHTML = gmHint(form.elements.venue.value); });
+  form.addEventListener('input', e => { if (e.isTrusted && e.target.classList.contains('is-auto')) { e.target.classList.remove('is-auto'); if (edit.auto) delete edit.auto[e.target.name]; } if (['date', 'venue', 'agAttend', 'agType', 'productId'].includes(e.target.name)) evAutoFill(); });
+  form.addEventListener('change', e => { if (e.isTrusted && e.target.classList.contains('is-auto')) { e.target.classList.remove('is-auto'); if (edit.auto) delete edit.auto[e.target.name]; } if (['date', 'agType', 'productId'].includes(e.target.name)) evAutoFill(); });
   form.elements.date.addEventListener('change', () => {
     const n = form.elements.name; const d = form.elements.date.value.replace(/-/g, '');
     if (d && /^\d{8}\b/.test(n.value)) n.value = n.value.replace(/^\d{8}/, d);
     n.placeholder = `${d || ''} - HCM Hospital - XMeeting BV …`;
   });
-  renderRows(); agBind(w); agRefresh(); evTab(tab || 'info');
+  renderRows(); agBind(w);
+  evSetFormat(fmt0, {tab:tab || (fmt0 === 'mod' && !evId ? 'hcp' : 'info')});
+}
+// Đổi hình thức: hiện / ẩn đúng phần cần điền
+function evSetFormat(f, {tab} = {}) {
+  const w = topModal(); if (!w || !edit) return;
+  const form = $('#ev-form', w), prev = form.elements.agFormat.value; form.elements.agFormat.value = f; w.dataset.f = f; $('.modal', w).dataset.f = f;
+  $$('.ev-fmt [data-f]', w).forEach(b => b.setAttribute('aria-checked', String(b.dataset.f === f)));
+  $('#ev-ag-btn', w).classList.toggle('primary', f !== 'mod');
+  $('#ev-fmt-p', w).textContent = !f ? 'Chọn hình thức trước, app hiện đúng các thông tin cần điền.' : f === 'mod' ? 'Thêm BS báo bài trước, rồi tới ngày giờ, địa điểm và agenda.' : 'Không có BS: chỉ cần ngày giờ, địa điểm, chủ đề để ra agenda và GM report.';
+  if (f && f !== 'mod') edit.agItems = edit.agItems && f === 'nopres' ? null : edit.agItems;
+  const hasBs = edit.rows.some(r => r.hcpId);
+  evTab(f === 'mod' ? (tab || (prev !== 'mod' || !w.dataset.tabbed ? (hasBs ? 'info' : 'hcp') : $('.ev-tabs [aria-selected="true"]', w)?.dataset.t) || 'hcp') : 'info');
+  w.dataset.tabbed = '1';
+  evDropNote(); agRefresh();
+}
+// Hình thức không có BS mà sự kiện đang có BS → báo trước khi lưu sẽ bỏ
+function evDropNote() {
+  const w = topModal(), box = w && $('#ev-drop', w); if (!box) return;
+  syncRows(); const f = $('#ev-form', w).elements.agFormat.value, live = edit.rows.filter(r => r.hcpId), locked = edit.rows.filter(r => r.locked);
+  box.innerHTML = f && f !== 'mod' && live.length ? `<div class="callout ${locked.length ? 'crit' : 'warn'}">${locked.length ? `<b>Không đổi được hình thức:</b> sự kiện có ${locked.length} BS đã gửi thanh toán.` : `<b>Sự kiện đang có ${live.length} BS</b> (${live.map(r => esc(r.hcpName)).join(', ')}). Hình thức này không có BS báo bài nên khi lưu, các BS này sẽ bị bỏ khỏi sự kiện.`}
+    <div class="actions" style="margin-top:8px"><button type="button" class="btn sm" data-act="ev-fmt" data-f="mod">Chuyển về with moderator</button></div></div>` : '';
+}
+/* Tự điền: chỉ ghi vào ô đang trống hoặc ô app đã tự điền trước đó; người dùng sửa tay thì giữ nguyên */
+const modeOf = arr => { const c = {}; let best = '', n = 0; for (const v of arr.map(clean).filter(Boolean)) { c[v] = (c[v] || 0) + 1; if (c[v] > n) { n = c[v]; best = v; } } return best; };
+function evAutoSet(form, name, val) {
+  const el = form.elements[name]; if (!el || val === undefined || val === null || clean(val) === '') return;
+  edit.auto ||= {};
+  if (clean(el.value) && clean(el.value) !== clean(edit.auto[name] ?? '\u0000')) return;
+  if (clean(el.value) === clean(val)) return;
+  el.value = val; edit.auto[name] = String(val); el.classList.add('is-auto');
+  if (name === 'productId') el.dispatchEvent(new Event('change'));
+}
+// Tên theo cách đặt quen thuộc: "yyyymmdd - HCM Hospital - BV … - Khoa …", nhiều BV → XMeeting, HM → Hospital Meeting
+function evNamePrefix() {
+  const segs = state.events.map(e => (e.name || '').split(/\s+[-–]\s+/)).filter(x => x.length >= 3 && /^\d{6,8}$/.test(x[0])).map(x => x[1]).filter(k => k.length < 25 && !/^(BV|Bệnh viện|XMeeting|Hospital Meeting|GM\b)/i.test(k));
+  return modeOf(segs) || 'HCM Hospital';
+}
+function evSuggestName(v, rows) {
+  const d = (v.date || '').replace(/-/g, ''); if (!d) return '';
+  const att = clean(v.agAttend) || guessAttendDesc(rows) || (isOnlineVenue(v.venue) ? '' : clean(v.venue)); if (!att) return '';
+  const hosps = [...new Set((att.match(/(Bệnh viện|BV)\s[^&,;]+?(?=\s*(?:&|,|;|$|\s-\s))/gi) || []).map(x => shortHosp(x)))];
+  const khoa = clean(att.split(/\s-\s*(?:Bệnh viện|BV)\s/i)[0]).replace(/\s*-\s*$/, '');
+  const pre = evNamePrefix();
+  if (hosps.length > 1) return `${d} - ${pre} - XMeeting ${hosps.join(' & ')}`;
+  if (!hosps.length) return `${d} - ${pre} - ${att}`;
+  if (v.fmt === 'mod' && v.agType === 'HM') return `${d} - Hospital Meeting ${hosps[0]}`;
+  return `${d} - ${pre} - ${hosps[0]}${khoa && !/^(Bệnh viện|BV)\s/i.test(khoa) ? ' - ' + khoa : ''}`;
+}
+function evAutoFill() {
+  const w = topModal(); if (!w || !edit) return; const form = $('#ev-form', w); if (!form) return; const f = form.elements, fmt = f.agFormat.value; if (!fmt) return;
+  const rows = edit.rows.filter(r => r.hcpId);
+  const past = state.events.filter(e => e.id !== edit.evId).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const same = past.filter(e => e.agFormat === fmt);
+  const att0 = norm(f.agAttend.value), sim0 = att0 && past.find(e => norm(e.agAttend) === att0);
+  if (!edit.evId) evAutoSet(form, 'productId', sim0?.productId || (rows.length && past.find(e => e.productId && engsOf(e.id).some(x => rows.some(r => r.hcpId === x.hcpId)))?.productId) || same.find(e => e.productId)?.productId || past.find(e => e.productId)?.productId);
+  evAutoSet(form, 'agStart', modeOf(same.map(e => e.agStart)) || modeOf(past.map(e => e.agStart)) || '12:00');
+  if (fmt !== 'mod' && /khoa|bệnh viện|\bbv\b/i.test(f.venue.value) && !isOnlineVenue(f.venue.value)) evAutoSet(form, 'agAttend', f.venue.value);
+  const att = norm(f.agAttend.value), sim = att && past.find(e => norm(e.agAttend) === att);
+  evAutoSet(form, 'agHcpCount', sim?.agHcpCount ? String(sim.agHcpCount) : '');
+  if (+sim?.agStaffCount > 1) evAutoSet(form, 'agStaffCount', String(sim.agStaffCount));
+  if (fmt !== 'mod') evAutoSet(form, 'agTopic', (sim && clean(sim.agTopic)) || past.find(e => e.productId === f.productId.value && clean(e.agTopic))?.agTopic);
+  if (fmt === 'nopres') evAutoSet(form, 'agRestaurant', sim?.agRestaurant || (/nhà hàng|quán|restaurant/i.test(f.venue.value) ? f.venue.value : ''));
+  evAutoSet(form, 'name', evSuggestName({date:f.date.value, agAttend:f.agAttend.value, venue:f.venue.value, agType:f.agType.value, fmt}, rows));
 }
 function evTab(t) {
   const w = topModal(); if (!w || !$('.ev-tabs', w)) return;
+  if (t === 'hcp' && w.dataset.f !== 'mod') t = 'info';
   $$('.ev-tabs [data-t]', w).forEach(b => b.setAttribute('aria-selected', String(b.dataset.t === t)));
   $$('.ev-pane', w).forEach(p => p.classList.toggle('on', p.dataset.pane === t));
-  $('#ev-form', w).scrollTop = 0; if (t === 'ag') agRefresh?.();
+  $('#ev-form', w).scrollTop = 0; if (t === 'info') agRefresh();
 }
 function blankRow() { return {rid:uid(), engId:null, hcpId:'', hcpName:'', role:'Báo cáo viên', topic:'', duration:state.settings.duration, prep:state.settings.prep, fee:state.settings.fee, specialty:''}; }
 function syncRows() {
@@ -2461,6 +2530,11 @@ function saveEvent(dl, ag) {
   syncRows();
   const f = readForm($('#ev-form', w));
   const name = clean(f.name), date = f.date;
+  if (!f.agFormat) { toast('Chọn hình thức sự kiện trước.', {kind:'err'}); return; }
+  const isMod = f.agFormat === 'mod';
+  if (!isMod && edit.rows.some(r => r.locked)) { toast('Sự kiện có BS đã gửi thanh toán nên phải giữ hình thức with moderator.', {kind:'err'}); return; }
+  if (!isMod) edit.rows = [];   // with / without presentation: không có BS báo bài
+  if (isMod && !edit.rows.some(r => r.hcpId) && !edit.rows.some(r => clean(r.hcpName))) { toast('GM with moderator cần ít nhất 1 BS báo bài. Thêm BS ở tab Bác sĩ.', {kind:'err'}); evTab('hcp'); return; }
   if (!f.productId) { toast('Chọn sản phẩm / hoạt động để file thanh toán có đúng UDA và SIO.', {kind:'err'}); evTab('info'); $('#ev-form', w).elements.productId.focus(); return; }
   if (!name || !date) { toast('Cần nhập tên và ngày sự kiện.', {kind:'err'}); evTab('info'); $('#ev-form', w).elements[name ? 'date' : 'name'].focus(); return; }
   const rows = edit.rows.filter(r => r.hcpId);
@@ -2778,7 +2852,7 @@ function flushSync() { if (sync.user && sync.timer && state.pending) { clearTime
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
 addEventListener('pagehide', flushSync);
 // Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
-const APP_VER = '2026.11.23.4';
+const APP_VER = '2026.11.23.5';
 let updShown = false;
 async function checkVersion() {
   if (updShown || location.protocol === 'file:') return;
@@ -3209,30 +3283,47 @@ function agendaMissing(ev, rows) {
 
 /* ================= Agenda & FMV: giao diện trong form sự kiện ================= */
 const AG_KEYS = ['agFormat','agType','agStart','agHcpCount','agStaffCount','agLength','agAttend','agRestaurant','agTitle','agTopic'];
-function agSectionHtml(ev) {
-  const f = ev.agFormat || '';
+function evInfoHtml(ev, venues) {
   const opt = (v, l, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`;
-  return `<details class="fsec ag-sec" id="ag-sec" open>
-    <summary><b>Agenda & FMV</b> <span class="muted small" id="ag-sum"></span></summary>
+  return `<div class="ag-sec" id="ag-sec">
+    <div id="ev-drop"></div>
+    <p class="hint auto-legend"><span class="input is-auto"></span> Ô nền xanh là app tự điền từ BS và các sự kiện trước. Kiểm tra lại, sửa nếu chưa đúng.</p>
     <div id="ag-sugg"></div>
-    <div class="fgrid" style="margin-top:12px">
-      <label class="field span2"><span>Hình thức <em>*</em></span><select class="input" name="agFormat"><option value="">Chọn hình thức…</option>${AG_FORMATS.map(([v, l, d]) => opt(v, `${l} · ${d}`, f)).join('')}</select></label>
-      <label class="field span2" data-ag="type"><span>Loại hoạt động trên FMV</span><select class="input" name="agType">${opt('', 'Tự nhận diện', ev.agType || '')}${opt('RTM', 'GM 1 khoa (RTM/Single-department meeting)', ev.agType)}${opt('HM', 'HM, Xmeeting, nhiều khoa (Hospital meeting/Combined-department)', ev.agType)}</select><span class="hint" id="ag-type-hint"></span></label>
+    <div class="fsec"><h3>Sản phẩm</h3><div class="fgrid">
+      <label class="field span2"><span>Sản phẩm / hoạt động <em>*</em></span><select class="input" name="productId"><option value="">Chọn sản phẩm…</option>${productOptions(ev.productId)}</select></label>
+      <div class="field span2" style="justify-content:flex-end"><span class="hint" id="prod-hint">${prodHint(productFor(ev))}</span></div></div></div>
+    <div class="fsec"><h3>Thời gian & địa điểm</h3><div class="fgrid">
+      <label class="field"><span>Ngày <em>*</em></span><input class="input" type="date" name="date" value="${esc(ev.date)}"></label>
       <label class="field"><span>Giờ bắt đầu <em>*</em></span><input class="input" type="time" name="agStart" value="${esc(ev.agStart || '')}"></label>
-      <label class="field"><span>Số NVYT tham dự <em>*</em></span><input class="input" name="agHcpCount" inputmode="numeric" value="${esc(ev.agHcpCount || '')}" placeholder="vd 20"></label>
-      <label class="field"><span>Số NV Bayer</span><input class="input" name="agStaffCount" inputmode="numeric" value="${esc(ev.agStaffCount || 1)}"></label>
       <label class="field" data-ag="len"><span>Thời lượng (phút)</span><input class="input" name="agLength" inputmode="numeric" value="${esc(ev.agLength || 60)}"></label>
-      <label class="field spanall"><span>Thành phần tham dự <em>*</em></span><input class="input" name="agAttend" value="${esc(ev.agAttend || '')}" placeholder="Khoa Nội Thận - Bệnh viện …" list="dl-ag-att"><span class="hint">Tự điền theo khoa – bệnh viện của BS trong sự kiện. File ghi: “20 nhân viên y tế - …”.</span></label>
+      <label class="field spanall"><span>Địa điểm tổ chức <em>*</em></span><input class="input" name="venue" list="dl-venue" value="${esc(ev.venue)}" placeholder="Khoa Nội Tim Mạch - Bệnh viện… · Trực tuyến qua phần mềm Zoom · Nhà hàng…"><span class="hint" id="gm-hint">${gmHint(ev.venue)}</span></label>
       <label class="field span2"><span>Nhà hàng / Nơi mua hàng</span><input class="input" name="agRestaurant" value="${esc(ev.agRestaurant || '')}" placeholder="- (không có)" list="dl-ag-rest"></label>
-      <label class="field span2" data-ag="title"><span>Tên buổi SHKH (nếu có)</span><input class="input" name="agTitle" value="${esc(ev.agTitle || '')}" placeholder="Dùng cho dòng khai mạc" list="dl-ag-title"></label>
+      <label class="field" data-only="mod"><span>Thành phố</span><input class="input" name="city" value="${esc(ev.city)}"></label>
+      <label class="field" data-only="mod"><span>Quốc gia</span><input class="input" name="country" value="${esc(ev.country)}"></label>
+    </div></div>
+    <div class="fsec"><h3>Tham dự</h3><div class="fgrid">
+      <label class="field"><span>Số NVYT <em>*</em></span><input class="input" name="agHcpCount" inputmode="numeric" value="${esc(ev.agHcpCount || '')}" placeholder="vd 20"></label>
+      <label class="field"><span>Số NV Bayer</span><input class="input" name="agStaffCount" inputmode="numeric" value="${esc(ev.agStaffCount || 1)}"></label>
+      <label class="field spanall"><span>Thành phần tham dự (khoa - bệnh viện) <em>*</em></span><input class="input" name="agAttend" value="${esc(ev.agAttend || '')}" placeholder="Khoa Nội Thận - Bệnh viện …" list="dl-ag-att"><span class="hint" data-only="mod">Tự điền theo khoa – bệnh viện của BS. File ghi: “20 nhân viên y tế - …”.</span></label>
+    </div></div>
+    <div class="fsec"><h3>Nội dung</h3><div class="fgrid">
       <label class="field spanall" data-ag="topic"><span>Chủ đề TDV trình bày / thảo luận <em>*</em></span><input class="input" name="agTopic" value="${esc(ev.agTopic || '')}" placeholder="Hiệu quả của Nifedipine GITS trong kiểm soát huyết áp…" list="dl-ag-topic"></label>
+      <label class="field span2" data-ag="title"><span>Tên buổi SHKH (nếu có)</span><input class="input" name="agTitle" value="${esc(ev.agTitle || '')}" placeholder="Dùng cho dòng khai mạc" list="dl-ag-title"></label>
+      <label class="field span2" data-ag="type"><span>Loại hoạt động trên FMV</span><select class="input" name="agType">${opt('', 'Tự nhận diện', ev.agType || '')}${opt('RTM', 'GM 1 khoa (RTM/Single-department meeting)', ev.agType)}${opt('HM', 'HM, Xmeeting, nhiều khoa (Hospital meeting/Combined-department)', ev.agType)}</select><span class="hint" id="ag-type-hint"></span></label>
+      <label class="field spanall"><span>Tên sự kiện <em>*</em></span><input class="input" name="name" value="${esc(ev.name)}" placeholder="Tự gợi ý theo ngày + khoa/bệnh viện"><span class="hint">App tự đặt theo ngày + bệnh viện + khoa như các sự kiện trước. Dùng đặt tên file hợp đồng, agenda, report.</span></label>
     </div>
     <div id="ag-items"></div>
-    <div id="ag-fmv"></div>
+    <div id="ag-fmv"></div></div>
+    <details class="fsec"><summary class="small" style="cursor:pointer;font-weight:600" id="sign-sum">${ev.signer1Name || ev.signer2Name ? 'Người ký phía Bayer: ' + esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ')) + ' · Ghi chú' : 'Người ký phía Bayer · Ghi chú'}</summary>
+      <div class="fgrid" style="margin-top:12px">
+        <label class="field" data-only="mod"><span>Người ký 1 (Sales)</span><input class="input" name="signer1Name" value="${esc(ev.signer1Name)}"></label><label class="field" data-only="mod"><span>Chức vụ</span><input class="input" name="signer1Title" value="${esc(ev.signer1Title)}"></label>
+        <label class="field" data-only="mod"><span>Người ký 2 (Marketing, theo sản phẩm)</span><input class="input" name="signer2Name" value="${esc(ev.signer2Name)}"></label><label class="field" data-only="mod"><span>Chức vụ</span><input class="input" name="signer2Title" value="${esc(ev.signer2Title)}"></label>
+        <label class="field spanall"><span>Ghi chú nội bộ</span><input class="input" name="note" value="${esc(ev.note)}"></label>
+      </div></details>
     ${agDl('dl-ag-att', agUsed('agAttend'))}${agDl('dl-ag-rest', agUsed('agRestaurant', state.events.map(e => /nhà hàng|quán|restaurant|cafe|coffee/i.test(e.venue || '') ? e.venue : '')))}${agDl('dl-ag-title', agUsed('agTitle'))}
     ${agDl('dl-ag-topic', agUsed('agTopic', state.engs.map(e => e.topic)))}
     ${agDl('dl-ag-desc', [...new Set(['Đón khách & khai mạc buổi họp', 'Thảo luận', 'Thảo luận và trả lời câu hỏi', 'Tổng kết chương trình', 'Chia sẻ kinh nghiệm điều trị', 'Kết thúc chương trình & Dùng tea-break', 'Kết thúc chương trình & Dùng bữa', ...state.events.flatMap(e => (e.agItems || []).map(x => x.desc))].filter(Boolean))])}
-  </details>`;
+  </div>`;
 }
 // Gợi ý: giá trị đã dùng ở các sự kiện trước (mới nhất trước)
 function agUsed(key, extra = []) {
@@ -3274,7 +3365,7 @@ function agRefresh() {
   const g = guessFmvType(v, rows);
   $('#ag-type-hint', w).textContent = v.agType ? '' : g.v ? `Nhận diện: ${g.v === 'HM' ? 'Hospital meeting' : 'RTM / GM 1 khoa'} (${g.why})` : 'Chưa nhận diện được, chọn giúp loại hoạt động.';
   const att = w.querySelector('[name="agAttend"]'); const auto = guessAttendDesc(rows);
-  if (auto && (!clean(att.value) || clean(att.value) === edit.attAuto)) { att.value = auto; edit.attAuto = auto; }
+  if (auto && (!clean(att.value) || clean(att.value) === edit.attAuto)) { att.value = auto; edit.attAuto = auto; att.classList.add('is-auto'); }
   // agenda
   const box = $('#ag-items', w);
   if (f === 'nopres') { box.innerHTML = `<p class="hint" style="margin:10px 0 0">GM không trình bày: file chỉ ghi giờ (${esc(v.agStart || '--:--')} – ${esc(hhmm(toMin(v.agStart) + (+v.agLength || 60)))}) và chủ đề thảo luận.</p>`; }
@@ -3304,6 +3395,7 @@ function agRefresh() {
       ${fr.length > 4 ? `<p class="hint">File FMV mẫu có 4 dòng BS. Xuất xong bấm “Add Row” trong file cho BS thứ 5 trở đi.</p>` : ''}`;
   }
   const ta = $('#tab-ag-n', w); if (ta) { ta.textContent = v.agFormat ? '' : '!'; ta.classList.toggle('warn', !v.agFormat); ta.title = v.agFormat ? '' : 'Chưa chọn hình thức'; }
+  evAutoFill();
   const s = $('#ag-sum', w); if (s) s.textContent = v.agFormat ? '· ' + (AG_FORMATS.find(x => x[0] === v.agFormat)?.[1] || '') + (paid.length ? ' · có FMV' : '') : '· chọn hình thức để tạo agenda';
 }
 function agReadItems(w) {
@@ -3642,14 +3734,17 @@ const ACT = {
   'new-event': () => openEventEditor(null),
   'edit-event': t => openEventEditor(t.dataset.id, {tab:t.dataset.tab}),
   'ev-tab': t => evTab(t.dataset.t),
+  'ev-fmt': t => evSetFormat(t.dataset.f),
   'set-jump': t => { const el = document.getElementById(t.dataset.id); if (el) scrollTo({top:el.getBoundingClientRect().top + scrollY - 64, behavior:'smooth'}); },
   'clone-event': t => openEventEditor(t.dataset.id, {clone:true}),
   'open-event': t => { while (modals.length) closeModal(); go('events', {eventId:t.dataset.id}); },
   'save-event': t => saveEvent(!!t.dataset.dl, !!t.dataset.ag),
   'ag-reset': () => { edit.agItems = null; agRefresh(); },
   'ag-copy': t => { const src = evById(t.dataset.id), w = topModal(); if (!src || !w) return; const f = $('#ev-form', w).elements;
-    for (const k of ['agFormat','agType','agStart','agHcpCount','agStaffCount','agLength','agAttend','agRestaurant','agTopic']) if (f[k] && src[k] !== undefined && src[k] !== '') f[k].value = src[k];
-    edit.attAuto = ''; agRefresh(); toast('Đã điền theo “' + src.name + '”. Sửa lại chỗ khác nếu cần.'); },
+    for (const k of ['agType','agStart','agHcpCount','agStaffCount','agLength','agAttend','agRestaurant','agTopic']) if (f[k] && src[k] !== undefined && src[k] !== '') f[k].value = src[k];
+    if (!clean(f.venue.value) && src.venue) f.venue.value = src.venue;
+    if (!f.productId.value && src.productId) { f.productId.value = src.productId; f.productId.dispatchEvent(new Event('change')); }
+    edit.attAuto = ''; evSetFormat(src.agFormat || f.agFormat.value); toast('Đã điền theo “' + src.name + '”. Sửa lại chỗ khác nếu cần.'); },
   'ag-add': () => { const w = topModal(); edit.agItems = agReadItems(w); edit.agItems.splice(Math.max(0, edit.agItems.length - 1), 0, {min:10, desc:'', who:''}); agRefresh(); },
   'ag-del': t => { const w = topModal(); edit.agItems = agReadItems(w); edit.agItems.splice(+t.dataset.i, 1); agRefresh(); },
   'dl-agenda': t => exportAgenda(t.dataset.id),
