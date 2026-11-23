@@ -3,6 +3,14 @@
 App web một trang để làm hợp đồng Speaker Agreement và file Yêu cầu thanh toán HCP.
 
 
+## Cắt bớt (24/11/2026)
+- Bỏ dòng mô tả dưới tiêu đề trang; điện thoại không lặp tiêu đề (thanh trên đã có).
+- Tổng quan chỉ còn "Việc cần làm" (bỏ 5 ô số liệu và bảng thù lao năm: tổng năm từng BS xem ở trang Bác sĩ, tô đỏ khi gần trần).
+- Form sự kiện: đã chọn hình thức thì 3 ô hình thức thu thành 1 dòng "GM with … · Đổi"; sửa sự kiện cũ không hiện "Điền nhanh".
+- Trang sự kiện: bỏ thành phố, UDA/SIO, người ký, bước "Diễn ra" (đã có ngày ở đầu trang).
+- Bác sĩ: bỏ cột CCCD, ngân hàng (cột Hồ sơ đã báo thiếu gì); Nhập / Xuất gom vào 1 nút; Cài đặt bỏ các nút nhập/xuất trùng.
+- Danh sách sự kiện, bác sĩ trên điện thoại thành thẻ gọn không nhãn cột. Cài đặt: bảng sản phẩm thu gọn.
+
 ## Giao diện gọn (23/11/2026)
 - Tổng quan: việc cần làm gộp theo từng sự kiện (1 dòng/sự kiện, các việc còn thiếu là nhãn màu, 1 nút cho việc cần làm trước). Thẻ "Bắt đầu" chỉ hiện khi chưa có BS.
 - Trang sự kiện: thanh 6 bước HĐ → Veeva → Agenda → Diễn ra → GM report → Thanh toán, mỗi bước có nút riêng, bước cần làm tiếp được làm nổi. GM report đã xuất thì thu gọn.
