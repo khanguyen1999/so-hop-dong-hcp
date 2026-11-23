@@ -3,6 +3,12 @@
 App web một trang để làm hợp đồng Speaker Agreement và file Yêu cầu thanh toán HCP.
 
 
+## Giao diện gọn (23/11/2026)
+- Tổng quan: việc cần làm gộp theo từng sự kiện (1 dòng/sự kiện, các việc còn thiếu là nhãn màu, 1 nút cho việc cần làm trước). Thẻ "Bắt đầu" chỉ hiện khi chưa có BS.
+- Trang sự kiện: thanh 6 bước HĐ → Veeva → Agenda → Diễn ra → GM report → Thanh toán, mỗi bước có nút riêng, bước cần làm tiếp được làm nổi. GM report đã xuất thì thu gọn.
+- Form sự kiện chia 3 tab: Sự kiện · Bác sĩ · Agenda & FMV. Lỗi ở tab nào thì tự chuyển sang tab đó. Trên điện thoại chân form còn 1 hàng nút.
+- Cài đặt có mục lục nhanh ở đầu trang.
+
 ## GM report (23/11/2026)
 - Sự kiện qua ngày → trang sự kiện có khung **GM report**, Tổng quan nhắc "chưa có GM report" (60 ngày gần nhất, có nút Bỏ qua).
 - GM with moderator: tự chọn 1 câu hỏi điều phối viên + 2 câu hỏi NVYT từ bộ câu hỏi theo sản phẩm (Adalat, Xarelto, Firialta), hợp chủ đề, tránh trùng 3 report gần nhất. Sửa tay, "Đổi bộ câu khác", hoặc "Tạo câu hỏi riêng bằng AI" (mở Claude với lời nhắc soạn sẵn) rồi "Dán kết quả AI".

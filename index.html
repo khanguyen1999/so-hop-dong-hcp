@@ -207,6 +207,37 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .step[data-on]::before{background:var(--c)}
 .step:not(:disabled):hover .dot{box-shadow:0 0 0 4px var(--accent-soft)}
 
+/* tiến trình sự kiện */
+.evflow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.ef{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:4px;align-content:start}
+.ef-h{display:flex;gap:7px;align-items:center;font-size:13.5px}
+.ef-dot{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;background:var(--surface-2);color:var(--muted)}
+.ef.done .ef-dot{background:var(--ok-soft,#e3f3e8);color:var(--ok,#1e7a3d)}
+.ef.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.ef.cur .ef-dot{background:var(--accent);color:#fff}
+.ef.na{opacity:.55}
+.ef-s{font-size:12.5px;color:var(--muted);min-height:18px}
+.ef-b{margin-top:4px}.ef-b .btn{width:100%;justify-content:center}
+@media (max-width:1100px){.evflow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.evflow{grid-template-columns:1fr;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .ef{border:0;border-top:1px solid var(--line);border-radius:0;grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:9px 14px;column-gap:10px}
+  .ef:first-child{border-top:0}.ef.cur{box-shadow:inset 3px 0 0 var(--accent)}
+  .ef-h{grid-column:1}.ef-s{grid-column:1;padding-left:27px;min-height:0}.ef-b{grid-column:2;grid-row:1/3;margin:0}.ef-b .btn{width:auto}}
+.tbl-ev td:first-child{min-width:230px}.tbl-ev td:nth-child(2){min-width:210px}
+.ev-tabs{flex:none;display:flex;gap:4px;padding:8px 22px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.ev-tabs button{flex:none;background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px 10px;font:inherit;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer;display:flex;gap:6px;align-items:center}
+.ev-tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.ev-tabs .tab-n:empty{display:none}.ev-tabs .tab-n{font-size:11.5px;min-width:18px;padding:0 5px;border-radius:9px;background:var(--surface-2);color:var(--muted);text-align:center}
+.ev-tabs .tab-n.warn{background:var(--warn-soft);color:var(--warn)}
+.ev-pane:not(.on){display:none}.show-m{display:none}
+.ev-pane .ag-sec>summary{display:none}.ev-pane .ag-sec #ag-sugg:empty+.fgrid{margin-top:0!important}
+.set-toc{position:sticky;top:0;z-index:15;display:flex;gap:6px;overflow-x:auto;padding:8px 0 10px;margin:-8px 0 6px;background:var(--bg);scrollbar-width:none}
+.set-toc a{flex:none;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;padding:6px 12px;border:1px solid var(--line);border-radius:99px;background:var(--surface)}
+.set-toc a:hover{color:var(--accent);border-color:var(--accent)}
+@media (max-width:640px){.set-toc{position:static;margin-inline:-16px;padding-inline:16px}}
+details.panel>summary{list-style:none;cursor:pointer}details.panel>summary::-webkit-details-marker{display:none}
+details.panel:not([open])>summary.panel-h{border-bottom:0}
+
 /* home */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-align:left;cursor:pointer;display:grid;gap:4px}
@@ -223,6 +254,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .todo-i .t-body{flex:1;min-width:0}
 .todo-i .t-title{font-weight:600}
 .todo-i .t-sub{font-size:13px;color:var(--muted)}
+.todo-i .t-title a{color:inherit;text-decoration:none}.todo-i .t-title a:hover{color:var(--accent);text-decoration:underline}
+.todo-i.ev .t-sub{display:flex;flex-wrap:wrap;gap:5px 6px;align-items:center;margin-top:5px}
+.todo-i .t-act{display:flex;gap:6px;flex:none;align-items:center}
+.todo-i.ev .sev{font-variant-numeric:tabular-nums;letter-spacing:0;font-size:12px;min-width:46px;text-align:center}
 .sev{flex:none;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:5px;margin-top:2px}
 .sev.crit{background:var(--crit-soft);color:var(--crit)}
 .sev.warn{background:var(--warn-soft);color:var(--warn)}
@@ -391,6 +426,13 @@ html.modal-open,html.modal-open body{overflow:hidden}
   .modal-f{padding:10px 16px max(12px,env(safe-area-inset-bottom,0px));gap:8px}
   .modal-f .btn{flex:1 1 auto}
   .modal-f .left{flex:0 0 auto}
+  .hide-m{display:none!important}.show-m{display:inline}
+  .kpis{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:8px;margin-inline:-16px;padding:0 16px 2px;scrollbar-width:none;scroll-padding-inline:16px}
+  .kpi{flex:0 0 44%;scroll-snap-align:start;padding:10px 12px}.kpi .k-n{font-size:22px}.kpi .k-l{font-size:12px}
+  .todo-i{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;padding:12px 14px}
+  .todo-i .t-act{grid-column:2;flex-wrap:wrap}
+  .ev-foot #ev-sum{display:none}
+  .ev-tabs{padding:4px 10px 0}.ev-tabs button{flex:1 1 auto;justify-content:center;padding:8px 6px 10px;font-size:13.5px}
 }
 @media (hover:none){.nav a:hover{background:none}.btn:hover{background:var(--surface)}.btn.primary:hover{background:var(--accent);border-color:var(--accent)}.btn.ghost:hover{background:transparent}.tbl tbody tr.clickable:hover td{background:none}.acct:hover{background:var(--surface)}.btn:active{background:var(--surface-2)}.btn.primary:active{background:var(--accent-hover)}}
 .btn,.nav a,.tbl tr.clickable{-webkit-tap-highlight-color:transparent}
@@ -1741,11 +1783,11 @@ function viewHome() {
   return pageHead('Tổng quan', `Hôm nay ${weekday(t)}, ${fmtDate(t)}.`, `<button class="btn" data-act="new-hcp">${I.plus} Bác sĩ</button><button class="btn primary" data-act="new-event">${I.plus} Sự kiện mới</button>`) + `
   <div class="stack">
     ${SYNC_ON && !sync.user && sync.status !== 'loading' ? `<div class="callout" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><span><b>Đăng nhập để dùng chung dữ liệu</b> trên laptop, iPad và điện thoại.</span><button class="btn primary sm" data-act="account">Đăng nhập</button></div>` : ''}
-    ${onboard ? onboardHtml() : ''}
+    ${!state.hcps.length ? onboardHtml() : !template ? `<div class="callout warn" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><span><b>Chưa có phôi hợp đồng.</b> Tải “Phoi_Speaker_Agreement.docx” lên để xuất hợp đồng.</span><button class="btn sm primary" data-act="pick" data-f="f-template">${I.up} Chọn file phôi</button></div>` : ''}
     <div class="kpis">${k.map(([st, l, list, v]) => `<button class="kpi ${STAGE[st].cls}" data-act="nav" data-v="${v}"><span class="k-l"><i></i>${l}</span><span class="k-n">${list.length}</span><span class="k-a mono">${fmtVND(sum(list))} VND</span></button>`).join('')}</div>
     <div class="grid-2">
       <section class="panel"><div class="panel-h"><h2>Việc cần làm</h2><span class="muted small">${todos.length ? todos.length + ' việc' : ''}</span></div>
-        ${todos.length ? `<div class="todo">${todos.map(td => `<div class="todo-i"><span class="sev ${td.sev}">${td.sevL}</span><div class="t-body"><div class="t-title">${td.title}</div>${td.sub ? `<div class="t-sub">${td.sub}</div>` : ''}</div>${td.btn || ''}</div>`).join('')}</div>`
+        ${todos.length ? `<div class="todo">${todos.map(td => `<div class="todo-i ${td.ev ? 'ev' : ''}"><span class="sev ${td.sev}">${td.sevL}</span><div class="t-body"><div class="t-title">${td.title}</div>${td.sub ? `<div class="t-sub">${td.sub}</div>` : ''}</div><div class="t-act">${td.btn || ''}</div></div>`).join('')}</div>`
           : `<div class="empty"><b>Không có việc tồn đọng</b>Sự kiện sắp tới, hợp đồng thiếu thông tin và khoản chờ gửi admin sẽ hiện ở đây.</div>`}
       </section>
       <section class="panel"><div class="panel-h"><h2>Thù lao năm ${year} theo BS</h2>${cap ? `<span class="tag crit">Trần ${fmtVND(cap)}</span>` : `<button class="btn sm ghost" data-act="nav" data-v="settings">Đặt trần/năm</button>`}</div>
@@ -1768,23 +1810,31 @@ function onboardHtml() {
       <div class="ob ${s3 ? 'done' : ''}"><span class="ob-n">${s3 ? 'XONG' : 'BƯỚC 3'}</span><b>Tạo sự kiện đầu tiên</b><p>Chọn BS, nhập chủ đề và phí, bấm xuất: mỗi BS ra một file hợp đồng đúng phôi.</p><div><button class="btn sm" data-act="new-event">${I.plus} Sự kiện mới</button></div></div>
     </div></div></section>`;
 }
+// Việc theo từng sự kiện: gộp mọi việc còn thiếu của 1 sự kiện vào 1 dòng
+function eventIssues(ev, t = today()) {
+  const es = engsOf(ev.id).filter(e => !e.cancelled), d = daysFrom(t, ev.date), out = [];
+  if (ev.date >= t) {
+    const miss = es.filter(e => hcpMissing(hcpById(e.hcpId)).length), noC = es.filter(e => !e.contractAt), noV = es.filter(e => !e.veevaAt);
+    if (miss.length) out.push({sev:'crit', l:`Thiếu TT HĐ: ${miss.map(e => esc(shortName(hcpById(e.hcpId)?.name))).join(', ')}`});
+    if (noC.length) out.push({sev:d <= 7 ? 'crit' : d <= 14 ? 'warn' : 'info', l:`Chưa xuất HĐ${es.length > 1 ? ` (${noC.length}/${es.length})` : ''}`, act:'dl-event', btn:'Xuất HĐ'});
+    if (noV.length && d <= 14) out.push({sev:d <= 7 ? 'crit' : 'warn', l:`Chưa raise Veeva${es.length > 1 ? ` (${noV.length})` : ''}`, act:'veeva-all', btn:'Đã raise Veeva'});
+    if (!ev.agendaAt && d <= 14 && (es.length || ev.agFormat)) out.push({sev:d <= 3 ? 'warn' : 'info', l:'Chưa xuất Agenda', act:'dl-agenda', btn:'Xuất Agenda'});
+  } else if (needsReport(ev)) out.push({sev:-d > 7 ? 'warn' : 'info', l:'Chưa có GM report', act:'open-report', btn:'Làm report', skip:true});
+  return out;
+}
+const shortName = n => clean(n).split(' ').slice(-2).join(' ');
 function buildTodos() {
-  const t = today(); const out = [];
-  const upcoming = state.events.filter(ev => ev.date && ev.date >= t && daysFrom(t, ev.date) <= 21).sort((a, b) => a.date.localeCompare(b.date));
-  for (const ev of upcoming) {
-    const es = engsOf(ev.id).filter(e => !e.cancelled); const d = daysFrom(t, ev.date);
-    const noC = es.filter(e => !e.contractAt), noV = es.filter(e => !e.veevaAt);
-    const miss = es.filter(e => hcpMissing(hcpById(e.hcpId)).length);
-    const btn = `<button class="btn sm" data-act="open-event" data-id="${ev.id}">Mở</button>`;
-    const sub = `${esc(ev.name)} · ${weekday(ev.date)} ${fmtDate(ev.date)} (${relDays(ev.date)})`;
-    if (miss.length) out.push({sev:'crit', sevL:'Thiếu', title:`Thiếu thông tin HĐ: ${miss.map(e => esc(hcpById(e.hcpId)?.name)).join(', ')}`, sub, btn, o:0});
-    if (noC.length) out.push({sev:d <= 7 ? 'crit' : d <= 14 ? 'warn' : 'info', sevL:'HĐ', title:`Chưa xuất hợp đồng cho ${noC.length} BS`, sub, btn:`<button class="btn sm" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất</button>`, o:1});
-    if (noV.length && d <= 14) out.push({sev:d <= 7 ? 'crit' : 'warn', sevL:'Veeva', title:`Chưa raise Veeva: ${noV.map(e => esc(hcpById(e.hcpId)?.name)).join(', ')}`, sub, btn, o:2});
-  }
-  for (const ev of state.events.filter(needsReport).sort((a, b) => a.date.localeCompare(b.date))) {
-    const n = daysFrom(ev.date, t);
-    out.push({sev:n > 7 ? 'warn' : 'info', sevL:'Report', title:'Sự kiện đã xong, chưa có GM report', sub:`${esc(ev.name)} · ${fmtDate(ev.date)} (${relDays(ev.date)})`,
-      btn:`<button class="btn sm primary" data-act="open-report" data-id="${ev.id}">Làm report</button><button class="btn sm ghost" data-act="rp-skip" data-id="${ev.id}" title="Sự kiện này không cần GM report">Bỏ qua</button>`, o:2.5});
+  const t = today(); const out = [], rank = {crit:0, warn:1, info:2};
+  const evs = state.events.filter(ev => ev.date && ((ev.date >= t && daysFrom(t, ev.date) <= 21) || needsReport(ev))).sort((a, b) => a.date.localeCompare(b.date));
+  for (const ev of evs) {
+    const iss = eventIssues(ev, t); if (!iss.length) continue;
+    const sev = iss.reduce((a, x) => rank[x.sev] < rank[a] ? x.sev : a, 'info'), first = iss.find(x => x.act);
+    const {d, m} = isoParts(ev.date);
+    out.push({sev, sevL:`${pad(d)}/${pad(m)}`, ev:true,
+      title:`<a href="#su-kien" data-act="open-event" data-id="${ev.id}">${esc(ev.name.replace(/^\d{8}\s*-\s*/, ''))}</a>`,
+      sub:`<span>${weekday(ev.date)} · ${relDays(ev.date)}</span>${iss.map(x => `<span class="tag ${x.sev}">${x.l}</span>`).join('')}`,
+      btn:`${first ? `<button class="btn sm ${first.act === 'open-report' ? 'primary' : ''}" data-act="${first.act}" data-id="${ev.id}">${first.act === 'dl-event' || first.act === 'dl-agenda' ? I.down + ' ' : ''}${first.btn}</button>` : `<button class="btn sm" data-act="open-event" data-id="${ev.id}">Mở</button>`}${first?.skip ? `<button class="btn sm ghost" data-act="rp-skip" data-id="${ev.id}" title="Sự kiện này không cần GM report">Bỏ qua</button>` : ''}`,
+      o:rank[sev]});
   }
   const held = state.engs.filter(e => stageOf(e) === 'held');
   if (held.length) {
@@ -1883,18 +1933,17 @@ function viewEventDetail(ev) {
       <div><h1>${esc(ev.name)}</h1>
         <div class="ev-meta"><span>${esc(ev.venue || 'Chưa có địa điểm')}</span><span>${esc(ev.city)}${ev.country && ev.country !== 'Việt Nam' ? ', ' + esc(ev.country) : ''}</span><span class="tag ${isOnlineEvent(ev) ? 'acc' : ''}">${isOnlineEvent(ev) ? 'Trực tuyến' : 'Trực tiếp'}</span>${ev.date ? `<span>${relDays(ev.date)}</span>` : ''}${p ? `<span class="tag acc">${esc(prodLabel(p))}</span><span class="mono">${esc(p.costCenter)} · SIO ${esc(p.sio)}</span>` : `<span class="tag crit">Chưa chọn sản phẩm</span>`}</div>
         <div class="ev-meta"><span>Bayer ký: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || '—')}</span><span class="mono">${live.length} BS · ${fmtVND(sum)} VND</span></div></div></div>
-    <div class="actions"><button class="btn" data-act="edit-event" data-id="${ev.id}">Sửa</button><button class="btn" data-act="clone-event" data-id="${ev.id}">Nhân bản</button>
-      <button class="btn" data-act="veeva-all" data-id="${ev.id}">Đã raise Veeva tất cả</button><button class="btn" data-act="dl-agenda" data-id="${ev.id}" title="${ev.agendaAt ? 'Đã xuất ' + new Date(ev.agendaAt).toLocaleDateString('vi-VN') : 'Agenda, FMV checklist, GM report'}">${I.down} Agenda${engsOf(ev.id).some(e => !e.cancelled && +e.fee > 0) ? ' & FMV' : ''}</button><button class="btn primary" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất ${live.length > 1 ? 'tất cả HĐ (.zip)' : 'hợp đồng'}</button></div>
+    <div class="actions"><button class="btn" data-act="edit-event" data-id="${ev.id}">Sửa</button><button class="btn" data-act="clone-event" data-id="${ev.id}">Nhân bản</button></div>
   </div>
+  ${eventFlowHtml(ev)}
   <section class="panel">
-    ${es.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Bác sĩ</th><th>Vai trò · Chủ đề</th><th class="num">Phí</th><th>Trạng thái</th><th>Tiến độ</th><th></th></tr></thead><tbody>
+    ${es.length ? `<div class="tbl-wrap"><table class="tbl tbl-ev"><thead><tr><th>Bác sĩ</th><th>Vai trò · Chủ đề</th><th class="num">Phí</th><th>Tiến độ</th><th></th></tr></thead><tbody>
     ${es.map(e => { const h = hcpById(e.hcpId); const miss = hcpMissing(h); const st = stageOf(e);
       return `<tr>
         <td><a href="#bac-si" class="t-main" data-act="edit-hcp" data-id="${e.hcpId}">${esc(h?.name || 'BS đã xoá')}</a><div class="t-sub">${esc(h?.position || h?.khoa || '')}${h?.hospital ? ' · ' + esc(h.hospital) : ''}</div>${miss.length ? `<div class="miss">${miss.map(x => `<span class="tag crit">${x}</span>`).join('')}</div>` : ''}</td>
         <td style="max-width:340px"><div>${esc(e.role)}${e.duration ? ` · ${esc(e.duration)} phút` : ''}</div><div class="t-sub">${esc(e.topic) || '<span class="tag warn">Chưa có chủ đề</span>'}</div></td>
         <td class="num mono">${fmtVND(e.fee)}</td>
-        <td>${chip(st, stageLabel(e))}</td>
-        <td>${stepper(e)}</td>
+        <td title="${esc(stageLabel(e))}">${stepper(e)}</td>
         <td class="nowrap"><button class="btn sm" data-act="dl-one" data-id="${e.id}" ${e.cancelled ? 'disabled' : ''} title="Tải hợp đồng .docx">${I.down} HĐ</button>
           <button class="btn sm ghost" data-act="copy-veeva" data-id="${e.id}" title="Copy thông tin để nhập Veeva">${I.copy}</button>
           ${e.sentAt ? '' : `<button class="btn sm ghost" data-act="toggle-cancel" data-id="${e.id}">${e.cancelled ? 'Khôi phục' : 'Huỷ'}</button>`}</td></tr>`; }).join('')}
@@ -1905,6 +1954,24 @@ function viewEventDetail(ev) {
   <div class="actions" style="margin-top:18px"><button class="btn danger sm" data-act="del-event" data-id="${ev.id}" data-confirm="Bấm lần nữa để xoá sự kiện" ${anySent ? 'disabled title="Đã có BS gửi thanh toán, không xoá được"' : ''}>Xoá sự kiện</button></div>`;
 }
 
+/* Tiến trình 1 sự kiện: mỗi bước 1 trạng thái + 1 nút, bước cần làm tiếp được làm nổi */
+function eventFlowHtml(ev) {
+  const live = engsOf(ev.id).filter(e => !e.cancelled), n = live.length, paidN = live.filter(e => +e.fee > 0);
+  const cnt = k => live.filter(e => e[k]).length, held = isHeld(ev), fee = paidN.length > 0;
+  const b = (act, label, extra = '') => `<button class="btn sm" data-act="${act}" data-id="${ev.id}" ${extra}>${label}</button>`;
+  const steps = [
+    {k:'HĐ', na:!n, done:n && cnt('contractAt') === n, st:!n ? 'Không có BS' : `${cnt('contractAt')}/${n} đã xuất`, btn:n ? b('dl-event', `${I.down} ${cnt('contractAt') === n ? 'Xuất lại' : 'Xuất HĐ'}`) : b('edit-event', `${I.plus} Thêm BS`, 'data-tab="hcp"')},
+    {k:'Veeva', na:!n, done:n && cnt('veevaAt') === n, st:!n ? '—' : `${cnt('veevaAt')}/${n} đã raise`, btn:n && cnt('veevaAt') < n ? b('veeva-all', 'Đã raise tất cả') : ''},
+    {k:fee ? 'Agenda & FMV' : 'Agenda', done:!!ev.agendaAt, st:ev.agendaAt ? 'Xuất ' + fmtDate(new Date(ev.agendaAt).toISOString().slice(0, 10)) : 'Chưa xuất', btn:b('dl-agenda', `${I.down} ${ev.agendaAt ? 'Xuất lại' : 'Xuất'}`)},
+    {k:'Diễn ra', done:held, st:ev.date ? `${fmtDate(ev.date)} · ${relDays(ev.date)}` : 'Chưa có ngày', btn:''},
+    {k:'GM report', done:!!(ev.reportAt || ev.reportSkip), st:ev.reportAt ? 'Xuất ' + fmtDate(new Date(ev.reportAt).toISOString().slice(0, 10)) : ev.reportSkip ? 'Bỏ qua' : held ? 'Chưa làm' : 'Sau sự kiện', btn:held && !ev.reportAt ? b('open-report', 'Làm report') : ''},
+    {k:'Thanh toán', na:!fee, done:fee && paidN.every(e => e.paidAt), st:!fee ? 'Không có phí' : paidN.every(e => e.paidAt) ? 'Đã chi' : cnt('sentAt') ? `${paidN.filter(e => e.sentAt).length}/${paidN.length} đã gửi admin` : held ? 'Chờ gửi admin' : 'Sau sự kiện',
+      btn:held && fee && paidN.some(e => !e.sentAt) ? `<button class="btn sm" data-act="nav" data-v="pay">Tạo YCTT</button>` : ''},
+  ];
+  const cur = steps.findIndex(x => !x.done && !x.na && (x.btn || x.k === 'Diễn ra'));
+  return `<section class="evflow">${steps.map((x, i) => `<div class="ef ${x.done ? 'done' : ''} ${x.na ? 'na' : ''} ${i === cur ? 'cur' : ''}">
+    <div class="ef-h"><span class="ef-dot">${x.done ? '✓' : i + 1}</span><b>${x.k}</b></div><div class="ef-s">${x.st}</div>${x.btn && !x.na ? `<div class="ef-b">${i === cur ? x.btn.replace('class="btn sm"', 'class="btn sm primary"') : x.btn}</div>` : ''}</div>`).join('')}</section>`;
+}
 function payEligible() {
   const t = today();
   return state.engs.filter(e => !e.sentAt && !e.cancelled && evById(e.eventId) && (ui.payFuture || (evById(e.eventId).date && evById(e.eventId).date <= t)));
@@ -1958,6 +2025,13 @@ function viewPay() {
 }
 
 function viewSettings() {
+  const short = {'Tài khoản & đồng bộ':'Tài khoản', 'Mẫu Agenda & FMV':'Mẫu Agenda', 'Thông tin file YCTT':'YCTT & sản phẩm', 'Người ký phía Bayer':'Người ký', 'Giá trị mặc định':'Mặc định'};
+  const toc = [];
+  const h = viewSettings0().replace(/<section class="panel"><div class="panel-h"><h2>([^<]+)<\/h2>/g, (m, t) => { const id = 'set-' + toc.length; toc.push([id, short[t] || t]); return `<section class="panel" id="${id}"><div class="panel-h"><h2>${t}</h2>`; });
+  const i = h.indexOf('<section'); if (i < 0) return h;
+  return h.slice(0, i) + `<nav class="set-toc">${toc.map(([id, t]) => `<a href="#cai-dat" data-act="set-jump" data-id="${id}">${esc(t)}</a>`).join('')}</nav>` + h.slice(i);
+}
+function viewSettings0() {
   const s = state.settings;
   const f = (k, label, attrs = '') => `<label class="field"><span>${label}</span><input class="input" data-set="${k}" value="${esc(attrs.includes('data-money') ? (s[k] ? fmtVND(s[k]) : '0') : s[k])}" ${attrs}></label>`;
   return pageHead('Cài đặt', 'Thông tin cố định dùng cho hợp đồng và file thanh toán. Tự lưu khi bạn sửa.') + `
@@ -2230,7 +2304,7 @@ const gmHint = venue => !clean(venue) ? 'Ghi đúng như trên hợp đồng. C�
   : isOnlineVenue(venue) ? 'Trực tuyến → file YCTT ghi: <b>Khoa phòng - Bệnh viện của từng BS (trực tuyến)</b>'
   : `Tổ chức trực tiếp → file YCTT ghi nguyên: <b>${esc(clean(venue))}</b>`;
 const prodHint = p => p ? `${esc(p.bu || '')} · <b class="mono">${esc(p.costCenter || '—')}</b> · SIO <b class="mono">${esc(p.sio || '—')}</b>${p.signer2Name ? ` · Marketing ký: ${esc(p.signer2Name)}` : ''}` : 'UDA, SIO và người ký Marketing lấy theo sản phẩm.';
-function openEventEditor(evId, {clone} = {}) {
+function openEventEditor(evId, {clone, tab} = {}) {
   const src = evId ? evById(evId) : null;
   const ev = src ? {...src} : newEvent({date:addDays(today(), 7)});
   if (clone) { delete ev.imported; ev.date = ev.date && ev.date >= today() ? ev.date : addDays(today(), 7); ev.name = ev.name.replace(/^\d{8}/, ev.date.replace(/-/g, '')); }
@@ -2241,8 +2315,10 @@ function openEventEditor(evId, {clone} = {}) {
   const s = state.settings;
   const w = openModal(`
     <div class="modal-h"><div><h2>${clone ? 'Nhân bản sự kiện' : evId ? 'Sửa sự kiện' : 'Sự kiện mới'}</h2><p>Thông tin chung điền một lần cho mọi hợp đồng trong sự kiện.</p></div><button class="btn ghost sm" data-act="close" aria-label="Đóng">${I.x}</button></div>
+    <div class="ev-tabs" role="tablist">${[['info', 'Sự kiện'], ['hcp', 'Bác sĩ <span class="tab-n" id="tab-hcp-n"></span>'], ['ag', 'Agenda & FMV <span class="tab-n" id="tab-ag-n"></span>']].map(([k, l]) => `<button type="button" role="tab" data-act="ev-tab" data-t="${k}">${l}</button>`).join('')}</div>
     <form class="modal-b" id="ev-form" autocomplete="off">
-      <div class="fsec"><h3>Sự kiện</h3><div class="fgrid">
+      <div class="ev-pane" data-pane="info">
+      <div class="fsec"><div class="fgrid">
         <label class="field span2"><span>Sản phẩm / hoạt động <em>*</em></span><select class="input" name="productId" ${evId && !clone ? '' : 'autofocus'}>
           <option value="">Chọn sản phẩm…</option>${productOptions(ev.productId)}</select></label>
         <div class="field span2" style="justify-content:flex-end"><span class="hint" id="prod-hint">${prodHint(productFor(ev))}</span></div>
@@ -2252,20 +2328,22 @@ function openEventEditor(evId, {clone} = {}) {
         <label class="field"><span>Thành phố tổ chức</span><input class="input" name="city" value="${esc(ev.city)}"></label>
         <label class="field"><span>Quốc gia</span><input class="input" name="country" value="${esc(ev.country)}"></label>
       </div></div>
-      ${agSectionHtml(ev)}
       <details class="fsec"><summary class="small" style="cursor:pointer;font-weight:600" id="sign-sum">Người ký phía Bayer: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || 'chưa có')}</summary>
         <div class="fgrid" style="margin-top:12px">
           <label class="field"><span>Người ký 1 (Sales)</span><input class="input" name="signer1Name" value="${esc(ev.signer1Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer1Title" value="${esc(ev.signer1Title)}"></label>
           <label class="field"><span>Người ký 2 (Marketing, theo sản phẩm)</span><input class="input" name="signer2Name" value="${esc(ev.signer2Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer2Title" value="${esc(ev.signer2Title)}"></label>
         </div></details>
       <label class="field fsec"><span>Ghi chú nội bộ</span><input class="input" name="note" value="${esc(ev.note)}"></label>
-      <div class="fsec"><h3>Bác sĩ tham gia</h3><div class="eng-rows" id="eng-rows"></div>
-        <div><button type="button" class="btn sm" data-act="add-row">${I.plus} Thêm bác sĩ</button></div></div>
+      </div>
+      <div class="ev-pane" data-pane="hcp"><div class="fsec"><div class="eng-rows" id="eng-rows"></div>
+        <div><button type="button" class="btn sm" data-act="add-row">${I.plus} Thêm bác sĩ</button></div>
+        <p class="hint" style="margin:0">Không có BS (TDV báo bài, gặp ở nhà hàng) thì bỏ trống, qua tab Agenda & FMV.</p></div></div>
+      <div class="ev-pane" data-pane="ag">${agSectionHtml(ev)}</div>
       <datalist id="dl-venue">${venues.map(v => `<option>${esc(v)}</option>`).join('')}</datalist>
       <datalist id="dl-role">${ROLES.map(r => `<option>${r}</option>`).join('')}</datalist>
       <datalist id="dl-spec2">${[...new Set(['Tim Mạch','Nội thận','Nội tiết', ...state.hcps.map(x => x.specialty).filter(Boolean)])].map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
     </form>
-    <div class="modal-f"><span class="muted small left" id="ev-sum"></span><button class="btn" data-act="close">Huỷ</button><button class="btn" data-act="save-event">Lưu</button><button class="btn" data-act="save-event" data-ag="1">${I.down} Lưu & xuất Agenda</button><button class="btn primary" data-act="save-event" data-dl="1">${I.down} Lưu & xuất HĐ</button></div>`, {size:'wide', onClose:() => { edit = null; }});
+    <div class="modal-f ev-foot"><span class="muted small left" id="ev-sum"></span><button class="btn hide-m" data-act="close">Huỷ</button><button class="btn" data-act="save-event">Lưu</button><button class="btn" data-act="save-event" data-ag="1">${I.down} <span class="hide-m">Lưu & xuất Agenda</span><span class="show-m">Agenda</span></button><button class="btn primary" data-act="save-event" data-dl="1">${I.down} <span class="hide-m">Lưu & xuất HĐ</span><span class="show-m">Xuất HĐ</span></button></div>`, {size:'wide', onClose:() => { edit = null; }});
   const form = $('#ev-form', w);
   form.addEventListener('submit', e => e.preventDefault());
   let prevProd = productFor(ev);
@@ -2285,7 +2363,13 @@ function openEventEditor(evId, {clone} = {}) {
     if (d && /^\d{8}\b/.test(n.value)) n.value = n.value.replace(/^\d{8}/, d);
     n.placeholder = `${d || ''} - HCM Hospital - XMeeting BV …`;
   });
-  renderRows(); agBind(w); agRefresh();
+  renderRows(); agBind(w); agRefresh(); evTab(tab || 'info');
+}
+function evTab(t) {
+  const w = topModal(); if (!w || !$('.ev-tabs', w)) return;
+  $$('.ev-tabs [data-t]', w).forEach(b => b.setAttribute('aria-selected', String(b.dataset.t === t)));
+  $$('.ev-pane', w).forEach(p => p.classList.toggle('on', p.dataset.pane === t));
+  $('#ev-form', w).scrollTop = 0; if (t === 'ag') agRefresh?.();
 }
 function blankRow() { return {rid:uid(), engId:null, hcpId:'', hcpName:'', role:'Báo cáo viên', topic:'', duration:state.settings.duration, prep:state.settings.prep, fee:state.settings.fee, specialty:''}; }
 function syncRows() {
@@ -2317,6 +2401,7 @@ function renderRows() {
     </div>`; }).join('');
   const live = edit.rows.filter(r => r.hcpId);
   const sumEl = $('#ev-sum'); if (sumEl) sumEl.textContent = live.length ? `${live.length} BS · ${fmtVND(live.reduce((a, r) => a + (+r.fee || 0), 0))} VND` : '';
+  const tn = $('#tab-hcp-n'); if (tn) tn.textContent = live.length || '';
   agRefresh();
 }
 function pickHcpForRow(rid, h) {
@@ -2370,14 +2455,14 @@ function saveEvent(dl, ag) {
   syncRows();
   const f = readForm($('#ev-form', w));
   const name = clean(f.name), date = f.date;
-  if (!f.productId) { toast('Chọn sản phẩm / hoạt động để file thanh toán có đúng UDA và SIO.', {kind:'err'}); $('#ev-form', w).elements.productId.focus(); return; }
-  if (!name || !date) { toast('Cần nhập tên và ngày sự kiện.', {kind:'err'}); return; }
+  if (!f.productId) { toast('Chọn sản phẩm / hoạt động để file thanh toán có đúng UDA và SIO.', {kind:'err'}); evTab('info'); $('#ev-form', w).elements.productId.focus(); return; }
+  if (!name || !date) { toast('Cần nhập tên và ngày sự kiện.', {kind:'err'}); evTab('info'); $('#ev-form', w).elements[name ? 'date' : 'name'].focus(); return; }
   const rows = edit.rows.filter(r => r.hcpId);
   const typedNoPick = edit.rows.filter(r => !r.hcpId && clean(r.hcpName));
-  if (typedNoPick.length) { toast(`Chưa chọn BS cho “${typedNoPick[0].hcpName}”. Chọn trong danh sách gợi ý hoặc bấm Tạo hồ sơ.`, {kind:'err'}); return; }
+  if (typedNoPick.length) { toast(`Chưa chọn BS cho “${typedNoPick[0].hcpName}”. Chọn trong danh sách gợi ý hoặc bấm Tạo hồ sơ.`, {kind:'err'}); evTab('hcp'); return; }
   checkpoint();
   let ev = edit.evId ? evById(edit.evId) : null;
-  if (!clean(f.venue)) { toast('Nhập địa điểm tổ chức (như trên hợp đồng). File YCTT cần thông tin này.', {kind:'err'}); $('#ev-form', w).elements.venue.focus(); return; }
+  if (!clean(f.venue)) { toast('Nhập địa điểm tổ chức (như trên hợp đồng). File YCTT cần thông tin này.', {kind:'err'}); evTab('info'); $('#ev-form', w).elements.venue.focus(); return; }
   const evData = {name, date, venue:clean(f.venue), city:clean(f.city), country:clean(f.country) || 'Việt Nam', online:isOnlineVenue(f.venue), note:clean(f.note),
     signer1Name:clean(f.signer1Name), signer1Title:clean(f.signer1Title), signer2Name:clean(f.signer2Name), signer2Title:clean(f.signer2Title)};
   if (f.productId) evData.productId = f.productId;
@@ -2687,7 +2772,7 @@ function flushSync() { if (sync.user && sync.timer && state.pending) { clearTime
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
 addEventListener('pagehide', flushSync);
 // Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
-const APP_VER = '2026.11.23.2';
+const APP_VER = '2026.11.23.3';
 let updShown = false;
 async function checkVersion() {
   if (updShown || location.protocol === 'file:') return;
@@ -3212,6 +3297,7 @@ function agRefresh() {
         <span class="muted small">${d.count} lần trong năm</span></div>`).join('')}</div>
       ${fr.length > 4 ? `<p class="hint">File FMV mẫu có 4 dòng BS. Xuất xong bấm “Add Row” trong file cho BS thứ 5 trở đi.</p>` : ''}`;
   }
+  const ta = $('#tab-ag-n', w); if (ta) { ta.textContent = v.agFormat ? '' : '!'; ta.classList.toggle('warn', !v.agFormat); ta.title = v.agFormat ? '' : 'Chưa chọn hình thức'; }
   const s = $('#ag-sum', w); if (s) s.textContent = v.agFormat ? '· ' + (AG_FORMATS.find(x => x[0] === v.agFormat)?.[1] || '') + (paid.length ? ' · có FMV' : '') : '· chọn hình thức để tạo agenda';
 }
 function agReadItems(w) {
@@ -3410,8 +3496,8 @@ function reportPanelHtml(ev) {
       <textarea class="input" data-rk="q" rows="${Math.min(6, Math.ceil((it.q || '').length / 60) + 1)}" placeholder="Câu hỏi">${esc(it.q)}</textarea>
       <textarea class="input" data-rk="a" rows="${Math.min(9, Math.ceil((it.a || '').length / 75) + 1)}" placeholder="Câu trả lời">${esc(it.a)}</textarea>
       <button class="btn sm ghost" data-act="rp-del" data-sec="${sec}" data-i="${i}" aria-label="Bỏ câu này">${I.x}</button></div>`;
-  return `<section class="panel" id="rp-panel" data-ev="${ev.id}" data-f="${f}" style="margin-top:16px">
-    <div class="panel-h"><h2>GM report</h2>${ev.reportAt ? `<span class="tag ok">Đã xuất ${new Date(ev.reportAt).toLocaleDateString('vi-VN')}</span>` : '<span class="tag warn">Chưa xuất</span>'}</div>
+  return `<details class="panel" id="rp-panel" data-ev="${ev.id}" data-f="${f}" style="margin-top:16px" ${ev.reportAt && ui.rpOpen !== ev.id ? '' : 'open'}>
+    <summary class="panel-h"><h2>GM report</h2>${ev.reportAt ? `<span class="tag ok">Đã xuất ${new Date(ev.reportAt).toLocaleDateString('vi-VN')} · bấm để xem / sửa</span>` : '<span class="tag warn">Chưa xuất</span>'}</summary>
     <div class="panel-b stack">
       <div class="fgrid"><label class="field"><span>Số NVYT tham dự thực tế</span><input class="input" data-rp="hcpCount" inputmode="numeric" value="${esc(rep.hcpCount || '')}"></label>
         <label class="field span2"><span>Chủ đề trình bày (trên report)</span><input class="input" value="${esc(reportTopic(ev).replace(/\n/g, ' · '))}" disabled></label></div>
@@ -3425,8 +3511,8 @@ function reportPanelHtml(ev) {
       <p class="hint" style="margin:0">${bk ? `Lấy từ bộ câu hỏi ${esc(brandOf(ev))} hợp chủ đề, tránh trùng các report gần nhất.` : 'Sản phẩm này chưa có bộ câu hỏi sẵn: bấm “Tạo câu hỏi riêng bằng AI”.'} Đọc lại nội dung y khoa trước khi nộp.</p>` : ''}
       <div class="ag-h"><b class="small">Đánh giá / ý kiến từ NVYT</b></div>
       ${rep.evals.map((t, i) => `<input class="input" data-rp="eval" data-i="${i}" value="${esc(t)}">`).join('')}
-      <div class="actions"><button class="btn primary" data-act="dl-report" data-id="${ev.id}">${I.down} Xuất GM report & đóng event</button></div>
-    </div></section>`;
+      <div class="actions"><button class="btn primary" data-act="dl-report" data-id="${ev.id}">${I.down} ${ev.reportAt ? 'Xuất lại GM report' : 'Xuất GM report & đóng event'}</button></div>
+    </div></details>`;
 }
 function readReportPanel(ev) {
   const p = document.getElementById('rp-panel'); if (!p || !ev.rep) return;
@@ -3437,7 +3523,7 @@ function readReportPanel(ev) {
 }
 function rpEdit(fn) {
   const ev = evById($('#rp-panel')?.dataset.ev); if (!ev) return;
-  readReportPanel(ev); fn(ev.rep, ev); save(true);
+  readReportPanel(ev); fn(ev.rep, ev); save(true); ui.rpOpen = ev.id;
   const y = scrollY; render(); scrollTo(0, y);
 }
 function openRpPaste() {
@@ -3548,7 +3634,9 @@ const ACT = {
   'ask-info': t => openAskInfo(t.dataset.id),
   'export-hcps': () => exportHcps(),
   'new-event': () => openEventEditor(null),
-  'edit-event': t => openEventEditor(t.dataset.id),
+  'edit-event': t => openEventEditor(t.dataset.id, {tab:t.dataset.tab}),
+  'ev-tab': t => evTab(t.dataset.t),
+  'set-jump': t => { const el = document.getElementById(t.dataset.id); if (el) scrollTo({top:el.getBoundingClientRect().top + scrollY - 64, behavior:'smooth'}); },
   'clone-event': t => openEventEditor(t.dataset.id, {clone:true}),
   'open-event': t => { while (modals.length) closeModal(); go('events', {eventId:t.dataset.id}); },
   'save-event': t => saveEvent(!!t.dataset.dl, !!t.dataset.ag),
@@ -3560,7 +3648,7 @@ const ACT = {
   'ag-del': t => { const w = topModal(); edit.agItems = agReadItems(w); edit.agItems.splice(+t.dataset.i, 1); agRefresh(); },
   'dl-agenda': t => exportAgenda(t.dataset.id),
   'dl-report': t => exportReport(t.dataset.id),
-  'open-report': t => { while (modals.length) closeModal(); go('events', {eventId:t.dataset.id}); requestAnimationFrame(() => document.getElementById('rp-panel')?.scrollIntoView({behavior:'smooth', block:'start'})); },
+  'open-report': t => { while (modals.length) closeModal(); go('events', {eventId:t.dataset.id}); requestAnimationFrame(() => { const p = document.getElementById('rp-panel'); if (p) { p.open = true; p.scrollIntoView({behavior:'smooth', block:'start'}); } }); },
   'rp-skip': t => { const ev = evById(t.dataset.id); if (!ev) return; ev.reportSkip = true; save(); render(); toast('Đã bỏ qua GM report cho sự kiện này.'); },
   'rp-add': t => rpEdit(rep => rep[t.dataset.sec].push({id:'edit', q:'', a:''})),
   'rp-del': t => rpEdit(rep => rep[t.dataset.sec].splice(+t.dataset.i, 1)),
