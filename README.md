@@ -7,6 +7,7 @@ App web một trang để làm hợp đồng Speaker Agreement và file Yêu c�
 - Tổng quan: việc cần làm gộp theo từng sự kiện (1 dòng/sự kiện, các việc còn thiếu là nhãn màu, 1 nút cho việc cần làm trước). Thẻ "Bắt đầu" chỉ hiện khi chưa có BS.
 - Trang sự kiện: thanh 6 bước HĐ → Veeva → Agenda → Diễn ra → GM report → Thanh toán, mỗi bước có nút riêng, bước cần làm tiếp được làm nổi. GM report đã xuất thì thu gọn.
 - Form sự kiện: chọn hình thức trước. With moderator: tab 1 Bác sĩ (bắt buộc ≥1 BS) → tab 2 Sự kiện & Agenda. With / without presentation: không có BS, 1 trang Sự kiện & Agenda, không có nút xuất HĐ; đổi sang hình thức này khi đang có BS thì app báo và bỏ BS khi lưu.
+- Có nhà hàng / nơi mua hàng → agenda luôn có mục "Kết thúc chương trình & Dùng tea-break" (kể cả agenda sửa tay).
 - Tự điền (ô nền xanh): tên sự kiện theo kiểu "yyyymmdd - HCM Hospital - BV … - Khoa …" (nhiều BV → XMeeting), sản phẩm, giờ bắt đầu, thành phần tham dự, số NVYT, chủ đề, nhà hàng lấy từ BS và sự kiện trước. Sửa tay thì app không ghi đè.
 - Cài đặt có mục lục nhanh ở đầu trang.
 

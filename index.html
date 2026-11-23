@@ -2852,7 +2852,7 @@ function flushSync() { if (sync.user && sync.timer && state.pending) { clearTime
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
 addEventListener('pagehide', flushSync);
 // Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
-const APP_VER = '2026.11.23.5';
+const APP_VER = '2026.11.23.6';
 let updShown = false;
 async function checkVersion() {
   if (updShown || location.protocol === 'file:') return;
@@ -3094,8 +3094,8 @@ function buildAgenda(ev, rows) {
       {min:20, desc:clean(ev.agTopic) || 'Chủ đề trình bày', who:staffPresenter(false)}];
     for (const r of live) items.push({min:+r.duration || 10, desc:clean(r.topic) || 'Chia sẻ kinh nghiệm điều trị', who:presenterOf(hcpById(r.hcpId))});
     items.push({min:10, desc:'Thảo luận và trả lời câu hỏi', who:'Tất cả mọi người'});
-    items.push({min:10, desc:clean(ev.agRestaurant) && ev.agRestaurant !== '-' && !isOnlineVenue(ev.venue) ? 'Kết thúc chương trình & Dùng bữa' : 'Kết thúc chương trình & Dùng tea-break', who:'Tất cả mọi người'});
-    return items;
+    items.push({min:10, desc:'Kết thúc chương trình', who:'Tất cả mọi người'});
+    return withTeaBreak(items, ev);
   }
   const chair = live.find(r => /chủ tọa|chủ toạ|điều phối/i.test(r.role));
   const speakers = live.filter(r => r !== chair);
@@ -3106,7 +3106,15 @@ function buildAgenda(ev, rows) {
   if (!speakers.length && chair) items.push({min:+chair.duration || 20, desc:clean(chair.topic) || 'Chủ đề báo cáo', who:host});
   items.push({min:speakers.length > 1 ? 10 : 15, desc:'Thảo luận', who:chair && speakers.length ? 'Chủ tọa, BCV & Khách mời' : 'Tất cả mọi người'});
   items.push({min:chair ? 5 : 10, desc:'Tổng kết chương trình', who:host});
-  return items;
+  return withTeaBreak(items, ev);
+}
+// Có nhà hàng / nơi mua hàng → agenda phải có mục dùng tea-break
+const hasRestaurant = ev => !!clean(ev.agRestaurant) && !/^[-–—\s]*$|^không( có)?$/i.test(clean(ev.agRestaurant));
+function withTeaBreak(items, ev) {
+  if (!hasRestaurant(ev) || items.some(it => /tea.?break/i.test(it.desc))) return items;
+  const last = items[items.length - 1];
+  if (last && /^kết thúc/i.test(clean(last.desc))) return [...items.slice(0, -1), {...last, desc:'Kết thúc chương trình & Dùng tea-break'}];
+  return [...items, {min:10, desc:'Kết thúc chương trình & Dùng tea-break', who:'Tất cả mọi người'}];
 }
 const hhmm = m => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
 const toMin = t => { const m = String(t || '').match(/(\d{1,2})\s*[:hg.]\s*(\d{2})?/i); return m ? +m[1] * 60 + (+m[2] || 0) : 12 * 60; };
@@ -3210,7 +3218,7 @@ async function exportAgenda(evId) {
   try {
     await needZip(); await needAgTpl();
     const s = state.settings, f = ev.agFormat || agFormat(ev), type = ev.agType || guessFmvType(ev, rows).v || 'RTM';
-    const items = ev.agItems?.length ? ev.agItems : buildAgenda({...ev, agFormat:f}, rows);
+    const items = ev.agItems?.length ? withTeaBreak(ev.agItems, ev) : buildAgenda({...ev, agFormat:f}, rows);
     const attend = `${ev.agHcpCount} nhân viên y tế - ${clean(ev.agAttend)}`, staffN = `${+ev.agStaffCount || 1} nhân viên Bayer`;
     const base = `${yymmdd(ev.date)} - `, tail = ev.name.replace(/^\d{6,8}\s*-\s*/, '');
     const fmvRows = fmvRowsFor(ev, rows, type);
@@ -3297,7 +3305,7 @@ function evInfoHtml(ev, venues) {
       <label class="field"><span>Giờ bắt đầu <em>*</em></span><input class="input" type="time" name="agStart" value="${esc(ev.agStart || '')}"></label>
       <label class="field" data-ag="len"><span>Thời lượng (phút)</span><input class="input" name="agLength" inputmode="numeric" value="${esc(ev.agLength || 60)}"></label>
       <label class="field spanall"><span>Địa điểm tổ chức <em>*</em></span><input class="input" name="venue" list="dl-venue" value="${esc(ev.venue)}" placeholder="Khoa Nội Tim Mạch - Bệnh viện… · Trực tuyến qua phần mềm Zoom · Nhà hàng…"><span class="hint" id="gm-hint">${gmHint(ev.venue)}</span></label>
-      <label class="field span2"><span>Nhà hàng / Nơi mua hàng</span><input class="input" name="agRestaurant" value="${esc(ev.agRestaurant || '')}" placeholder="- (không có)" list="dl-ag-rest"></label>
+      <label class="field span2"><span>Nhà hàng / Nơi mua hàng</span><input class="input" name="agRestaurant" value="${esc(ev.agRestaurant || '')}" placeholder="- (không có)" list="dl-ag-rest"><span class="hint">Có nơi mua hàng → agenda tự thêm “Dùng tea-break”.</span></label>
       <label class="field" data-only="mod"><span>Thành phố</span><input class="input" name="city" value="${esc(ev.city)}"></label>
       <label class="field" data-only="mod"><span>Quốc gia</span><input class="input" name="country" value="${esc(ev.country)}"></label>
     </div></div>
@@ -3370,7 +3378,7 @@ function agRefresh() {
   const box = $('#ag-items', w);
   if (f === 'nopres') { box.innerHTML = `<p class="hint" style="margin:10px 0 0">GM không trình bày: file chỉ ghi giờ (${esc(v.agStart || '--:--')} – ${esc(hhmm(toMin(v.agStart) + (+v.agLength || 60)))}) và chủ đề thảo luận.</p>`; }
   else {
-    const items = edit.agItems || buildAgenda({...v, agFormat:f}, rows);
+    const items = edit.agItems ? withTeaBreak(edit.agItems, v) : buildAgenda({...v, agFormat:f}, rows);
     const timed = agendaTimes(v.agStart || '12:00', items);
     box.innerHTML = `<div class="ag-h"><b class="small">Chương trình</b><span class="muted small">${edit.agItems ? 'đã sửa tay' : 'tự tạo theo danh sách BS'}</span>
         <span class="grow"></span>${edit.agItems ? `<button type="button" class="btn sm ghost" data-act="ag-reset">Tạo lại tự động</button>` : ''}<button type="button" class="btn sm ghost" data-act="ag-add">${I.plus} Thêm dòng</button></div>
