@@ -121,13 +121,19 @@ main{min-width:0;padding-block:8px 120px}
 .field>span em{font-style:normal;color:var(--crit)}
 .input,select.input,textarea.input{width:100%;border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:38px}
 textarea.input{resize:vertical;min-height:62px;line-height:1.45}
+/* iOS: ô ngày/giờ có độ rộng riêng, căn giữa → ép về như ô thường; nội dung dài không được đẩy rộng form */
+input[type=date].input,input[type=time].input{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;display:block;text-align:left}
+input[type=date].input::-webkit-date-and-time-value,input[type=time].input::-webkit-date-and-time-value{text-align:left}
+.modal,.modal-b,.ev-pane,.ag-sec,.fsec,.fsec>*,.fgrid>*,.field,.stack>*{min-width:0}
+.modal-b{overflow-x:hidden}
+#ag-sugg .ag-h .btn{max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
 .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .input.search{padding-left:34px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237d8a90' stroke-width='2'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 3.5 3.5'/%3E%3C/svg%3E") no-repeat 11px 50%}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px}
 .fgrid .span2{grid-column:span 2}
 .fgrid .spanall{grid-column:1/-1}
 @media (max-width:520px){.fgrid .span2{grid-column:1/-1}}
-.fsec{display:grid;gap:12px;padding:16px 0;border-top:1px solid var(--line)}
+.fsec{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:16px 0;border-top:1px solid var(--line)}
 .fsec:first-child{border-top:0;padding-top:0}
 .fsec h3{margin:0;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .hint{font-size:13px;color:var(--muted)}
@@ -2772,7 +2778,7 @@ function flushSync() { if (sync.user && sync.timer && state.pending) { clearTime
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
 addEventListener('pagehide', flushSync);
 // Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
-const APP_VER = '2026.11.23.3';
+const APP_VER = '2026.11.23.4';
 let updShown = false;
 async function checkVersion() {
   if (updShown || location.protocol === 'file:') return;
