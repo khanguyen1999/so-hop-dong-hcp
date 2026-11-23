@@ -3,6 +3,13 @@
 App web một trang để làm hợp đồng Speaker Agreement và file Yêu cầu thanh toán HCP.
 
 
+## Agenda & FMV (23/11/2026)
+- Tạo sự kiện → phần **Agenda & FMV** trong form: chọn hình thức (GM with moderator · with presentation · without presentation), giờ bắt đầu, số NVYT, thành phần tham dự. Agenda tự tạo theo danh sách BS (khai mạc, từng bài, thảo luận, tổng kết), sửa tay được.
+- Có BS nhận phí → xuất **Agenda & FMV Checklist V9.1 (.xlsm)**: điền agenda + FMV (requestor, brand, loại hoạt động RTM / Hospital meeting, BS, vai trò, phân loại, tier, số lần trong năm, phí). Giữ nguyên macro, công thức FMV, danh sách chọn.
+- Không có phí / TDV báo bài / không trình bày → xuất **Agenda GM (.xlsx)**: hiện đúng sheet agenda + GM report của hình thức đó.
+- Thông tin không tự đoán được thì hỏi trước khi xuất. Gợi ý các giá trị đã dùng và nút "Điền nhanh giống sự kiện trước".
+- File mẫu lưu ở Supabase (bảng `shared_config`, id `tpl-agenda`), chỉ người đăng nhập đọc được; admin tải lên ở Cài đặt. Không đưa file mẫu lên GitHub.
+
 ## Giao diện điện thoại (22/11/2026)
 - Thanh tab dưới đáy (Tổng quan · Sự kiện · Thanh toán · Bác sĩ · Cài đặt), tự ẩn khi lướt xuống hoặc đang gõ; thanh trên cùng chỉ còn logo + tên trang.
 - Bảng chuyển thành thẻ (nhãn cột bên trái), không phải vuốt ngang; danh sách BS chỉ hiện khoa – bệnh viện, thù lao năm, tình trạng hồ sơ.

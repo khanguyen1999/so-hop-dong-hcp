@@ -171,6 +171,15 @@ table.tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tag.acc{background:var(--accent-soft);color:var(--accent)}
 .miss{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
 .ct-list{display:grid;gap:12px}
+.ag-sec>summary{cursor:pointer}
+.ag-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:14px 0 8px}.ag-h .grow{flex:1}
+.ag-list{display:grid;gap:6px}
+.ag-row{display:grid;grid-template-columns:96px 56px minmax(0,1.4fr) minmax(0,1fr) auto;gap:6px;align-items:start}
+.ag-row .ag-time{padding-top:10px;font-size:13px;color:var(--muted)}
+.ag-row textarea{resize:vertical;min-height:40px;font-size:13px;line-height:1.35}
+.ag-fmv{display:grid;gap:6px}
+.ag-fr{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.2fr) minmax(0,1.3fr) auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13.5px}
+@media (max-width:640px){.ag-row{grid-template-columns:64px 52px minmax(0,1fr) auto;padding-bottom:8px;border-bottom:1px solid var(--line)}.ag-row textarea{grid-column:1/-1;grid-row:2}.ag-row [data-agk="desc"]{grid-column:3/4;grid-row:1}.ag-row [data-act="ag-del"]{grid-column:4;grid-row:1}.ag-fr{grid-template-columns:1fr}}
 .ct-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:12px;min-width:0}
 .ct-card.err{background:var(--crit-soft);border-color:transparent}
 .ct-h{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
@@ -398,6 +407,8 @@ html.modal-open,html.modal-open body{overflow:hidden}
 <input type="file" id="f-excel" accept=".xlsx,.xlsm" hidden>
 <input type="file" id="f-contracts" accept=".docx,.doc,.pdf,image/*" multiple hidden>
 <input type="file" id="f-template" accept=".docx" hidden>
+<input type="file" id="f-ag-fmv" accept=".xlsm" hidden>
+<input type="file" id="f-ag-gm" accept=".xlsx" hidden>
 <input type="file" id="f-restore" accept=".json,application/json" hidden>
 
 <script>
@@ -516,7 +527,7 @@ async function needXlsx() { await loadScript(LIBS.xlsx); return window.ExcelJS; 
 function defaultSettings() {
   return { staffName:'', manager:'', contractForm:'Bản chữ ký sống', signer1Name:'', signer1Title:'', signer2Name:'', signer2Title:'',
     venue:'Trực tiếp qua phần mềm Zoom', city:'Hồ Chí Minh', country:'Việt Nam', prep:120, duration:15, chairDuration:60, fee:5000000,
-    filePattern:'{yymmdd} - Draft Speaker Agreement - Dr. {ho_ten}', annualCap:0 };
+    filePattern:'{yymmdd} - Draft Speaker Agreement - Dr. {ho_ten}', annualCap:0, buDept:'GF CVRM HCM', staffTitle:'DS.' };
 }
 function fresh() { return { v:1, hcps:[], events:[], engs:[], batches:[], products:presetProducts(), settings:defaultSettings(), lastBackupAt:null, changes:0 }; }
 /* Sản phẩm / hoạt động: quyết định BU, UDA (cost center), SIO trên file YCTT và người ký Marketing trên hợp đồng */
@@ -802,7 +813,7 @@ function emptyHcp() {
 function newEvent(o = {}) {
   const s = state.settings;
   return { id:uid(), name:'', date:'', venue:s.venue, city:s.city, country:s.country, online:true, productId:'',
-    signer1Name:s.signer1Name, signer1Title:s.signer1Title, signer2Name:s.signer2Name, signer2Title:s.signer2Title, note:'', createdAt:Date.now(), ...o };
+    signer1Name:s.signer1Name, signer1Title:s.signer1Title, signer2Name:s.signer2Name, signer2Title:s.signer2Title, note:'', agStaffCount:1, createdAt:Date.now(), ...o };
 }
 function newEng(o = {}) {
   return { id:uid(), eventId:'', hcpId:'', role:'Báo cáo viên', topic:'', duration:state.settings.duration, prep:state.settings.prep, fee:state.settings.fee,
@@ -1865,7 +1876,7 @@ function viewEventDetail(ev) {
         <div class="ev-meta"><span>${esc(ev.venue || 'Chưa có địa điểm')}</span><span>${esc(ev.city)}${ev.country && ev.country !== 'Việt Nam' ? ', ' + esc(ev.country) : ''}</span><span class="tag ${isOnlineEvent(ev) ? 'acc' : ''}">${isOnlineEvent(ev) ? 'Trực tuyến' : 'Trực tiếp'}</span>${ev.date ? `<span>${relDays(ev.date)}</span>` : ''}${p ? `<span class="tag acc">${esc(prodLabel(p))}</span><span class="mono">${esc(p.costCenter)} · SIO ${esc(p.sio)}</span>` : `<span class="tag crit">Chưa chọn sản phẩm</span>`}</div>
         <div class="ev-meta"><span>Bayer ký: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || '—')}</span><span class="mono">${live.length} BS · ${fmtVND(sum)} VND</span></div></div></div>
     <div class="actions"><button class="btn" data-act="edit-event" data-id="${ev.id}">Sửa</button><button class="btn" data-act="clone-event" data-id="${ev.id}">Nhân bản</button>
-      <button class="btn" data-act="veeva-all" data-id="${ev.id}">Đã raise Veeva tất cả</button><button class="btn primary" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất ${live.length > 1 ? 'tất cả HĐ (.zip)' : 'hợp đồng'}</button></div>
+      <button class="btn" data-act="veeva-all" data-id="${ev.id}">Đã raise Veeva tất cả</button><button class="btn" data-act="dl-agenda" data-id="${ev.id}" title="${ev.agendaAt ? 'Đã xuất ' + new Date(ev.agendaAt).toLocaleDateString('vi-VN') : 'Agenda, FMV checklist, GM report'}">${I.down} Agenda${engsOf(ev.id).some(e => !e.cancelled && +e.fee > 0) ? ' & FMV' : ''}</button><button class="btn primary" data-act="dl-event" data-id="${ev.id}">${I.down} Xuất ${live.length > 1 ? 'tất cả HĐ (.zip)' : 'hợp đồng'}</button></div>
   </div>
   <section class="panel">
     ${es.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Bác sĩ</th><th>Vai trò · Chủ đề</th><th class="num">Phí</th><th>Trạng thái</th><th>Tiến độ</th><th></th></tr></thead><tbody>
@@ -1952,6 +1963,7 @@ function viewSettings() {
         <div class="tbl-wrap" style="margin-top:10px"><table class="tbl"><tbody>${TAGS.map(([k, d]) => `<tr><td class="mono">{{${k}}}</td><td>${esc(d)}</td></tr>`).join('')}</tbody></table></div></details>
     </div></section>
 
+  ${agTplHtml()}
   <section class="panel"><div class="panel-h"><h2>Thông tin file YCTT</h2></div><div class="panel-b stack">
     <div class="fgrid">${f('staffName', 'Họ tên Staff (cột E)')}${f('manager', 'Người quản lý RFFM/RKAM (cột Q)')}${f('contractForm', 'Hình thức HĐ gốc (cột R)')}</div>
     <div><div class="field"><span>Sản phẩm / hoạt động: BU, UDA, SIO (cột B, C, D) và người ký Marketing trên hợp đồng. Mỗi sự kiện chọn một dòng.</span></div>
@@ -2215,7 +2227,7 @@ function openEventEditor(evId, {clone} = {}) {
   if (clone) { delete ev.imported; ev.date = ev.date && ev.date >= today() ? ev.date : addDays(today(), 7); ev.name = ev.name.replace(/^\d{8}/, ev.date.replace(/-/g, '')); }
   const rows = src ? engsOf(src.id).map(e => ({rid:uid(), engId:clone ? null : e.id, hcpId:e.hcpId, hcpName:hcpById(e.hcpId)?.name || '', role:e.role, topic:e.topic, duration:e.duration, prep:e.prep, fee:e.fee, specialty:e.specialty, locked:!clone && !!e.sentAt})) : [];
   if (!rows.length) rows.push(blankRow());
-  edit = {evId:clone ? null : evId, ev, rows};
+  edit = {evId:clone ? null : evId, ev, rows, agItems:src?.agItems?.length ? src.agItems.map(x => ({...x})) : null, attAuto:''};
   const venues = [...new Set([state.settings.venue, ...state.events.map(x => x.venue)].filter(Boolean))];
   const s = state.settings;
   const w = openModal(`
@@ -2231,6 +2243,7 @@ function openEventEditor(evId, {clone} = {}) {
         <label class="field"><span>Thành phố tổ chức</span><input class="input" name="city" value="${esc(ev.city)}"></label>
         <label class="field"><span>Quốc gia</span><input class="input" name="country" value="${esc(ev.country)}"></label>
       </div></div>
+      ${agSectionHtml(ev)}
       <details class="fsec"><summary class="small" style="cursor:pointer;font-weight:600" id="sign-sum">Người ký phía Bayer: ${esc([ev.signer1Name, ev.signer2Name].filter(Boolean).join(', ') || 'chưa có')}</summary>
         <div class="fgrid" style="margin-top:12px">
           <label class="field"><span>Người ký 1 (Sales)</span><input class="input" name="signer1Name" value="${esc(ev.signer1Name)}"></label><label class="field"><span>Chức vụ</span><input class="input" name="signer1Title" value="${esc(ev.signer1Title)}"></label>
@@ -2243,7 +2256,7 @@ function openEventEditor(evId, {clone} = {}) {
       <datalist id="dl-role">${ROLES.map(r => `<option>${r}</option>`).join('')}</datalist>
       <datalist id="dl-spec2">${[...new Set(['Tim Mạch','Nội thận','Nội tiết', ...state.hcps.map(x => x.specialty).filter(Boolean)])].map(x => `<option>${esc(x)}</option>`).join('')}</datalist>
     </form>
-    <div class="modal-f"><span class="muted small left" id="ev-sum"></span><button class="btn" data-act="close">Huỷ</button><button class="btn" data-act="save-event">Lưu</button><button class="btn primary" data-act="save-event" data-dl="1">${I.down} Lưu & xuất HĐ</button></div>`, {size:'wide', onClose:() => { edit = null; }});
+    <div class="modal-f"><span class="muted small left" id="ev-sum"></span><button class="btn" data-act="close">Huỷ</button><button class="btn" data-act="save-event">Lưu</button><button class="btn" data-act="save-event" data-ag="1">${I.down} Lưu & xuất Agenda</button><button class="btn primary" data-act="save-event" data-dl="1">${I.down} Lưu & xuất HĐ</button></div>`, {size:'wide', onClose:() => { edit = null; }});
   const form = $('#ev-form', w);
   form.addEventListener('submit', e => e.preventDefault());
   let prevProd = productFor(ev);
@@ -2263,7 +2276,7 @@ function openEventEditor(evId, {clone} = {}) {
     if (d && /^\d{8}\b/.test(n.value)) n.value = n.value.replace(/^\d{8}/, d);
     n.placeholder = `${d || ''} - HCM Hospital - XMeeting BV …`;
   });
-  renderRows();
+  renderRows(); agBind(w); agRefresh();
 }
 function blankRow() { return {rid:uid(), engId:null, hcpId:'', hcpName:'', role:'Báo cáo viên', topic:'', duration:state.settings.duration, prep:state.settings.prep, fee:state.settings.fee, specialty:''}; }
 function syncRows() {
@@ -2295,6 +2308,7 @@ function renderRows() {
     </div>`; }).join('');
   const live = edit.rows.filter(r => r.hcpId);
   const sumEl = $('#ev-sum'); if (sumEl) sumEl.textContent = live.length ? `${live.length} BS · ${fmtVND(live.reduce((a, r) => a + (+r.fee || 0), 0))} VND` : '';
+  agRefresh();
 }
 function pickHcpForRow(rid, h) {
   syncRows(); const r = edit.rows.find(x => x.rid === rid); if (!r) return;
@@ -2342,7 +2356,7 @@ function topicRender(input) {
   }).join('');
   list.hidden = !hits.length; input.setAttribute('aria-expanded', String(!list.hidden));
 }
-function saveEvent(dl) {
+function saveEvent(dl, ag) {
   const w = topModal(); if (!edit || !w) return;
   syncRows();
   const f = readForm($('#ev-form', w));
@@ -2358,6 +2372,8 @@ function saveEvent(dl) {
   const evData = {name, date, venue:clean(f.venue), city:clean(f.city), country:clean(f.country) || 'Việt Nam', online:isOnlineVenue(f.venue), note:clean(f.note),
     signer1Name:clean(f.signer1Name), signer1Title:clean(f.signer1Title), signer2Name:clean(f.signer2Name), signer2Title:clean(f.signer2Title)};
   if (f.productId) evData.productId = f.productId;
+  for (const k of AG_KEYS) evData[k] = ['agHcpCount', 'agStaffCount', 'agLength'].includes(k) ? (+digits(f[k] || '') || '') : clean(f[k] || '');
+  evData.agItems = edit.agItems && evData.agFormat !== 'nopres' ? edit.agItems.filter(x => x.desc || x.who) : null;
   if (ev) { Object.assign(ev, evData); if (ev.imported === 'yctt') ev.imported = 'edited'; }
   else { ev = newEvent(evData); state.events.push(ev); }
   const keep = new Set();
@@ -2373,6 +2389,7 @@ function saveEvent(dl) {
   ui.view = 'events'; ui.eventId = id; setHash('su-kien'); render();
   toast('Đã lưu sự kiện.');
   if (dl) downloadContracts(engsOf(id).map(e => e.id), zipNameFor(evById(id)));
+  if (ag) exportAgenda(id);
 }
 const zipNameFor = ev => safeFile(`${yymmdd(ev.date)} - Speaker Agreements - ${ev.name.replace(/^\d{8}\s*-\s*/, '')}`).slice(0, 150) + '.zip';
 
@@ -2661,7 +2678,7 @@ function flushSync() { if (sync.user && sync.timer && state.pending) { clearTime
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
 addEventListener('pagehide', flushSync);
 // Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
-const APP_VER = '2026.11.22.2';
+const APP_VER = '2026.11.23.1';
 let updShown = false;
 async function checkVersion() {
   if (updShown || location.protocol === 'file:') return;
@@ -2740,6 +2757,493 @@ function sharedHtml() {
   return '';
 }
 
+/* ================= Agenda & FMV: điền thẳng vào XML của file mẫu (giữ nguyên macro, công thức, định dạng) ================= */
+const XL = {
+  esc: s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'),
+  col: ref => ref.replace(/\d+/g, ''), row: ref => +ref.replace(/\D+/g, ''),
+  colNum: c => [...c].reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0),
+  serial: iso => { const [y, m, d] = iso.split('-').map(Number); return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5); },
+};
+function xlOpen(zip) {
+  const wb = zip.file('xl/workbook.xml').asText(), rels = zip.file('xl/_rels/workbook.xml.rels').asText();
+  const sheets = [...wb.matchAll(/<sheet\b[^>]*\/>/g)].map((m, i) => {
+    const tag = m[0], name = tag.match(/name="([^"]*)"/)[1].replace(/&amp;/g, '&'), rid = tag.match(/r:id="([^"]+)"/)[1];
+    const rel = rels.match(new RegExp(`<Relationship\\b[^>]*Id="${rid}"[^>]*>`))[0];
+    const target = rel.match(/Target="([^"]+)"/)[1].replace(/^\/?xl\//, '');
+    return {name, index:i, path:'xl/' + target};
+  });
+  return {zip, sheets, xml:{}, get(name) { const s = sheets.find(x => x.name === name); if (!s) throw new Error(`File mẫu thiếu sheet “${name}”.`); return s; },
+    read(name) { const s = this.get(name); return this.xml[s.path] ??= zip.file(s.path).asText(); },
+    write(name, x) { this.xml[this.get(name).path] = x; } };
+}
+// Ghi 1 ô: giữ style (s) của ô; chuỗi → inlineStr, số → <v>; null/'' → xoá nội dung (cả công thức)
+function xlSet(x, ref, val, {keepFormula} = {}) {
+  const r = XL.row(ref);
+  let rowRe = new RegExp(`<row\\b[^>]*\\br="${r}"[^>]*?(?:/>|>[\\s\\S]*?</row>)`);
+  let rm = x.match(rowRe);
+  if (!rm) { // chèn hàng mới đúng thứ tự
+    const rows = [...x.matchAll(/<row\b[^>]*\br="(\d+)"/g)]; const after = rows.find(m => +m[1] > r);
+    const blank = `<row r="${r}"></row>`;
+    x = after ? x.slice(0, after.index) + blank + x.slice(after.index) : x.replace('</sheetData>', blank + '</sheetData>');
+    if (x.includes('<sheetData/>')) x = x.replace('<sheetData/>', `<sheetData>${blank}</sheetData>`);
+    rm = x.match(rowRe);
+  }
+  let row = rm[0];
+  if (row.endsWith('/>')) row = row.slice(0, -2) + '></row>';
+  const cellRe = new RegExp(`<c\\b[^>]*\\br="${ref}"[^>]*?(?:/>|>[\\s\\S]*?</c>)`);
+  const old = row.match(cellRe)?.[0] || '';
+  const s = old.match(/\ss="(\d+)"/)?.[1];
+  const sAttr = s ? ` s="${s}"` : '';
+  let cell;
+  if (val === null || val === undefined || val === '') cell = `<c r="${ref}"${sAttr}/>`;
+  else if (typeof val === 'number') cell = `<c r="${ref}"${sAttr}><v>${val}</v></c>`;
+  else cell = `<c r="${ref}"${sAttr} t="inlineStr"><is><t xml:space="preserve">${XL.esc(val)}</t></is></c>`;
+  if (keepFormula && /<f[\s>]/.test(old)) cell = old;
+  if (old) row = row.replace(old, cell);
+  else { // chèn ô đúng thứ tự cột
+    const cn = XL.colNum(XL.col(ref)); const cells = [...row.matchAll(/<c\b[^>]*\br="([A-Z]+)\d+"/g)];
+    const after = cells.find(m => XL.colNum(m[1]) > cn);
+    row = after ? row.slice(0, after.index) + cell + row.slice(after.index) : row.replace('</row>', cell + '</row>');
+  }
+  return x.replace(rm[0], row);
+}
+function xlRowAttr(x, r, attrs) {
+  return x.replace(new RegExp(`<row\\b([^>]*)\\br="${r}"([^>]*?)(/?)>`), (m, a, b, sl) => {
+    let t = ` r="${r}"` + (a + b).replace(/\s(hidden|ht|customHeight)="[^"]*"/g, '');
+    for (const [k, v] of Object.entries(attrs)) if (v !== null && v !== undefined) t += ` ${k}="${v}"`;
+    return `<row${t}${sl}>`;
+  });
+}
+// Hàng trống bên dưới bảng → hàng của bảng (chép style + gộp ô A:B) khi agenda dài hơn số dòng có sẵn
+function xlCloneRow(x, fromR, toR) {
+  const src = x.match(new RegExp(`<row\\b[^>]*\\br="${fromR}"[^>]*?>[\\s\\S]*?</row>`))[0];
+  const cells = [...src.matchAll(/<c\b[^>]*\br="([A-Z]+)\d+"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g)].map(m => { const s = m[0].match(/\ss="(\d+)"/)?.[1]; return `<c r="${m[1]}${toR}"${s ? ` s="${s}"` : ''}/>`; });
+  const head = src.match(/<row\b[^>]*>/)[0].replace(/\br="\d+"/, `r="${toR}"`);
+  const neu = head + cells.join('') + '</row>';
+  const exist = x.match(new RegExp(`<row\\b[^>]*\\br="${toR}"[^>]*?(?:/>|>[\\s\\S]*?</row>)`));
+  if (exist) x = x.replace(exist[0], neu);
+  else { const rows = [...x.matchAll(/<row\b[^>]*\br="(\d+)"/g)]; const after = rows.find(m => +m[1] > toR); x = after ? x.slice(0, after.index) + neu + x.slice(after.index) : x.replace('</sheetData>', neu + '</sheetData>'); }
+  if (/<mergeCell ref="A\d+:B\d+"\/>/.test(x) && new RegExp(`<mergeCell ref="A${fromR}:B${fromR}"/>`).test(x) && !new RegExp(`<mergeCell ref="A${toR}:B${toR}"/>`).test(x)) {
+    x = x.replace(/<mergeCells count="(\d+)">/, (m, n) => `<mergeCells count="${+n + 1}"><mergeCell ref="A${toR}:B${toR}"/>`);
+  }
+  return x;
+}
+function xlUnmergeAB(x, r) {
+  if (!new RegExp(`<mergeCell ref="A${r}:B${r}"/>`).test(x)) return x;
+  return x.replace(`<mergeCell ref="A${r}:B${r}"/>`, '').replace(/<mergeCells count="(\d+)">/, (m, n) => `<mergeCells count="${+n - 1}">`);
+}
+// Hiện đúng các sheet cần, chọn sheet mở đầu, buộc Excel tính lại công thức khi mở
+function xlShowSheets(book, visible, active) {
+  let wb = book.zip.file('xl/workbook.xml').asText();
+  for (const s of book.sheets) {
+    const want = visible.includes(s.name);
+    wb = wb.replace(new RegExp(`<sheet\\b[^>]*name="${XL.esc(s.name).replace(/[()[\]]/g, '\\$&')}"[^>]*/>`), tag => {
+      let t = tag.replace(/\sstate="[^"]*"/, '');
+      return want ? t : t.replace('<sheet ', '<sheet state="hidden" ');
+    });
+    const x = book.xml[s.path] ?? book.zip.file(s.path).asText();
+    book.xml[s.path] = x.replace(/\stabSelected="1"/g, '').replace(/<sheetView\b/, s.name === active ? '<sheetView tabSelected="1"' : '<sheetView');
+  }
+  const ai = book.get(active).index;
+  wb = wb.replace(/<workbookView\b[^>]*\/>/, v => v.replace(/\s(activeTab|firstSheet)="\d+"/g, '').replace('<workbookView', `<workbookView firstSheet="${Math.min(ai, book.sheets.findIndex(s => visible.includes(s.name)))}" activeTab="${ai}"`));
+  wb = /<calcPr\b/.test(wb) ? wb.replace(/<calcPr\b([^>]*?)\/?>/, (m, a) => `<calcPr${a.replace(/\sfullCalcOnLoad="[^"]*"/, '')} fullCalcOnLoad="1"/>`) : wb.replace('</workbook>', '<calcPr fullCalcOnLoad="1"/></workbook>');
+  book.zip.file('xl/workbook.xml', wb);
+}
+function xlSave(book, mime) {
+  for (const [p, x] of Object.entries(book.xml)) book.zip.file(p, x);
+  if (book.zip.file('xl/calcChain.xml')) { // bỏ chuỗi tính toán cũ để Excel tự tạo lại, tránh báo lỗi file
+    book.zip.remove('xl/calcChain.xml');
+    book.zip.file('[Content_Types].xml', book.zip.file('[Content_Types].xml').asText().replace(/<Override[^>]*calcChain[^>]*\/>/, ''));
+    book.zip.file('xl/_rels/workbook.xml.rels', book.zip.file('xl/_rels/workbook.xml.rels').asText().replace(/<Relationship[^>]*calcChain[^>]*\/>/, ''));
+  }
+  return book.zip.generate({type:'blob', mimeType:mime, compression:'DEFLATE'});
+}
+
+/* ================= Agenda & FMV: dữ liệu sự kiện ================= */
+const AG_FORMATS = [
+  ['mod', 'GM with moderator', 'BS báo bài: GM, Xmeeting, Hospital Meeting'],
+  ['pres', 'GM with presentation', 'TDV báo bài'],
+  ['nopres', 'GM without presentation', 'Trao đổi, không trình bày (nhà hàng…)'],
+];
+const FMV_TYPES = {RTM:'RTM/Single-department meeting', HM:'Hospital meeting/Combined-department meeting'};
+const agFormat = ev => ev.agFormat || (engsOf(ev.id).some(e => !e.cancelled) ? 'mod' : 'nopres');
+const brandOf = ev => clean(productFor(ev)?.brand || '').replace(/\s+U$/i, '');
+const shortKhoa = k => clean(k).replace(/^khoa\s+/i, '');
+const shortHosp = h => clean(h).replace(/^bệnh viện\s+/i, 'BV ').replace(/^bv\s+đa khoa\s+/i, 'BV ');
+const normTitle = t => clean(t).replace(/\.$/, '').replace(/^BSCK(I{1,2})$/i, 'BS.CK$1').replace(/^BS\.?\s*CK\s*(I{1,2}|1|2)$/i, (m, n) => 'BS.CK' + (n === '1' ? 'I' : n === '2' ? 'II' : n.toUpperCase())).replace(/^ThS\.?\s*BS$/i, 'ThS.BS').replace(/^TS\.?\s*BS$/i, 'TS.BS');
+// Loại hoạt động cho FMV: tên có HM / Hospital Meeting / Xmeeting / nhiều khoa, nhiều bệnh viện → Hospital meeting; còn lại RTM (GM 1 khoa)
+function guessFmvType(ev, rows) {
+  const n = norm(ev.name || '');
+  if (/hospital meeting|\bhm\b|xmeeting|x meeting|lien khoa|hoi nghi|hoi thao|shkh/.test(n)) return {v:'HM', why:'theo tên sự kiện'};
+  const hs = (rows || []).map(r => hcpById(r.hcpId)).filter(Boolean);
+  const keys = new Set(hs.map(h => norm(h.hospital) + '|' + norm(h.khoa)));
+  if (keys.size > 1) return {v:'HM', why:'BS từ nhiều khoa / bệnh viện'};
+  if (/\bgm\b|group meeting|rtm/.test(n) || keys.size === 1) return {v:'RTM', why:keys.size === 1 ? 'BS cùng 1 khoa' : 'theo tên sự kiện'};
+  return {v:'', why:''};
+}
+function guessAttendDesc(rows) {
+  const hs = (rows || []).map(r => hcpById(r.hcpId)).filter(Boolean);
+  const byHosp = new Map();
+  for (const h of hs) { const k = clean(h.hospital); if (!k) continue; if (!byHosp.has(k)) byHosp.set(k, new Set()); if (clean(h.khoa)) byHosp.get(k).add(clean(h.khoa).replace(/^khoa\s+/i, '')); }
+  return [...byHosp].map(([hosp, ks]) => `${ks.size ? 'Khoa ' + [...ks].join(', ') + ' - ' : ''}${hosp}`).join(' & ');
+}
+// Người trình bày: học vị + tên / chức vụ (nếu là trưởng/phó) hoặc khoa / bệnh viện
+function presenterOf(h) {
+  if (!h) return '';
+  const pos = /trưởng|phó|giám đốc|chủ nhiệm/i.test(h.position || '') ? clean(h.position) : clean(h.khoa) || clean(h.position);
+  return [`${normTitle(h.title)} ${h.name}`.trim(), pos, clean(h.hospital)].filter(Boolean).join('\n');
+}
+const staffPresenter = (full = true) => { const s = state.settings; const n = `${clean(s.staffTitle || 'DS.')} ${clean(s.staffName) || 'Nhân viên Bayer'}`.trim(); return full ? `${n}\nCông ty TNHH Bayer Việt Nam` : n; };
+// Agenda tự tạo theo hình thức + danh sách BS (mỗi mục: số phút, nội dung, người trình bày)
+function buildAgenda(ev, rows) {
+  const f = ev.agFormat || 'mod';
+  const live = (rows || []).filter(r => r.hcpId && !r.cancelled);
+  if (f === 'nopres') return [];
+  if (f === 'pres') {
+    const items = [{min:10, desc:'Đón khách & khai mạc buổi họp', who:staffPresenter(false)},
+      {min:20, desc:clean(ev.agTopic) || 'Chủ đề trình bày', who:staffPresenter(false)}];
+    for (const r of live) items.push({min:+r.duration || 10, desc:clean(r.topic) || 'Chia sẻ kinh nghiệm điều trị', who:presenterOf(hcpById(r.hcpId))});
+    items.push({min:10, desc:'Thảo luận và trả lời câu hỏi', who:'Tất cả mọi người'});
+    items.push({min:10, desc:clean(ev.agRestaurant) && ev.agRestaurant !== '-' && !isOnlineVenue(ev.venue) ? 'Kết thúc chương trình & Dùng bữa' : 'Kết thúc chương trình & Dùng tea-break', who:'Tất cả mọi người'});
+    return items;
+  }
+  const chair = live.find(r => /chủ tọa|chủ toạ|điều phối/i.test(r.role));
+  const speakers = live.filter(r => r !== chair);
+  const host = chair ? presenterOf(hcpById(chair.hcpId)) : staffPresenter();
+  const title = clean(ev.agTitle);
+  const items = [{min:5, desc:title ? `Đón khách & khai mạc buổi SHKH: "${title.toUpperCase()}"` : 'Đón khách & khai mạc buổi họp', who:host}];
+  for (const r of speakers) items.push({min:+r.duration || 20, desc:clean(r.topic) || 'Chủ đề báo cáo', who:presenterOf(hcpById(r.hcpId))});
+  if (!speakers.length && chair) items.push({min:+chair.duration || 20, desc:clean(chair.topic) || 'Chủ đề báo cáo', who:host});
+  items.push({min:speakers.length > 1 ? 10 : 15, desc:'Thảo luận', who:chair && speakers.length ? 'Chủ tọa, BCV & Khách mời' : 'Tất cả mọi người'});
+  items.push({min:chair ? 5 : 10, desc:'Tổng kết chương trình', who:host});
+  return items;
+}
+const hhmm = m => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
+const toMin = t => { const m = String(t || '').match(/(\d{1,2})\s*[:hg.]\s*(\d{2})?/i); return m ? +m[1] * 60 + (+m[2] || 0) : 12 * 60; };
+function agendaTimes(start, items) { let t = toMin(start); return items.map(it => { const a = t; t += +it.min || 0; return {...it, time:`${hhmm(a)} - ${hhmm(t)}`}; }); }
+const viDateText = iso => { const {d, m, y} = isoParts(iso); return `ngày ${pad(d)} tháng ${pad(m)} năm ${y}`; };
+
+// FMV: vai trò, phân loại, tier theo hồ sơ BS
+function fmvRole(role, type) {
+  const n = norm(role);
+  if (/chu toa|dieu phoi|chair|moderat/.test(n)) return type === 'HM' ? 'Chairman' : 'Moderator';
+  return 'Speaker';
+}
+function fmvClass(h) { const t = norm(h?.tier || ''); return /\btl\b|thought/.test(t) ? 'TL' : /nurse|dieu duong/.test(t) ? 'Nurse' : 'HCP SP'; }
+function fmvTier(h) { const m = String(h?.tier || '').match(/([1-4])/); return m ? 'Tier ' + m[1] : ''; }
+function fmvCount(hcpId, ev) {
+  const y = (ev.date || today()).slice(0, 4);
+  return state.engs.filter(e => e.hcpId === hcpId && !e.cancelled && e.eventId !== ev.id && (() => { const d = evById(e.eventId)?.date || ''; return d.startsWith(y) && d < (ev.date || '9'); })()).length;
+}
+// Bảng FMV lấy từ sheet "New Rate Masters" trong file mẫu (không lưu trong mã nguồn)
+let fmvMasters = null;
+function parseFmvMasters(zip) {
+  try {
+    const book = xlOpen(zip); const p = book.get('New Rate Masters').path;
+    const ss = [...(zip.file('xl/sharedStrings.xml')?.asText() || '').matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m => [...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(t => t[1]).join('').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
+    const val = c => { if (!c) return ''; const v = c.match(/<v>([\s\S]*?)<\/v>/)?.[1] ?? c.match(/<t[^>]*>([\s\S]*?)<\/t>/)?.[1] ?? ''; return /t="s"/.test(c) ? ss[+v] : v; };
+    const map = new Map();
+    for (const row of zip.file(p).asText().matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+      const a = row[1].match(/<c r="A\d+"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/)?.[0], mcol = row[1].match(/<c r="M\d+"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/)?.[0];
+      const k = val(a); if (k) map.set(k, val(mcol));
+    }
+    return map.size ? map : null;
+  } catch (e) { return null; }
+}
+function fmvRange(type, role, cls, tier, multi = 'No', night = 'No') { return fmvMasters?.get(FMV_TYPES[type] + role + cls + tier + multi + night) || ''; }
+function fmvRowsFor(ev, rows, type) {
+  const live = rows.filter(r => r.hcpId && !r.cancelled && (+r.fee || 0) > 0);
+  const per = new Map(); live.forEach(r => per.set(r.hcpId, (per.get(r.hcpId) || 0) + 1));
+  return live.map(r => {
+    const h = hcpById(r.hcpId); const role = fmvRole(r.role, type), cls = fmvClass(h), tier = fmvTier(h), multi = per.get(r.hcpId) > 1 ? 'Yes' : 'No';
+    const range = tier ? fmvRange(type, role, cls, tier, multi) : '';
+    const max = +String(range).split('-')[1] || 0; const fee = (+r.fee || 0) / 1e6;
+    return {h, r, role, cls, tier, multi, night:'No', count:fmvCount(r.hcpId, ev), range, fee, over:max && fee > max};
+  });
+}
+
+/* ================= Agenda & FMV: mẫu dùng chung (Supabase, chỉ người đăng nhập đọc được) ================= */
+let agTpl = null; // {fmv:{name,b64,uploadedAt}, gm:{...}}
+function loadAgTplLocal() { try { agTpl = JSON.parse(localStorage.getItem('hcp-ag-tpl') || 'null'); } catch (e) { agTpl = null; } }
+function saveAgTplLocal() { try { localStorage.setItem('hcp-ag-tpl', JSON.stringify(agTpl)); } catch (e) {} }
+async function needAgTpl(force) {
+  if (!agTpl) loadAgTplLocal();
+  if (sync.user && sync.client && (force || !agTpl?.fmv || !agTpl?.gm || !agTpl.checkedAt || Date.now() - agTpl.checkedAt > 6 * 3600e3)) {
+    try {
+      const r = await sync.client.from('shared_config').select('template, updated_at').eq('id', 'tpl-agenda').maybeSingle();
+      if (!r.error && r.data?.template) { agTpl = {...r.data.template, checkedAt:Date.now()}; saveAgTplLocal(); fmvMasters = null; }
+    } catch (e) {}
+  }
+  if (agTpl?.fmv && !fmvMasters) { await needZip(); fmvMasters = parseFmvMasters(new PizZip(bufFromB64(agTpl.fmv.b64))); }
+  return agTpl;
+}
+async function uploadAgTpl(kind, file) {
+  const buf = await file.arrayBuffer(); const b64 = b64FromBuf(buf);
+  await needZip();
+  const book = xlOpen(new PizZip(buf));
+  const need = kind === 'fmv' ? ['Agenda with moderator', 'Vietnam FMV Rate as of June2025'] : ['Agenda with moderator', 'GM Report_w Moderator', 'Agenda (with pre-IST)', 'GM Report (with pre-IST)', 'Agenda (w.o pre)', 'GM Report (w.o pre)'];
+  const miss = need.filter(n => !book.sheets.some(s => s.name === n || (n.startsWith('Vietnam FMV') && /fmv/i.test(s.name))));
+  if (miss.length) throw new Error('File thiếu sheet: ' + miss.join(', '));
+  agTpl = {...(agTpl || {}), [kind]:{name:file.name, b64, uploadedAt:Date.now()}, checkedAt:Date.now()}; saveAgTplLocal(); fmvMasters = null;
+  if (sync.user && sync.client && isAdmin()) {
+    const {checkedAt, ...tpl} = agTpl;
+    const {error} = await sync.client.from('shared_config').upsert({id:'tpl-agenda', products:[], template:tpl, updated_at:new Date().toISOString(), updated_by:sync.user.email});
+    if (error) throw new Error('Đã lưu trên máy này, chưa đưa lên cho cả team: ' + error.message);
+    return 'Đã cập nhật mẫu cho cả team.';
+  }
+  return 'Đã lưu mẫu trên máy này.';
+}
+
+/* ================= Agenda & FMV: xuất file ================= */
+const fmvSheetName = book => (book.sheets.find(s => /^Vietnam FMV/i.test(s.name)) || book.sheets.find(s => /fmv/i.test(s.name)))?.name;
+function fillAgendaRows(book, sheet, items, firstRow, lastRow, {maxRow = lastRow + 8} = {}) {
+  let x = book.read(sheet);
+  const timed = agendaTimes(book.start, items);
+  const end = Math.max(lastRow, firstRow + timed.length - 1);
+  if (end > maxRow) throw new Error(`Agenda có ${timed.length} mục, file mẫu chỉ chứa được ${maxRow - firstRow + 1}. Gộp bớt mục rồi xuất lại.`);
+  for (let r = lastRow + 1; r <= end; r++) x = xlCloneRow(x, lastRow - 1, r);
+  for (let i = 0; firstRow + i <= end; i++) {
+    const r = firstRow + i, it = timed[i];
+    x = xlSet(x, 'A' + r, it ? it.time : ''); x = xlSet(x, 'C' + r, it ? it.desc : ''); x = xlSet(x, 'D' + r, it ? it.who : '');
+    const lines = it ? Math.max(Math.ceil(it.desc.length / 60), it.who.split('\n').reduce((a, l) => a + Math.max(1, Math.ceil(l.length / 32)), 0)) : 1;
+    x = xlRowAttr(x, r, it ? {ht:Math.max(30, lines * 15 + 8), customHeight:1} : {hidden:1, ht:15, customHeight:1});
+  }
+  book.write(sheet, x);
+}
+function fillHeader(book, sheet, cells) { let x = book.read(sheet); for (const [ref, v] of Object.entries(cells)) x = xlSet(x, ref, v); book.write(sheet, x); }
+async function exportAgenda(evId) {
+  const ev = evById(evId); if (!ev) return;
+  const rows = engsOf(ev.id).filter(e => !e.cancelled);
+  const ask = agendaMissing(ev, rows);
+  if (ask.length) { openAgendaAsk(ev, ask); return; }
+  busy('Đang tạo Agenda…');
+  try {
+    await needZip(); await needAgTpl();
+    const s = state.settings, f = ev.agFormat || agFormat(ev), type = ev.agType || guessFmvType(ev, rows).v || 'RTM';
+    const items = ev.agItems?.length ? ev.agItems : buildAgenda({...ev, agFormat:f}, rows);
+    const attend = `${ev.agHcpCount} nhân viên y tế - ${clean(ev.agAttend)}`, staffN = `${+ev.agStaffCount || 1} nhân viên Bayer`;
+    const base = `${yymmdd(ev.date)} - `, tail = ev.name.replace(/^\d{6,8}\s*-\s*/, '');
+    const fmvRows = fmvRowsFor(ev, rows, type);
+    const files = [];
+    if (fmvRows.length && agTpl?.fmv) { // có hono → file Agenda & FMV (.xlsm, giữ macro)
+      const book = xlOpen(new PizZip(bufFromB64(agTpl.fmv.b64))); book.start = ev.agStart;
+      const A = 'Agenda with moderator', F = fmvSheetName(book);
+      fillHeader(book, A, {C5:viDateText(ev.date), C6:ev.venue, C7:clean(ev.agRestaurant) || '-', C8:clean(s.staffName), C9:attend, C10:staffN});
+      if (f === 'mod') fillAgendaRows(book, A, items, 15, 20, {maxRow:28});
+      let x = book.read(F);
+      const head = {C10:clean(s.staffName), C11:clean(s.buDept) || 'GF CVRM HCM', C12:brandOf(ev), C15:FMV_TYPES[type], C16:ev.name, C17:XL.serial(ev.date), C18:ev.venue, C19:+ev.agHcpCount || null};
+      for (const [k, v] of Object.entries(head)) x = xlSet(x, k, v);
+      const slots = 4;
+      if (fmvRows.length > slots) throw new Error(`Sự kiện có ${fmvRows.length} BS nhận phí, file FMV mẫu có ${slots} dòng. Xuất xong, bấm “Add Row” trong file để thêm BS thứ ${slots + 1} trở đi.`);
+      for (let i = 0; i < slots; i++) {
+        const r = 23 + i, d = fmvRows[i];
+        const v = d ? [d.h.name, shortKhoa(d.h.khoa), shortHosp(d.h.hospital), d.role, d.cls, d.tier, d.multi, d.night, d.count] : Array(9).fill('');
+        'BCDEFGHIJ'.split('').forEach((c, j) => { x = xlSet(x, c + r, v[j] === '' ? null : v[j]); });
+        x = d ? xlSet(x, 'K' + r, null, {keepFormula:true}) : xlSet(x, 'K' + r, null);
+        x = xlSet(x, 'L' + r, d ? d.fee : null);
+      }
+      if (!fmvRows.some(d => d.tier)) {}
+      book.write(F, x);
+      xlShowSheets(book, f === 'mod' ? [A, F] : [F], f === 'mod' ? A : F);
+      files.push({name:safeFile(`${base}Agenda & FMV Checklist V9.1 - ${tail}`) + '.xlsm', blob:xlSave(book, 'application/vnd.ms-excel.sheet.macroEnabled.12')});
+    }
+    if (agTpl?.gm && (f !== 'mod' || !fmvRows.length)) { // không hono, hoặc TDV báo bài / không trình bày → file Agenda GM (.xlsx)
+      const book = xlOpen(new PizZip(bufFromB64(agTpl.gm.b64))); book.start = ev.agStart;
+      const brand = brandOf(ev), topic = clean(ev.agTopic) || items.find((it, i) => i > 0)?.desc || '';
+      const rep = {C4:viDateText(ev.date), C5:brand, C6:topic, C7:clean(s.staffName)};
+      let show, active;
+      if (f === 'mod') {
+        const A = 'Agenda with moderator', R = 'GM Report_w Moderator';
+        fillHeader(book, A, {C5:viDateText(ev.date), C6:ev.venue, C7:clean(ev.agRestaurant) || '-', C8:clean(s.staffName), C9:attend, C10:staffN});
+        fillAgendaRows(book, A, items, 15, 20, {maxRow:29});
+        const chair = rows.find(r => /chủ tọa|chủ toạ|điều phối/i.test(r.role)) || rows[0];
+        fillHeader(book, R, {...rep, C6:items[1]?.desc || topic, C8:chair ? `Dr. ${hcpById(chair.hcpId)?.name || ''}` : '', C9:attend, C10:staffN, C36:XL.serial(ev.date), C37:clean(s.staffName)});
+        show = [A, R]; active = A;
+      } else if (f === 'pres') {
+        const A = 'Agenda (with pre-IST)', R = 'GM Report (with pre-IST)';
+        fillHeader(book, A, {C5:viDateText(ev.date), C6:ev.venue, C7:clean(ev.agRestaurant) || '-', C8:clean(s.staffName), C9:attend, C10:staffN});
+        fillAgendaRows(book, A, items, 15, 19, {maxRow:28});
+        fillHeader(book, R, {...rep, C8:attend, C9:staffN, C17:XL.serial(ev.date), C18:clean(s.staffName)});
+        show = [A, R]; active = A;
+      } else {
+        const A = 'Agenda (w.o pre)', R = 'GM Report (w.o pre)';
+        const t0 = toMin(ev.agStart), t1 = t0 + (+ev.agLength || 60);
+        fillHeader(book, A, {C5:viDateText(ev.date), C6:`${hhmm(t0)} - ${hhmm(t1)}`, C7:ev.venue, C8:clean(ev.agRestaurant) || ev.venue, C9:clean(s.staffName), C10:attend, C11:staffN, C12:topic});
+        fillHeader(book, R, {...rep, C8:attend, C9:staffN, C17:XL.serial(ev.date), C18:clean(s.staffName)});
+        show = [A, R]; active = A;
+      }
+      xlShowSheets(book, show, active);
+      files.push({name:safeFile(`${base}Agenda ${f === 'nopres' ? 'GM' : 'GM'} - ${tail}`) + '.xlsx', blob:xlSave(book, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')});
+    }
+    if (!files.length) throw new Error(agTpl?.fmv || agTpl?.gm ? 'Chưa có file mẫu phù hợp cho hình thức này.' : 'Chưa có file mẫu Agenda / FMV. Admin tải mẫu lên ở Cài đặt.');
+    busy(false);
+    for (const fl of files) await saveFile(fl.name, fl.blob);
+    ev.agendaAt = Date.now(); save(true); render();
+    toast(files.length > 1 ? `Đã xuất ${files.length} file: Agenda & FMV + Agenda GM.` : `Đã xuất ${files[0].name.endsWith('.xlsm') ? 'Agenda & FMV' : 'Agenda'}.`);
+  } catch (err) { busy(false); toast(err.message || String(err), {kind:'err'}); }
+}
+// Thông tin không tự đoán được → hỏi trước khi xuất
+function agendaMissing(ev, rows) {
+  const m = [];
+  if (!ev.agFormat) m.push('agFormat');
+  if (!+ev.agHcpCount) m.push('agHcpCount');
+  if (!clean(ev.agAttend)) m.push('agAttend');
+  if (!clean(ev.agStart)) m.push('agStart');
+  const f = ev.agFormat || agFormat(ev);
+  if (f === 'mod' && rows.some(r => +r.fee > 0) && !ev.agType && !guessFmvType(ev, rows).v) m.push('agType');
+  if (f !== 'mod' && !clean(ev.agTopic)) m.push('agTopic');
+  if (f === 'nopres' && !clean(ev.agRestaurant)) m.push('agRestaurant');
+  return m;
+}
+
+/* ================= Agenda & FMV: giao diện trong form sự kiện ================= */
+const AG_KEYS = ['agFormat','agType','agStart','agHcpCount','agStaffCount','agLength','agAttend','agRestaurant','agTitle','agTopic'];
+function agSectionHtml(ev) {
+  const f = ev.agFormat || '';
+  const opt = (v, l, cur) => `<option value="${v}" ${v === cur ? 'selected' : ''}>${l}</option>`;
+  return `<details class="fsec ag-sec" id="ag-sec" open>
+    <summary><b>Agenda & FMV</b> <span class="muted small" id="ag-sum"></span></summary>
+    <div id="ag-sugg"></div>
+    <div class="fgrid" style="margin-top:12px">
+      <label class="field span2"><span>Hình thức <em>*</em></span><select class="input" name="agFormat"><option value="">Chọn hình thức…</option>${AG_FORMATS.map(([v, l, d]) => opt(v, `${l} · ${d}`, f)).join('')}</select></label>
+      <label class="field span2" data-ag="type"><span>Loại hoạt động trên FMV</span><select class="input" name="agType">${opt('', 'Tự nhận diện', ev.agType || '')}${opt('RTM', 'GM 1 khoa (RTM/Single-department meeting)', ev.agType)}${opt('HM', 'HM, Xmeeting, nhiều khoa (Hospital meeting/Combined-department)', ev.agType)}</select><span class="hint" id="ag-type-hint"></span></label>
+      <label class="field"><span>Giờ bắt đầu <em>*</em></span><input class="input" type="time" name="agStart" value="${esc(ev.agStart || '')}"></label>
+      <label class="field"><span>Số NVYT tham dự <em>*</em></span><input class="input" name="agHcpCount" inputmode="numeric" value="${esc(ev.agHcpCount || '')}" placeholder="vd 20"></label>
+      <label class="field"><span>Số NV Bayer</span><input class="input" name="agStaffCount" inputmode="numeric" value="${esc(ev.agStaffCount || 1)}"></label>
+      <label class="field" data-ag="len"><span>Thời lượng (phút)</span><input class="input" name="agLength" inputmode="numeric" value="${esc(ev.agLength || 60)}"></label>
+      <label class="field spanall"><span>Thành phần tham dự <em>*</em></span><input class="input" name="agAttend" value="${esc(ev.agAttend || '')}" placeholder="Khoa Nội Thận - Bệnh viện …" list="dl-ag-att"><span class="hint">Tự điền theo khoa – bệnh viện của BS trong sự kiện. File ghi: “20 nhân viên y tế - …”.</span></label>
+      <label class="field span2"><span>Nhà hàng / Nơi mua hàng</span><input class="input" name="agRestaurant" value="${esc(ev.agRestaurant || '')}" placeholder="- (không có)" list="dl-ag-rest"></label>
+      <label class="field span2" data-ag="title"><span>Tên buổi SHKH (nếu có)</span><input class="input" name="agTitle" value="${esc(ev.agTitle || '')}" placeholder="Dùng cho dòng khai mạc" list="dl-ag-title"></label>
+      <label class="field spanall" data-ag="topic"><span>Chủ đề TDV trình bày / thảo luận <em>*</em></span><input class="input" name="agTopic" value="${esc(ev.agTopic || '')}" placeholder="Hiệu quả của Nifedipine GITS trong kiểm soát huyết áp…" list="dl-ag-topic"></label>
+    </div>
+    <div id="ag-items"></div>
+    <div id="ag-fmv"></div>
+    ${agDl('dl-ag-att', agUsed('agAttend'))}${agDl('dl-ag-rest', agUsed('agRestaurant', state.events.map(e => /nhà hàng|quán|restaurant|cafe|coffee/i.test(e.venue || '') ? e.venue : '')))}${agDl('dl-ag-title', agUsed('agTitle'))}
+    ${agDl('dl-ag-topic', agUsed('agTopic', state.engs.map(e => e.topic)))}
+    ${agDl('dl-ag-desc', [...new Set(['Đón khách & khai mạc buổi họp', 'Thảo luận', 'Thảo luận và trả lời câu hỏi', 'Tổng kết chương trình', 'Chia sẻ kinh nghiệm điều trị', 'Kết thúc chương trình & Dùng tea-break', 'Kết thúc chương trình & Dùng bữa', ...state.events.flatMap(e => (e.agItems || []).map(x => x.desc))].filter(Boolean))])}
+  </details>`;
+}
+// Gợi ý: giá trị đã dùng ở các sự kiện trước (mới nhất trước)
+function agUsed(key, extra = []) {
+  const evs = [...state.events].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const seen = new Set(), out = [];
+  for (const v of [...evs.map(e => e[key]), ...extra]) { const t = clean(v); if (t && t !== '-' && !seen.has(norm(t))) { seen.add(norm(t)); out.push(t); } }
+  return out.slice(0, 40);
+}
+const agDl = (id, list) => `<datalist id="${id}">${list.map(x => `<option value="${esc(x)}">`).join('')}</datalist>`;
+// Sự kiện trước giống nhất (cùng bệnh viện / khoa / tên / sản phẩm) để điền nhanh
+function agSimilar(v) {
+  const words = t => new Set(norm(t).split(/[^a-z0-9]+/).filter(w => w.length > 2 && !/^(benh|vien|khoa|hcm|tp|gm|the|meeting|hospital|ngay|truc|tiep|tuyen|thong|qua|phan|mem|zoom|teams|online|webinar)$/.test(w)));
+  const mine = words([v.name, v.venue, v.agAttend].join(' ')), mineName = words(v.name);
+  return state.events.filter(e => e.id !== v.id && e.agFormat).map(e => {
+    const w = words([e.name, e.venue, e.agAttend].join(' ')); let sc = 0; for (const x of w) if (mine.has(x)) sc++;
+    for (const x of words(e.name)) if (mineName.has(x)) sc += 2;   // trùng tên sự kiện nặng ký hơn
+    if (e.productId && e.productId === v.productId) sc += 1;
+    return {e, sc};
+  }).filter(x => x.sc > 0).sort((a, b) => b.sc - a.sc || (b.e.date || '').localeCompare(a.e.date || '')).slice(0, 3).map(x => x.e);
+}
+function agFormVals(w) {
+  const f = $('#ev-form', w)?.elements; if (!f?.agFormat) return null;
+  const o = {}; for (const k of AG_KEYS) o[k] = clean(f[k]?.value || ''); o.name = clean(f.name.value); o.venue = clean(f.venue.value); o.date = f.date.value; o.productId = f.productId.value; o.id = edit.evId;
+  return o;
+}
+// Làm mới phần Agenda & FMV khi đổi BS, hình thức, giờ…
+function agRefresh() {
+  const w = topModal(); if (!edit || !w || !$('#ag-sec', w)) return;
+  syncRows();
+  const v = agFormVals(w); const f = v.agFormat || 'mod';
+  const rows = edit.rows.filter(r => r.hcpId);
+  w.querySelectorAll('[data-ag]').forEach(el => {
+    const k = el.dataset.ag;
+    el.hidden = (k === 'type' && f !== 'mod') || (k === 'len' && f !== 'nopres') || (k === 'title' && f !== 'mod') || (k === 'topic' && f === 'mod');
+  });
+  const sim = agSimilar(v), sg = $('#ag-sugg', w);
+  const sgHtml = sim.length ? `<div class="ag-h"><b class="small">Điền nhanh giống sự kiện trước:</b>${sim.map(e => `<button type="button" class="btn sm" data-act="ag-copy" data-id="${e.id}" title="${esc(e.name)}">${esc((e.name || '').replace(/^\d{6,8}\s*-\s*/, '').slice(0, 42))} · ${esc(AG_FORMATS.find(x => x[0] === e.agFormat)?.[1].replace('GM ', '') || '')}</button>`).join('')}</div>` : '';
+  if (sg && sg.dataset.h !== sgHtml) { sg.innerHTML = sgHtml; sg.dataset.h = sgHtml; }   // chỉ vẽ lại khi đổi, tránh mất cú bấm
+  const g = guessFmvType(v, rows);
+  $('#ag-type-hint', w).textContent = v.agType ? '' : g.v ? `Nhận diện: ${g.v === 'HM' ? 'Hospital meeting' : 'RTM / GM 1 khoa'} (${g.why})` : 'Chưa nhận diện được, chọn giúp loại hoạt động.';
+  const att = w.querySelector('[name="agAttend"]'); const auto = guessAttendDesc(rows);
+  if (auto && (!clean(att.value) || clean(att.value) === edit.attAuto)) { att.value = auto; edit.attAuto = auto; }
+  // agenda
+  const box = $('#ag-items', w);
+  if (f === 'nopres') { box.innerHTML = `<p class="hint" style="margin:10px 0 0">GM không trình bày: file chỉ ghi giờ (${esc(v.agStart || '--:--')} – ${esc(hhmm(toMin(v.agStart) + (+v.agLength || 60)))}) và chủ đề thảo luận.</p>`; }
+  else {
+    const items = edit.agItems || buildAgenda({...v, agFormat:f}, rows);
+    const timed = agendaTimes(v.agStart || '12:00', items);
+    box.innerHTML = `<div class="ag-h"><b class="small">Chương trình</b><span class="muted small">${edit.agItems ? 'đã sửa tay' : 'tự tạo theo danh sách BS'}</span>
+        <span class="grow"></span>${edit.agItems ? `<button type="button" class="btn sm ghost" data-act="ag-reset">Tạo lại tự động</button>` : ''}<button type="button" class="btn sm ghost" data-act="ag-add">${I.plus} Thêm dòng</button></div>
+      <div class="ag-list">${timed.map((it, i) => `<div class="ag-row" data-i="${i}">
+        <span class="ag-time mono">${v.agStart ? it.time : '--:--'}</span>
+        <input class="input mono ag-min" data-agk="min" value="${esc(it.min)}" inputmode="numeric" aria-label="Số phút" title="Số phút">
+        <input class="input" data-agk="desc" value="${esc(it.desc)}" aria-label="Nội dung" list="dl-ag-desc">
+        <textarea class="input" data-agk="who" rows="${Math.min(3, it.who.split('\n').length)}" aria-label="Người trình bày">${esc(it.who)}</textarea>
+        <button type="button" class="btn sm ghost" data-act="ag-del" data-i="${i}" aria-label="Bỏ dòng">${I.x}</button></div>`).join('')}</div>`;
+  }
+  // FMV
+  const fb = $('#ag-fmv', w);
+  const paid = rows.filter(r => (+r.fee || 0) > 0);
+  if (!paid.length) fb.innerHTML = `<p class="hint" style="margin:10px 0 0">Không có BS nhận phí → không cần FMV. Xuất ra file Agenda GM (.xlsx).</p>`;
+  else {
+    const type = v.agType || g.v || 'RTM';
+    const fr = fmvRowsFor({...v, id:edit.evId}, paid, type);
+    fb.innerHTML = `<div class="ag-h" style="margin-top:12px"><b class="small">FMV checklist</b><span class="muted small">${esc(FMV_TYPES[type])}${fmvMasters ? '' : ' · mở file mẫu để xem khung FMV'}</span></div>
+      <div class="ag-fmv">${fr.map(d => `<div class="ag-fr"><b>${esc(d.h.name)}</b><span>${d.role} · ${d.cls} · ${d.tier || '<span class="tag crit">chưa có Tier</span>'}${d.multi === 'Yes' ? ' · nhiều vai trò' : ''}</span>
+        <span>${d.range ? `FMV ${esc(d.range)} tr` : ''} · đề xuất <b>${String(d.fee).replace('.', ',')} tr</b> ${d.over ? '<span class="tag crit">vượt FMV</span>' : d.range ? '<span class="tag ok">trong khung</span>' : ''}</span>
+        <span class="muted small">${d.count} lần trong năm</span></div>`).join('')}</div>
+      ${fr.length > 4 ? `<p class="hint">File FMV mẫu có 4 dòng BS. Xuất xong bấm “Add Row” trong file cho BS thứ 5 trở đi.</p>` : ''}`;
+  }
+  const s = $('#ag-sum', w); if (s) s.textContent = v.agFormat ? '· ' + (AG_FORMATS.find(x => x[0] === v.agFormat)?.[1] || '') + (paid.length ? ' · có FMV' : '') : '· chọn hình thức để tạo agenda';
+}
+function agReadItems(w) {
+  return [...w.querySelectorAll('.ag-row')].map(r => ({min:digits(r.querySelector('[data-agk="min"]').value) || 0, desc:clean(r.querySelector('[data-agk="desc"]').value), who:r.querySelector('[data-agk="who"]').value.trim()}));
+}
+function agBind(w) {
+  const sec = $('#ag-sec', w); if (!sec) return;
+  sec.addEventListener('input', e => {
+    if (e.target.closest('.ag-row')) { edit.agItems = agReadItems(w); const t = agendaTimes(agFormVals(w).agStart || '12:00', edit.agItems); w.querySelectorAll('.ag-row .ag-time').forEach((el, i) => { if (t[i]) el.textContent = agFormVals(w).agStart ? t[i].time : '--:--'; }); return; }
+    if (e.target.name === 'agAttend') return;
+    agRefresh();
+  });
+  sec.addEventListener('change', e => { if (e.target.tagName === 'SELECT') agRefresh(); });
+  const f = $('#ev-form', w); ['name', 'venue', 'productId'].forEach(n => f.elements[n]?.addEventListener('change', agRefresh));
+  let tm = 0; const later = () => { clearTimeout(tm); tm = setTimeout(agRefresh, 300); };
+  $('#eng-rows', w)?.addEventListener('input', later); $('#eng-rows', w)?.addEventListener('change', later);
+  needAgTpl().then(() => agRefresh()).catch(() => {});
+}
+// Hỏi thông tin còn thiếu trước khi xuất
+const AG_ASK = {
+  agFormat:['Hình thức', ev => `<select class="input" name="agFormat">${AG_FORMATS.map(([v, l, d]) => `<option value="${v}" ${v === agFormat(ev) ? 'selected' : ''}>${l} · ${d}</option>`).join('')}</select>`],
+  agType:['Loại hoạt động trên FMV', () => `<select class="input" name="agType"><option value="RTM">GM 1 khoa (RTM/Single-department meeting)</option><option value="HM">HM, Xmeeting, nhiều khoa (Hospital meeting)</option></select>`],
+  agStart:['Giờ bắt đầu', ev => `<input class="input" type="time" name="agStart" value="${esc(ev.agStart || '')}">`],
+  agHcpCount:['Số NVYT tham dự', ev => `<input class="input" name="agHcpCount" inputmode="numeric" placeholder="vd 20" value="${esc(ev.agHcpCount || '')}">`],
+  agAttend:['Thành phần tham dự (khoa - bệnh viện)', ev => `<input class="input" name="agAttend" value="${esc(ev.agAttend || guessAttendDesc(engsOf(ev.id)))}" placeholder="Khoa Nội Thận - Bệnh viện …">`],
+  agTopic:['Chủ đề TDV trình bày / thảo luận', ev => `<input class="input" name="agTopic" value="${esc(ev.agTopic || '')}">`],
+  agRestaurant:['Nhà hàng / Nơi mua hàng', ev => `<input class="input" name="agRestaurant" value="${esc(ev.agRestaurant || '')}" placeholder="Tên nhà hàng">`],
+};
+function openAgendaAsk(ev, keys) {
+  const w = openModal(`<div class="modal-h"><div><h2>Bổ sung để tạo Agenda</h2><p>${esc(ev.name)}</p></div><button class="btn ghost sm" data-act="close">${I.x}</button></div>
+    <form class="modal-b stack" id="ag-ask">${keys.map(k => `<label class="field"><span>${AG_ASK[k][0]}</span>${AG_ASK[k][1](ev)}</label>`).join('')}
+      <p class="hint" style="margin:0">App không tự đoán được các mục này. Lưu một lần, lần sau xuất không hỏi lại.</p></form>
+    <div class="modal-f"><button class="btn" data-act="close">Huỷ</button><button class="btn primary" id="ag-ask-go">${I.down} Lưu & xuất</button></div>`, {size:'narrow'});
+  $('#ag-ask-go', w).onclick = () => {
+    const f = readForm($('#ag-ask', w));
+    for (const k of keys) if (!clean(f[k])) { toast('Điền đủ các ô rồi xuất lại.', {kind:'err'}); return; }
+    Object.assign(ev, Object.fromEntries(keys.map(k => [k, clean(f[k])]))); if (!ev.agStaffCount) ev.agStaffCount = 1;
+    save(); closeModal(); exportAgenda(ev.id);
+  };
+}
+function agTplHtml() {
+  const t = agTpl || {};
+  const line = (k, label, acc) => `<div class="actions"><span><b>${label}</b> · ${t[k] ? `${esc(t[k].name)} <span class="muted small">· ${new Date(t[k].uploadedAt).toLocaleDateString('vi-VN')}</span>` : '<span class="tag crit">chưa có</span>'}</span>
+    ${!sharedActive() || isAdmin() ? `<button class="btn sm" data-act="pick" data-f="f-ag-${k}">${I.up} ${t[k] ? 'Thay' : 'Tải lên'} (${acc})</button>` : ''}</div>`;
+  return `<section class="panel"><div class="panel-h"><h2>Mẫu Agenda & FMV</h2>${t.fmv && t.gm ? '<span class="tag ok">Đủ mẫu</span>' : '<span class="tag warn">Thiếu mẫu</span>'}</div><div class="panel-b stack">
+    ${line('fmv', 'Agenda & FMV Checklist (có macro)', '.xlsm')}${line('gm', 'Agenda GM (6 sheet: có / không trình bày, có điều phối viên)', '.xlsx')}
+    <p class="hint" style="margin:0">App chỉ ghi chữ vào ô, giữ nguyên macro, công thức FMV và danh sách chọn. ${sharedActive() && !isAdmin() ? 'Mẫu do admin quản lý, tự cập nhật cho tài khoản của bạn.' : isAdmin() ? 'Bạn là admin: mẫu tải lên dùng chung cho cả team (chỉ người đăng nhập tải được).' : ''}</p>
+    <div class="fgrid"><label class="field"><span>BU/Department trên FMV</span><input class="input" data-set="buDept" value="${esc(state.settings.buDept || 'GF CVRM HCM')}"></label>
+      <label class="field"><span>Danh xưng của bạn trên agenda</span><input class="input" data-set="staffTitle" value="${esc(state.settings.staffTitle || 'DS.')}"></label></div>
+  </div></section>`;
+}
+
 /* ================= toast & busy ================= */
 function toast(msg, {kind, action, onAction} = {}) {
   const el = document.createElement('div'); el.className = 'toast' + (kind === 'err' ? ' err' : '');
@@ -2776,7 +3280,14 @@ const ACT = {
   'edit-event': t => openEventEditor(t.dataset.id),
   'clone-event': t => openEventEditor(t.dataset.id, {clone:true}),
   'open-event': t => { while (modals.length) closeModal(); go('events', {eventId:t.dataset.id}); },
-  'save-event': t => saveEvent(!!t.dataset.dl),
+  'save-event': t => saveEvent(!!t.dataset.dl, !!t.dataset.ag),
+  'ag-reset': () => { edit.agItems = null; agRefresh(); },
+  'ag-copy': t => { const src = evById(t.dataset.id), w = topModal(); if (!src || !w) return; const f = $('#ev-form', w).elements;
+    for (const k of ['agFormat','agType','agStart','agHcpCount','agStaffCount','agLength','agAttend','agRestaurant','agTopic']) if (f[k] && src[k] !== undefined && src[k] !== '') f[k].value = src[k];
+    edit.attAuto = ''; agRefresh(); toast('Đã điền theo “' + src.name + '”. Sửa lại chỗ khác nếu cần.'); },
+  'ag-add': () => { const w = topModal(); edit.agItems = agReadItems(w); edit.agItems.splice(Math.max(0, edit.agItems.length - 1), 0, {min:10, desc:'', who:''}); agRefresh(); },
+  'ag-del': t => { const w = topModal(); edit.agItems = agReadItems(w); edit.agItems.splice(+t.dataset.i, 1); agRefresh(); },
+  'dl-agenda': t => exportAgenda(t.dataset.id),
   'add-row': () => { syncRows(); edit.rows.push(blankRow()); renderRows(); const last = edit.rows[edit.rows.length - 1]; topModal()?.querySelector(`[name="r.${last.rid}.hcpName"]`)?.focus(); },
   'del-row': t => { syncRows(); edit.rows = edit.rows.filter(r => r.rid !== t.dataset.rid); if (!edit.rows.length) edit.rows.push(blankRow()); renderRows(); },
   'combo-pick': t => pickHcpForRow(t.dataset.rid, hcpById(t.dataset.id)),
@@ -2912,6 +3423,12 @@ $('#f-contracts').addEventListener('change', async e => {
   catch (err) { busy(false); toast(err.message, {kind:'err'}); }
 });
 $('#f-template').addEventListener('change', e => { const f = e.target.files[0]; if (f) onTemplateFile(f); });
+for (const k of ['fmv', 'gm']) $('#f-ag-' + k).addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { busy('Đang nạp mẫu…'); const msg = await uploadAgTpl(k, f); busy(false); render(); toast(msg); }
+  catch (err) { busy(false); render(); toast(err.message || String(err), {kind:'err'}); }
+});
+loadAgTplLocal();
 $('#f-restore').addEventListener('change', e => { const f = e.target.files[0]; if (f) onRestoreFile(f); });
 window.addEventListener('storage', e => { if (e.key === STORE_KEY && e.newValue) { try { state = {...fresh(), ...JSON.parse(e.newValue)}; render(); } catch (_) {} } });
 
