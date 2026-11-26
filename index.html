@@ -2600,7 +2600,12 @@ function saveEvent(dl, ag) {
   if (dl) downloadContracts(engsOf(id).map(e => e.id), zipNameFor(evById(id)));
   if (ag) exportAgenda(id);
 }
-const zipNameFor = ev => safeFile(`${yymmdd(ev.date)} - Speaker Agreements - ${ev.name.replace(/^\d{8}\s*-\s*/, '')}`).slice(0, 150) + '.zip';
+// Tên .zip ngắn: Windows "Extract all" tạo thư mục trùng tên file zip, cộng đường dẫn OneDrive + tên từng HĐ dễ vượt 260 ký tự → lỗi "Path too long"
+const zipNameFor = ev => {
+  const where = ev.name.replace(/^\d{6,8}\s*[-–]\s*/, '').split(/\s+[-–]\s+/).filter(x => !/^HCM Hospital$|^GF\b/i.test(x.trim()))[0] || '';
+  const short = where.length > 32 ? where.slice(0, 32).replace(/\s+\S*$/, '').replace(/[\s&,–-]+(BV|Khoa)?$/i, '') : where;
+  return safeFile(`${yymmdd(ev.date)} - HĐ${short ? ' - ' + short : ''}`) + '.zip';
+};
 
 /* --- import preview modals --- */
 function showExcelPlan(plan) {
@@ -2887,7 +2892,7 @@ function flushSync() { if (sync.user && sync.timer && state.pending) { clearTime
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSync(); });
 addEventListener('pagehide', flushSync);
 // Báo "App có bản mới": khi deploy, sửa APP_VER ở đây và trong ver.json cùng số
-const APP_VER = '2026.11.24.1';
+const APP_VER = '2026.11.26.1';
 let updShown = false;
 async function checkVersion() {
   if (updShown || location.protocol === 'file:') return;
